@@ -2,44 +2,70 @@ import { supabase } from '@/integrations/supabase/client';
 import { SalesOrderDTO, SalesOrderLineDTO, ProductLookupItem, StockLevel, ListParams, KPIData } from '../types';
 
 export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDTO> => {
-  const { data: order, error: orderError } = await supabase
-    .from('sales_orders')
-    .insert({
-      order_number: dto.orderNumber || `SO-${Date.now()}`,
-      customer_name: dto.customerName,
-      customer_email: dto.customerEmail,
-      customer_phone: dto.customerPhone,
-      status: dto.status,
-      total_amount: dto.totalAmount,
-      discount_amount: dto.discountAmount,
-      tax_amount: dto.taxAmount,
-      created_by: (await supabase.auth.getUser()).data.user?.id,
-      store_id: (await getUserProfile())?.store_id
-    })
-    .select()
-    .single();
+  try {
+    // Get user and profile info
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('User not authenticated');
+    }
 
-  if (orderError) throw orderError;
+    const userProfile = await getUserProfile();
+    if (!userProfile?.store_id) {
+      throw new Error('User profile not found or store not assigned');
+    }
 
-  // Insert order lines
-  if (dto.lines.length > 0) {
-    const { error: linesError } = await supabase
-      .from('sales_order_items')
-      .insert(
-        dto.lines.map(line => ({
-          sales_order_id: order.id,
-          product_id: line.productId,
-          quantity: line.quantity,
-          unit_price: line.unitPrice,
-          discount_amount: (line.unitPrice * line.quantity * line.discountPercent) / 100,
-          total_amount: line.subTotal
-        }))
-      );
+    console.log('Creating order with user:', user.id, 'store:', userProfile.store_id);
 
-    if (linesError) throw linesError;
+    const { data: order, error: orderError } = await supabase
+      .from('sales_orders')
+      .insert({
+        order_number: dto.orderNumber || `SO-${Date.now()}`,
+        customer_name: dto.customerName,
+        customer_email: dto.customerEmail,
+        customer_phone: dto.customerPhone,
+        status: dto.status,
+        total_amount: dto.totalAmount || 0,
+        discount_amount: dto.discountAmount || 0,
+        tax_amount: dto.taxAmount || 0,
+        created_by: user.id,
+        store_id: userProfile.store_id
+      })
+      .select()
+      .single();
+
+    if (orderError) {
+      console.error('Order creation error:', orderError);
+      throw orderError;
+    }
+
+    console.log('Order created successfully:', order);
+
+    // Insert order lines if any
+    if (dto.lines && dto.lines.length > 0) {
+      const { error: linesError } = await supabase
+        .from('sales_order_items')
+        .insert(
+          dto.lines.map(line => ({
+            sales_order_id: order.id,
+            product_id: line.productId,
+            quantity: line.quantity,
+            unit_price: line.unitPrice,
+            discount_amount: (line.unitPrice * line.quantity * line.discountPercent) / 100,
+            total_amount: line.subTotal
+          }))
+        );
+
+      if (linesError) {
+        console.error('Order lines creation error:', linesError);
+        throw linesError;
+      }
+    }
+
+    return { ...dto, id: order.id, orderNumber: order.order_number };
+  } catch (error) {
+    console.error('Failed to create sales order:', error);
+    throw error;
   }
-
-  return { ...dto, id: order.id };
 };
 
 export const updateSalesOrder = async (id: string, dto: SalesOrderDTO): Promise<SalesOrderDTO> => {
