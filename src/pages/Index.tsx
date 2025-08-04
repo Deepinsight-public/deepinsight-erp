@@ -2,19 +2,30 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, ArrowRight } from 'lucide-react';
+import { Building2, ArrowRight, LogIn } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
-  // Auto-redirect to store dashboard after a short delay
+  // Auto-redirect authenticated users to store dashboard
   useEffect(() => {
-    const timer = setTimeout(() => {
-      navigate('/store/dashboard');
-    }, 3000);
+    if (!loading && user) {
+      const timer = setTimeout(() => {
+        navigate('/store/dashboard');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [navigate, user, loading]);
 
-    return () => clearTimeout(timer);
-  }, [navigate]);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div>Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5">
@@ -29,19 +40,39 @@ const Index = () => {
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button 
-            onClick={() => navigate('/store/dashboard')} 
-            className="w-full"
-          >
-            Enter Store Dashboard
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
-          
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground">
-              Redirecting automatically in 3 seconds...
-            </p>
-          </div>
+          {user ? (
+            <>
+              <Button 
+                onClick={() => navigate('/store/dashboard')} 
+                className="w-full"
+              >
+                Enter Store Dashboard
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+              
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">
+                  Welcome back! Redirecting in 2 seconds...
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <Button 
+                onClick={() => navigate('/auth')} 
+                className="w-full"
+              >
+                Login to Continue
+                <LogIn className="h-4 w-4 ml-2" />
+              </Button>
+              
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">
+                  Please sign in to access the store management system
+                </p>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

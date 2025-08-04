@@ -5,8 +5,35 @@ export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDT
   try {
     console.log('Creating order with data:', dto);
 
-    // For development/testing without authentication, use sample store
-    const sampleStoreId = '550e8400-e29b-41d4-a716-446655440000';
+    // Get authenticated user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('User not authenticated. Please sign in to create orders.');
+    }
+
+    // Get user's profile to find store_id
+    const userProfile = await getUserProfile();
+    if (!userProfile?.store_id) {
+      // If no profile exists, create one with default store
+      const sampleStoreId = '550e8400-e29b-41d4-a716-446655440000';
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: user.id,
+          store_id: sampleStoreId,
+          role: 'store_employee',
+          full_name: user.user_metadata?.full_name || user.email,
+          email: user.email,
+          is_active: true
+        });
+
+      if (profileError) {
+        console.error('Failed to create user profile:', profileError);
+        throw new Error('Failed to create user profile');
+      }
+    }
+
+    const storeId = userProfile?.store_id || '550e8400-e29b-41d4-a716-446655440000';
     const orderNumber = dto.orderNumber || `SO-${Date.now()}`;
 
     const { data: order, error: orderError } = await supabase
@@ -20,8 +47,8 @@ export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDT
         total_amount: dto.totalAmount || 0,
         discount_amount: dto.discountAmount || 0,
         tax_amount: dto.taxAmount || 0,
-        store_id: sampleStoreId,
-        created_by: sampleStoreId // Use store_id as placeholder for created_by
+        store_id: storeId,
+        created_by: user.id
       })
       .select()
       .single();

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bell, ChevronDown, Globe, User } from 'lucide-react';
+import { Bell, ChevronDown, Globe, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,10 +12,12 @@ import {
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/useAuth';
 
 export function StoreHeader() {
   const { t, i18n } = useTranslation();
-  const [storeName] = useState('Main Store'); // This would come from auth context
+  const { user, signOut } = useAuth();
+  const [storeName] = useState('测试门店'); 
   const [notificationCount] = useState(3);
 
   const toggleLanguage = () => {
@@ -23,9 +25,8 @@ export function StoreHeader() {
     i18n.changeLanguage(newLang);
   };
 
-  const handleLogout = () => {
-    // Implement logout logic
-    console.log('Logout clicked');
+  const handleLogout = async () => {
+    await signOut();
   };
 
   return (
@@ -94,18 +95,19 @@ export function StoreHeader() {
                   <User className="h-4 w-4" />
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm font-medium hidden md:block">John Doe</span>
+              <span className="text-sm font-medium hidden md:block">{user?.email || 'User'}</span>
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem>
               <User className="h-4 w-4 mr-2" />
-              <span>{t('profile')}</span>
+              <span>个人资料</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
-              <span>{t('logout')}</span>
+              <LogOut className="h-4 w-4 mr-2" />
+              <span>退出登录</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
