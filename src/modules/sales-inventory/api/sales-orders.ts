@@ -178,13 +178,68 @@ export const fetchProductLookup = async (search: string): Promise<ProductLookupI
 
   if (error) throw error;
 
-  return (data || []).map(product => ({
+  const dbProducts = (data || []).map(product => ({
     id: product.id,
     sku: product.sku,
     productName: product.product_name,
     price: product.price || 0,
     availableStock: (product.inventory?.[0]?.quantity || 0) - (product.inventory?.[0]?.reserved_quantity || 0)
   }));
+
+  // If no database results, provide sample electronic products
+  if (dbProducts.length === 0) {
+    const sampleProducts = [
+      {
+        id: 'sample-1',
+        sku: 'FRIDGE001',
+        productName: '三星双门冰箱',
+        price: 3299.99,
+        availableStock: 8
+      },
+      {
+        id: 'sample-2', 
+        sku: 'LAPTOP001',
+        productName: '联想ThinkPad笔记本电脑',
+        price: 5899.99,
+        availableStock: 12
+      },
+      {
+        id: 'sample-3',
+        sku: 'PRINTER001', 
+        productName: '惠普激光打印机',
+        price: 1299.99,
+        availableStock: 15
+      },
+      {
+        id: 'sample-4',
+        sku: 'FRIDGE002',
+        productName: 'LG多门冰箱',
+        price: 4599.99,
+        availableStock: 6
+      },
+      {
+        id: 'sample-5',
+        sku: 'DESKTOP001',
+        productName: '戴尔台式电脑',
+        price: 3799.99,
+        availableStock: 10
+      },
+      {
+        id: 'sample-6',
+        sku: 'PRINTER002',
+        productName: '佳能彩色打印机',
+        price: 1899.99,
+        availableStock: 20
+      }
+    ];
+    
+    return sampleProducts.filter(p => 
+      p.productName.toLowerCase().includes(search.toLowerCase()) ||
+      p.sku.toLowerCase().includes(search.toLowerCase())
+    );
+  }
+
+  return dbProducts;
 };
 
 export const fetchStockLevel = async (sku: string): Promise<StockLevel> => {
