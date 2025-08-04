@@ -147,13 +147,16 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
 
   // Product search
   const handleProductSearch = async (search: string) => {
+    console.log('Product search called with:', search);
     if (search.length < 2) {
+      console.log('Search too short, clearing options');
       setProductOptions([]);
       return;
     }
     
     try {
       const products = await fetchProductLookup(search);
+      console.log('Fetched products:', products);
       setProductOptions(products);
     } catch (error) {
       console.error('Product search failed:', error);
@@ -417,6 +420,14 @@ interface AddItemDialogProps {
 function AddItemDialog({ open, onClose, onAdd, onProductSearch, productOptions }: AddItemDialogProps) {
   const [selectedProduct, setSelectedProduct] = useState('');
   const [quantity, setQuantity] = useState(1);
+
+  // Load sample products when dialog opens
+  useEffect(() => {
+    if (open && productOptions.length === 0) {
+      console.log('Dialog opened, loading initial products');
+      onProductSearch('冰箱'); // Search for 冰箱 to show sample products
+    }
+  }, [open, productOptions.length, onProductSearch]);
 
   const handleAdd = () => {
     if (selectedProduct && quantity > 0) {
