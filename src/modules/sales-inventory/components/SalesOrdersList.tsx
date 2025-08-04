@@ -182,14 +182,14 @@ export function SalesOrdersList() {
             </div>
             
             <Select
-              value={statusFilter[0] || ''}
-              onValueChange={(value) => setStatusFilter(value ? [value] : [])}
+              value={statusFilter[0] || 'all'}
+              onValueChange={(value) => setStatusFilter(value === 'all' ? [] : [value])}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 {statusOptions.map(option => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
