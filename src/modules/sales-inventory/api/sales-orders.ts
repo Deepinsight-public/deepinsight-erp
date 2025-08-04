@@ -243,6 +243,20 @@ export const fetchProductLookup = async (search: string): Promise<ProductLookupI
 };
 
 export const fetchStockLevel = async (sku: string): Promise<StockLevel> => {
+  // Handle sample products
+  if (sku.startsWith('FRIDGE') || sku.startsWith('LAPTOP') || sku.startsWith('PRINTER') || sku.startsWith('DESKTOP')) {
+    const sampleStockLevels: Record<string, StockLevel> = {
+      'FRIDGE001': { sku: 'FRIDGE001', availableStock: 8, reservedQuantity: 0 },
+      'FRIDGE002': { sku: 'FRIDGE002', availableStock: 6, reservedQuantity: 0 },
+      'LAPTOP001': { sku: 'LAPTOP001', availableStock: 12, reservedQuantity: 0 },
+      'PRINTER001': { sku: 'PRINTER001', availableStock: 15, reservedQuantity: 0 },
+      'PRINTER002': { sku: 'PRINTER002', availableStock: 20, reservedQuantity: 0 },
+      'DESKTOP001': { sku: 'DESKTOP001', availableStock: 10, reservedQuantity: 0 }
+    };
+    
+    return sampleStockLevels[sku] || { sku, availableStock: 0, reservedQuantity: 0 };
+  }
+
   const { data, error } = await supabase
     .from('products')
     .select(`
@@ -253,9 +267,13 @@ export const fetchStockLevel = async (sku: string): Promise<StockLevel> => {
       )
     `)
     .eq('sku', sku)
-    .single();
+    .maybeSingle(); // Use maybeSingle instead of single to handle no results
 
   if (error) throw error;
+
+  if (!data) {
+    return { sku, availableStock: 0, reservedQuantity: 0 };
+  }
 
   return {
     sku: data.sku,
