@@ -12,6 +12,7 @@ import { StoreLayout } from "@/components/store/StoreLayout";
 import Dashboard from "./pages/store/Dashboard";
 import SalesOrders from "./pages/store/SalesOrders";
 import SalesOrderDetail from "./pages/store/SalesOrderDetail";
+import NewSalesOrder from "./pages/store/NewSalesOrder";
 import PurchaseRequests from "./pages/store/PurchaseRequests";
 import Inventory from "./pages/store/Inventory";
 import Customers from "./pages/store/Customers";
@@ -54,6 +55,7 @@ const App = () => (
               
               {/* Sales Orders */}
               <Route path="sales-orders" element={<SalesOrders />} />
+              <Route path="sales-orders/new" element={<NewSalesOrder />} />
               <Route path="sales-orders/:id" element={<SalesOrderDetail />} />
               
               {/* Purchase Requests */}

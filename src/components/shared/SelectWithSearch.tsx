@@ -30,6 +30,7 @@ interface SelectWithSearchProps {
   emptyText?: string;
   className?: string;
   disabled?: boolean;
+  onSearchChange?: (search: string) => void;
 }
 
 export function SelectWithSearch({
@@ -41,6 +42,7 @@ export function SelectWithSearch({
   emptyText = 'No option found.',
   className,
   disabled = false,
+  onSearchChange,
 }: SelectWithSearchProps) {
   const [open, setOpen] = useState(false);
 
@@ -62,7 +64,10 @@ export function SelectWithSearch({
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">
         <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+          <CommandInput 
+            placeholder={searchPlaceholder}
+            onValueChange={onSearchChange}
+          />
           <CommandList>
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
