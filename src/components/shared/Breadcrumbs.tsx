@@ -23,7 +23,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
       </NavLink>
       
       {items.map((item, index) => (
-        <React.Fragment key={index}>
+        <React.Fragment key={`breadcrumb-${index}`}>
           <ChevronRight className="h-4 w-4" />
           {item.href ? (
             <NavLink 

@@ -121,7 +121,7 @@ export default function Inventory() {
   return (
     <div className="space-y-6">
       <div>
-        <Breadcrumbs items={[{ title: t('inventory') }]} />
+        <Breadcrumbs items={[{ title: 'Inventory' }]} />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Inventory Management</h1>
@@ -147,13 +147,13 @@ export default function Inventory() {
 
       <Tabs defaultValue="search" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="search">{t('inventory.search.title')}</TabsTrigger>
-          <TabsTrigger value="transfers">{t('inventory.transfers.title')}</TabsTrigger>
-          <TabsTrigger value="counts">{t('inventory.count.title')}</TabsTrigger>
-          <TabsTrigger value="purchase">{t('purchaseRequests')}</TabsTrigger>
+          <TabsTrigger value="search">Search</TabsTrigger>
+          <TabsTrigger value="transfers">Transfers</TabsTrigger>
+          <TabsTrigger value="counts">Count</TabsTrigger>
+          <TabsTrigger value="purchase">Purchase</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="search" className="space-y-6">
+        <TabsContent value="search" className="mt-6 space-y-6">
           <InventorySearch 
             onSearch={(filters) => console.log('Search filters:', filters)}
             onExport={() => console.log('Exporting inventory...')}
@@ -166,15 +166,15 @@ export default function Inventory() {
           />
         </TabsContent>
 
-        <TabsContent value="transfers">
+        <TabsContent value="transfers" className="mt-6">
           <TransferManagement storeId={storeId} />
         </TabsContent>
 
-        <TabsContent value="counts">
+        <TabsContent value="counts" className="mt-6">
           <InventoryCount storeId={storeId} />
         </TabsContent>
 
-        <TabsContent value="purchase">
+        <TabsContent value="purchase" className="mt-6">
           <div className="text-center py-8 text-muted-foreground">
             <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Purchase management is available in the Purchase Requests section.</p>
