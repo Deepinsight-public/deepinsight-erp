@@ -5,6 +5,15 @@ export interface SalesOrderDTO {
   customerName?: string;
   customerEmail?: string;
   customerPhone?: string;
+  // Customer details (denormalized)
+  customerFirst?: string;
+  customerLast?: string;
+  addrCountry?: string;
+  addrState?: string;
+  addrCity?: string;
+  addrStreet?: string;
+  addrZipcode?: string;
+  // Order details
   orderDate: string;
   orderType: 'retail' | 'wholesale';
   status: 'draft' | 'submitted' | 'pending' | 'confirmed' | 'shipped' | 'completed' | 'cancelled';
@@ -13,6 +22,22 @@ export interface SalesOrderDTO {
   taxAmount: number;
   totalAmount: number;
   lines: SalesOrderLineDTO[];
+  // Extras
+  warrantyYears?: number;
+  warrantyAmount?: number;
+  walkInDelivery?: string;
+  accessory?: string;
+  otherServices?: string;
+  otherFee?: number;
+  paymentMethod?: string;
+  paymentNote?: string;
+  customerSource?: string;
+  cashierId?: string;
+  // Meta
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  storeId?: string;
 }
 
 export interface SalesOrderLineDTO {

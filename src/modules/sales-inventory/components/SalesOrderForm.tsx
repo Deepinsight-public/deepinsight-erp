@@ -69,26 +69,26 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
     defaultValues: {
       orderDate: initialData?.orderDate || new Date().toISOString().split('T')[0],
       orderType: initialData?.orderType || 'retail',
-      fulfillmentType: undefined as any,
+      fulfillmentType: initialData?.walkInDelivery as 'walk-in' | 'delivery' || 'walk-in',
       customerName: initialData?.customerName || '',
       customerEmail: initialData?.customerEmail || '',
       customerPhone: initialData?.customerPhone || '',
-      firstName: '',
-      lastName: '',
-      country: '',
-      state: '',
-      city: '',
-      street: '',
-      zipcode: '',
-      paymentMethod: '',
-      paymentNote: '',
-      customerSource: '',
-      cashierId: '',
-      warrantyYears: 1,
-      warrantyAmount: 0,
-      accessory: '',
-      otherServices: '',
-      otherFee: 0,
+      firstName: initialData?.customerFirst || '',
+      lastName: initialData?.customerLast || '',
+      country: initialData?.addrCountry || '',
+      state: initialData?.addrState || '',
+      city: initialData?.addrCity || '',
+      street: initialData?.addrStreet || '',
+      zipcode: initialData?.addrZipcode || '',
+      paymentMethod: initialData?.paymentMethod || '',
+      paymentNote: initialData?.paymentNote || '',
+      customerSource: initialData?.customerSource || '',
+      cashierId: initialData?.cashierId || '',
+      warrantyYears: initialData?.warrantyYears || 1,
+      warrantyAmount: initialData?.warrantyAmount || 0,
+      accessory: initialData?.accessory || '',
+      otherServices: initialData?.otherServices || '',
+      otherFee: initialData?.otherFee || 0,
       status: initialData?.status || 'draft',
       ...initialData
     }
@@ -174,17 +174,111 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
     try {
       const formData = getValues();
       
-      // Save customer information to customers table
+      // Get user profile for store_id and user_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('store_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile?.store_id) throw new Error('User profile not found');
+
+      // Prepare order data for database
+      const orderData = {
+        order_number: initialData?.orderNumber || `ORD-${Date.now()}`,
+        customer_name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim(),
+        customer_first: formData.firstName,
+        customer_last: formData.lastName,
+        customer_email: formData.customerEmail,
+        customer_phone: formData.customerPhone,
+        addr_country: formData.country,
+        addr_state: formData.state,
+        addr_city: formData.city,
+        addr_street: formData.street,
+        addr_zipcode: formData.zipcode,
+        warranty_years: formData.warrantyYears || 1,
+        warranty_amount: formData.warrantyAmount || 0,
+        walk_in_delivery: formData.fulfillmentType || 'walk-in',
+        accessory: formData.accessory,
+        other_services: formData.otherServices,
+        other_fee: formData.otherFee || 0,
+        payment_method: formData.paymentMethod,
+        payment_note: formData.paymentNote,
+        customer_source: formData.customerSource,
+        total_amount: totals.totalAmount,
+        discount_amount: totals.discountAmount,
+        tax_amount: totals.taxAmount,
+        status,
+        order_date: new Date().toISOString(),
+        store_id: profile.store_id,
+        created_by: user.id,
+        cashier_id: formData.cashierId || user.id
+      };
+
+      let savedOrder;
+      if (initialData?.id) {
+        // Update existing order
+        const { data: updatedOrder, error } = await supabase
+          .from('sales_orders')
+          .update(orderData)
+          .eq('id', initialData.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        savedOrder = updatedOrder;
+      } else {
+        // Create new order
+        const { data: newOrder, error } = await supabase
+          .from('sales_orders')
+          .insert({ id: crypto.randomUUID(), ...orderData })
+          .select()
+          .single();
+
+        if (error) throw error;
+        savedOrder = newOrder;
+      }
+
+      // Save/update line items
+      if (lines.length > 0) {
+        // Delete existing line items if updating
+        if (initialData?.id) {
+          await supabase
+            .from('sales_order_items')
+            .delete()
+            .eq('sales_order_id', initialData.id);
+        }
+
+        // Insert new line items
+        const lineItemsData = lines.map(item => ({
+          sales_order_id: savedOrder.id,
+          product_id: item.productId,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          discount_amount: item.unitPrice * item.quantity * item.discountPercent / 100,
+          total_amount: item.subTotal
+        }));
+
+        const { error: lineItemsError } = await supabase
+          .from('sales_order_items')
+          .insert(lineItemsData);
+
+        if (lineItemsError) throw lineItemsError;
+      }
+
+      // Save customer information to customers table if new customer
       if (formData.customerEmail && !customerFound) {
         try {
-          const { data: currentProfile } = await supabase.auth.getUser();
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('store_id')
-            .eq('user_id', currentProfile.user?.id)
+          const { data: existingCustomer } = await supabase
+            .from('customers')
+            .select('id')
+            .eq('email', formData.customerEmail)
             .single();
 
-          if (profile?.store_id) {
+          if (!existingCustomer) {
             const customerData = {
               store_id: profile.store_id,
               name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim(),
@@ -197,39 +291,62 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                 formData.zipcode,
                 formData.country
               ].filter(Boolean).join(', ') || null,
-              created_by: currentProfile.user?.id
+              created_by: user.id
             };
 
-            const { error: customerError } = await supabase
+            await supabase
               .from('customers')
               .insert(customerData);
-
-            if (customerError) {
-              console.warn('Failed to save customer:', customerError);
-            }
           }
         } catch (customerError) {
           console.warn('Error saving customer:', customerError);
         }
       }
 
-      const orderData: SalesOrderDTO = {
-        ...formData,
-        status,
+      // Convert to DTO format for callback
+      const orderDTO: SalesOrderDTO = {
+        id: savedOrder.id,
+        orderNumber: savedOrder.order_number,
+        customerName: savedOrder.customer_name,
+        customerEmail: savedOrder.customer_email,
+        customerPhone: savedOrder.customer_phone,
+        customerFirst: savedOrder.customer_first,
+        customerLast: savedOrder.customer_last,
+        addrCountry: savedOrder.addr_country,
+        addrState: savedOrder.addr_state,
+        addrCity: savedOrder.addr_city,
+        addrStreet: savedOrder.addr_street,
+        addrZipcode: savedOrder.addr_zipcode,
+        warrantyYears: savedOrder.warranty_years,
+        warrantyAmount: savedOrder.warranty_amount,
+        walkInDelivery: savedOrder.walk_in_delivery,
+        accessory: savedOrder.accessory,
+        otherServices: savedOrder.other_services,
+        otherFee: savedOrder.other_fee,
+        paymentMethod: savedOrder.payment_method,
+        paymentNote: savedOrder.payment_note,
+        customerSource: savedOrder.customer_source,
+        cashierId: savedOrder.cashier_id,
+        totalAmount: savedOrder.total_amount,
+        discountAmount: savedOrder.discount_amount,
+        taxAmount: savedOrder.tax_amount,
+        status: savedOrder.status,
+        orderDate: savedOrder.order_date,
         lines,
-        ...totals
+        subTotal: totals.subTotal,
+        orderType: 'retail', // Default value
+        createdAt: savedOrder.created_at,
+        updatedAt: savedOrder.updated_at,
+        createdBy: savedOrder.created_by,
+        storeId: savedOrder.store_id
       };
-
-      const savedOrder = initialData?.id 
-        ? await updateSalesOrder(initialData.id, orderData)
-        : await createSalesOrder(orderData);
 
       toast({
         title: 'Success',
         description: `Order ${status === 'draft' ? 'saved as draft' : 'submitted'} successfully`
       });
       
-      onSave?.(savedOrder);
+      onSave?.(orderDTO);
     } catch (error) {
       console.error('Error saving sales order:', error);
       toast({

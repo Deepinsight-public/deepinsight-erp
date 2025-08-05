@@ -448,52 +448,103 @@ export type Database = {
       }
       sales_orders: {
         Row: {
+          accessory: string | null
+          addr_city: string | null
+          addr_country: string | null
+          addr_state: string | null
+          addr_street: string | null
+          addr_zipcode: string | null
+          cashier_id: string | null
           created_at: string
           created_by: string
           customer_email: string | null
+          customer_first: string | null
+          customer_last: string | null
           customer_name: string | null
           customer_phone: string | null
+          customer_source: string | null
           discount_amount: number
           id: string
+          order_date: string | null
           order_number: string
+          other_fee: number | null
+          other_services: string | null
           payment_method: string | null
+          payment_note: string | null
           status: string | null
           store_id: string
           tax_amount: number
           total_amount: number
           updated_at: string
+          walk_in_delivery: string | null
+          warranty_amount: number | null
+          warranty_years: number | null
         }
         Insert: {
+          accessory?: string | null
+          addr_city?: string | null
+          addr_country?: string | null
+          addr_state?: string | null
+          addr_street?: string | null
+          addr_zipcode?: string | null
+          cashier_id?: string | null
           created_at?: string
           created_by: string
           customer_email?: string | null
+          customer_first?: string | null
+          customer_last?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          customer_source?: string | null
           discount_amount?: number
           id?: string
+          order_date?: string | null
           order_number: string
+          other_fee?: number | null
+          other_services?: string | null
           payment_method?: string | null
+          payment_note?: string | null
           status?: string | null
           store_id: string
           tax_amount?: number
           total_amount?: number
           updated_at?: string
+          walk_in_delivery?: string | null
+          warranty_amount?: number | null
+          warranty_years?: number | null
         }
         Update: {
+          accessory?: string | null
+          addr_city?: string | null
+          addr_country?: string | null
+          addr_state?: string | null
+          addr_street?: string | null
+          addr_zipcode?: string | null
+          cashier_id?: string | null
           created_at?: string
           created_by?: string
           customer_email?: string | null
+          customer_first?: string | null
+          customer_last?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          customer_source?: string | null
           discount_amount?: number
           id?: string
+          order_date?: string | null
           order_number?: string
+          other_fee?: number | null
+          other_services?: string | null
           payment_method?: string | null
+          payment_note?: string | null
           status?: string | null
           store_id?: string
           tax_amount?: number
           total_amount?: number
           updated_at?: string
+          walk_in_delivery?: string | null
+          warranty_amount?: number | null
+          warranty_years?: number | null
         }
         Relationships: [
           {
