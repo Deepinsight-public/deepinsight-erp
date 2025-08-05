@@ -15,12 +15,12 @@ export function RecentOrdersList() {
   const [kpiData, setKpiData] = useState<KPIData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load recent orders (limit to 20)
+  // Load recent orders (limit to 5)
   const loadData = async () => {
     setLoading(true);
     try {
       const [ordersData, kpiDataResult] = await Promise.all([
-        fetchSalesOrders({ limit: 20 }),
+        fetchSalesOrders({ limit: 5 }),
         fetchKPIData()
       ]);
 
@@ -133,33 +133,13 @@ export function RecentOrdersList() {
         <div>
           <h1 className="text-3xl font-bold">Recent Sales Orders</h1>
           <p className="text-muted-foreground mt-2">
-            Latest 20 sales orders from your store.
+            Latest 5 sales orders from your store.
           </p>
         </div>
         <Button onClick={() => navigate('/store/sales-orders/new')}>
           New Order
         </Button>
       </div>
-
-      {/* View Full History Banner */}
-      <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-primary">Need to see more orders?</h3>
-              <p className="text-sm text-muted-foreground">View complete order history with advanced filters and search.</p>
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/store/sales-orders/history')}
-              className="ml-4"
-            >
-              View Full History
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Recent Orders Table */}
       <DataTable
@@ -169,6 +149,17 @@ export function RecentOrdersList() {
         onRowClick={handleRowClick}
         title="Recent Orders"
       />
+
+      {/* View All Sales Orders Banner */}
+      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-6 text-center">
+        <Button 
+          onClick={() => navigate('/store/sales-orders/history')}
+          className="font-medium"
+        >
+          View All Sales Orders
+          <ArrowRight className="h-4 w-4 ml-2" />
+        </Button>
+      </div>
     </div>
   );
 }
