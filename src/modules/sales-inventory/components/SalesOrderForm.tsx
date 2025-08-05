@@ -251,9 +251,9 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
 
     setIsSearchingCustomer(true);
     try {
-      // Use Supabase to search for customer by email
+      // Use Supabase to search for customer by email in customers table
       const { data: customers, error } = await supabase
-        .from('profiles')
+        .from('customers')
         .select('*')
         .eq('email', email)
         .limit(1);
@@ -266,8 +266,8 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         const customer = customers[0];
         setCustomerFound(true);
         
-        // Parse customer name from full_name field
-        const nameParts = customer.full_name ? customer.full_name.split(' ') : [];
+        // Parse customer name from name field
+        const nameParts = customer.name ? customer.name.split(' ') : [];
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
 
@@ -278,6 +278,16 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         setValue('firstName', firstName);
         setValue('lastName', lastName);
         setValue('customerPhone', customer.phone || '');
+        
+        // Auto-fill address if available
+        if (customer.address) {
+          const addressParts = customer.address.split(', ');
+          if (addressParts.length >= 1) setValue('street', addressParts[0] || '');
+          if (addressParts.length >= 2) setValue('city', addressParts[1] || '');
+          if (addressParts.length >= 3) setValue('state', addressParts[2] || '');
+          if (addressParts.length >= 4) setValue('zipcode', addressParts[3] || '');
+          if (addressParts.length >= 5) setValue('country', addressParts[4] || '');
+        }
         
         toast({
           title: 'Customer Found',
