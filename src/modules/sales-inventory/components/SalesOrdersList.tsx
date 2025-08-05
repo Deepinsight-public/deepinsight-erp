@@ -139,12 +139,12 @@ export function SalesOrdersList() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <KPIWidget
             title="Today's Sales"
-            value={`$${kpiData.todaySales.toFixed(2)}`}
+            value={`$${(kpiData.todaySales || 0).toFixed(2)}`}
             icon={DollarSign}
           />
           <KPIWidget
             title="Today's Orders"
-            value={kpiData.todayOrderCount.toString()}
+            value={(kpiData.todayOrderCount || 0).toString()}
             icon={Package}
           />
         </div>
