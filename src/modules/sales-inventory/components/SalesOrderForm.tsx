@@ -221,6 +221,9 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
           const nameParts = customer.name ? customer.name.split(' ') : [];
           const firstName = nameParts[0] || '';
           const lastName = nameParts.slice(1).join(' ') || '';
+
+          console.log("Found the email");
+          console.log(nameParts);
           
           // Parse address (assuming address is stored as a string or object)
           let addressParts: {
