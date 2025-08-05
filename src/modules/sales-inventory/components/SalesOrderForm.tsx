@@ -1,13 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DataTable, FormDialog, SelectWithSearch, ConfirmDialog, LoadingOverlay } from '@/components';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 import { SalesOrderDTO, SalesOrderLineDTO, ProductLookupItem } from '../types';
 import { fetchProductLookup, fetchStockLevel, createSalesOrder, updateSalesOrder } from '../api/sales-orders';
 
@@ -18,6 +24,23 @@ interface SalesOrderFormProps {
   readOnly?: boolean;
 }
 
+interface CustomerInfo {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  country: string;
+  state: string;
+  city: string;
+  street: string;
+  zipcode: string;
+}
+
+interface StaffMember {
+  id: string;
+  name: string;
+}
+
 export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false }: SalesOrderFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -25,14 +48,46 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
   const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
   const [productOptions, setProductOptions] = useState<ProductLookupItem[]>([]);
   const [lines, setLines] = useState<SalesOrderLineDTO[]>(initialData?.lines || []);
-
-  const { register, handleSubmit, watch, setValue, getValues } = useForm<SalesOrderDTO>({
+  const [staffOptions, setStaffOptions] = useState<StaffMember[]>([]);
+  const [customerFound, setCustomerFound] = useState(false);
+  const [isSearchingCustomer, setIsSearchingCustomer] = useState(false);
+  
+  const { register, handleSubmit, watch, setValue, getValues } = useForm<SalesOrderDTO & CustomerInfo & {
+    orderType: 'retail' | 'wholesale';
+    fulfillmentType: 'walk-in' | 'delivery';
+    paymentMethod: string;
+    paymentNote: string;
+    customerSource: string;
+    cashierId: string;
+    warrantyYears: number;
+    warrantyAmount: number;
+    accessory: string;
+    otherServices: string;
+    otherFee: number;
+  }>({
     defaultValues: {
       orderDate: initialData?.orderDate || new Date().toISOString().split('T')[0],
       orderType: initialData?.orderType || 'retail',
+      fulfillmentType: 'walk-in',
       customerName: initialData?.customerName || '',
       customerEmail: initialData?.customerEmail || '',
       customerPhone: initialData?.customerPhone || '',
+      firstName: '',
+      lastName: '',
+      country: '',
+      state: '',
+      city: '',
+      street: '',
+      zipcode: '',
+      paymentMethod: 'cash',
+      paymentNote: '',
+      customerSource: 'storefront',
+      cashierId: '',
+      warrantyYears: 1,
+      warrantyAmount: 0,
+      accessory: '',
+      otherServices: '',
+      otherFee: 0,
       status: initialData?.status || 'draft',
       ...initialData
     }
@@ -146,6 +201,81 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
     }
   };
 
+  // Customer lookup by email
+  const searchCustomerByEmail = useCallback(async (email: string) => {
+    if (!email || email.length < 3) {
+      setCustomerFound(false);
+      return;
+    }
+
+    setIsSearchingCustomer(true);
+    try {
+      // Mock API call - replace with actual customer lookup
+      const response = await fetch(`/store/customers?email=${encodeURIComponent(email)}`);
+      if (response.ok) {
+        const customers = await response.json();
+        if (customers.length > 0) {
+          const customer = customers[0];
+          setCustomerFound(true);
+          setValue('firstName', customer.firstName || '');
+          setValue('lastName', customer.lastName || '');
+          setValue('customerPhone', customer.phone || '');
+          setValue('country', customer.address?.country || '');
+          setValue('state', customer.address?.state || '');
+          setValue('city', customer.address?.city || '');
+          setValue('street', customer.address?.street || '');
+          setValue('zipcode', customer.address?.zipcode || '');
+          toast({
+            title: 'Customer Found',
+            description: `Auto-filled details for ${customer.firstName} ${customer.lastName}`
+          });
+        } else {
+          setCustomerFound(false);
+        }
+      }
+    } catch (error) {
+      console.error('Customer search failed:', error);
+      setCustomerFound(false);
+    } finally {
+      setIsSearchingCustomer(false);
+    }
+  }, [setValue, toast]);
+
+  // Debounced email search
+  useEffect(() => {
+    const email = watch('customerEmail');
+    const timeoutId = setTimeout(() => {
+      if (email && !customerFound) {
+        searchCustomerByEmail(email);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [watch('customerEmail'), searchCustomerByEmail, customerFound]);
+
+  // Load staff options
+  useEffect(() => {
+    const loadStaff = async () => {
+      try {
+        // Mock API call - replace with actual staff lookup
+        const response = await fetch('/store/staff');
+        if (response.ok) {
+          const staff = await response.json();
+          setStaffOptions(staff);
+        }
+      } catch (error) {
+        console.error('Failed to load staff:', error);
+        // Mock data for demo
+        setStaffOptions([
+          { id: '1', name: 'John Smith' },
+          { id: '2', name: 'Sarah Johnson' },
+          { id: '3', name: 'Mike Chen' },
+        ]);
+      }
+    };
+    loadStaff();
+  }, []);
+
   // Product search
   const handleProductSearch = async (search: string) => {
     console.log('Product search called with:', search);
@@ -248,68 +378,291 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
     <div className="space-y-6">
       {loading && <LoadingOverlay />}
       
-      {/* Order Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Order Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      {/* Order Information */}
+      <Card className="p-6 space-y-6">
+        {/* Customer Information */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Customer Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="customerName">Customer Name</Label>
-              <Input
-                id="customerName"
-                {...register('customerName')}
-                disabled={readOnly}
-              />
-            </div>
-            <div>
-              <Label htmlFor="orderDate">Order Date</Label>
-              <Input
-                id="orderDate"
-                type="date"
-                {...register('orderDate')}
-                disabled={readOnly}
-              />
-            </div>
-            <div>
-              <Label htmlFor="customerEmail">Customer Email</Label>
+              <Label htmlFor="customerEmail">Email (lookup key) *</Label>
               <Input
                 id="customerEmail"
                 type="email"
                 {...register('customerEmail')}
                 disabled={readOnly}
+                placeholder="customer@example.com"
+                className={cn(customerFound && "border-success")}
+              />
+              {isSearchingCustomer && (
+                <p className="text-xs text-muted-foreground mt-1">Searching customer...</p>
+              )}
+              {customerFound && (
+                <p className="text-xs text-success mt-1">Customer found and details auto-filled</p>
+              )}
+            </div>
+            <div />
+            
+            <div>
+              <Label htmlFor="firstName">First Name *</Label>
+              <Input
+                id="firstName"
+                {...register('firstName')}
+                disabled={readOnly || customerFound}
+                placeholder="John"
               />
             </div>
             <div>
-              <Label htmlFor="customerPhone">Customer Phone</Label>
+              <Label htmlFor="lastName">Last Name *</Label>
+              <Input
+                id="lastName"
+                {...register('lastName')}
+                disabled={readOnly || customerFound}
+                placeholder="Smith"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="customerPhone">Phone</Label>
               <Input
                 id="customerPhone"
                 {...register('customerPhone')}
-                disabled={readOnly}
+                disabled={readOnly || customerFound}
+                placeholder="+1 (555) 123-4567"
+              />
+            </div>
+            <div />
+            
+            <div>
+              <Label htmlFor="country">Country</Label>
+              <Input
+                id="country"
+                {...register('country')}
+                disabled={readOnly || customerFound}
+                placeholder="United States"
+              />
+            </div>
+            <div>
+              <Label htmlFor="state">State</Label>
+              <Input
+                id="state"
+                {...register('state')}
+                disabled={readOnly || customerFound}
+                placeholder="California"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="city">City</Label>
+              <Input
+                id="city"
+                {...register('city')}
+                disabled={readOnly || customerFound}
+                placeholder="San Francisco"
+              />
+            </div>
+            <div>
+              <Label htmlFor="street">Street</Label>
+              <Input
+                id="street"
+                {...register('street')}
+                disabled={readOnly || customerFound}
+                placeholder="123 Main St"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="zipcode">Zipcode</Label>
+              <Input
+                id="zipcode"
+                {...register('zipcode')}
+                disabled={readOnly || customerFound}
+                placeholder="94105"
               />
             </div>
           </div>
-          
-          {!readOnly && (
+        </div>
+
+        {/* Order Details */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Order Details</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label>Order Type</Label>
+              <Label>Order Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !watch('orderDate') && "text-muted-foreground"
+                    )}
+                    disabled={readOnly}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {watch('orderDate') ? format(new Date(watch('orderDate')), "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={watch('orderDate') ? new Date(watch('orderDate')) : undefined}
+                    onSelect={(date) => setValue('orderDate', date ? format(date, 'yyyy-MM-dd') : '')}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div>
+              <Label>Walk-in / Delivery</Label>
               <RadioGroup
-                value={watch('orderType')}
-                onValueChange={(value) => setValue('orderType', value as 'retail' | 'wholesale')}
+                value={watch('fulfillmentType')}
+                onValueChange={(value) => setValue('fulfillmentType', value as 'walk-in' | 'delivery')}
+                disabled={readOnly}
+                className="flex gap-6 mt-2"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="retail" id="retail" />
-                  <Label htmlFor="retail">Retail</Label>
+                  <RadioGroupItem value="walk-in" id="walk-in" />
+                  <Label htmlFor="walk-in">Walk-in</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="wholesale" id="wholesale" />
-                  <Label htmlFor="wholesale">Wholesale</Label>
+                  <RadioGroupItem value="delivery" id="delivery" />
+                  <Label htmlFor="delivery">Delivery</Label>
                 </div>
               </RadioGroup>
             </div>
-          )}
-        </CardContent>
+            
+            <div>
+              <Label>Payment Method</Label>
+              <Select 
+                value={watch('paymentMethod')} 
+                onValueChange={(value) => setValue('paymentMethod', value)}
+                disabled={readOnly}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="paymentNote">Payment Note</Label>
+              <Textarea
+                id="paymentNote"
+                {...register('paymentNote')}
+                disabled={readOnly}
+                placeholder="Optional payment notes..."
+                className="min-h-[40px] resize-none"
+              />
+            </div>
+            
+            <div>
+              <Label>Customer Source</Label>
+              <Select 
+                value={watch('customerSource')} 
+                onValueChange={(value) => setValue('customerSource', value)}
+                disabled={readOnly}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="storefront">Storefront</SelectItem>
+                  <SelectItem value="website">Website</SelectItem>
+                  <SelectItem value="referral">Referral</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Cashier</Label>
+              <SelectWithSearch
+                options={staffOptions.map(staff => ({
+                  value: staff.id,
+                  label: staff.name
+                }))}
+                value={watch('cashierId')}
+                onValueChange={(value) => setValue('cashierId', value)}
+                placeholder="Select cashier..."
+                disabled={readOnly}
+                className="w-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Warranty & Extras */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Warranty & Extras</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="warrantyYears">Warranty (years)</Label>
+              <Input
+                id="warrantyYears"
+                type="number"
+                {...register('warrantyYears', { valueAsNumber: true })}
+                disabled={readOnly}
+                min="0"
+                step="1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="warrantyAmount">Warranty Amount ($)</Label>
+              <Input
+                id="warrantyAmount"
+                type="number"
+                {...register('warrantyAmount', { valueAsNumber: true })}
+                disabled={readOnly}
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="accessory">Accessory</Label>
+              <Input
+                id="accessory"
+                {...register('accessory')}
+                disabled={readOnly}
+                placeholder="Optional accessories..."
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="otherServices">Other Services</Label>
+              <Input
+                id="otherServices"
+                {...register('otherServices')}
+                disabled={readOnly}
+                placeholder="Installation, setup, etc..."
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="otherFee">Other Fee ($)</Label>
+              <Input
+                id="otherFee"
+                type="number"
+                {...register('otherFee', { valueAsNumber: true })}
+                disabled={readOnly}
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+        </div>
       </Card>
 
       {/* Line Items */}
