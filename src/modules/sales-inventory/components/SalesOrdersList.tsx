@@ -141,6 +141,7 @@ export function SalesOrdersList() {
             title="Today's Sales"
             value={kpiData.todaySales ?? 0}
             icon={DollarSign}
+            format="currency"
           />
           <KPIWidget
             title="Today's Orders"
