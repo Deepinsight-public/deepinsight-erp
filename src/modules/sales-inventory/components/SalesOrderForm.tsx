@@ -269,8 +269,8 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         if (lineItemsError) throw lineItemsError;
       }
 
-      // Save customer information to customers table if new customer
-      if (formData.customerEmail && !customerFound) {
+      // Save/update customer information in customers table
+      if (formData.customerEmail) {
         try {
           const { data: existingCustomer } = await supabase
             .from('customers')
@@ -278,22 +278,29 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
             .eq('email', formData.customerEmail)
             .single();
 
-          if (!existingCustomer) {
-            const customerData = {
-              store_id: profile.store_id,
-              name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim(),
-              email: formData.customerEmail,
-              phone: formData.customerPhone || null,
-              address: [
-                formData.street,
-                formData.city,
-                formData.state,
-                formData.zipcode,
-                formData.country
-              ].filter(Boolean).join(', ') || null,
-              created_by: user.id
-            };
+          const customerData = {
+            store_id: profile.store_id,
+            name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim(),
+            email: formData.customerEmail,
+            phone: formData.customerPhone || null,
+            address: [
+              formData.street,
+              formData.city,
+              formData.state,
+              formData.zipcode,
+              formData.country
+            ].filter(Boolean).join(', ') || null,
+            created_by: user.id
+          };
 
+          if (existingCustomer) {
+            // Update existing customer
+            await supabase
+              .from('customers')
+              .update(customerData)
+              .eq('id', existingCustomer.id);
+          } else {
+            // Create new customer
             await supabase
               .from('customers')
               .insert(customerData);
@@ -598,7 +605,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               <Input
                 id="firstName"
                 {...register('firstName')}
-                disabled={readOnly || customerFound}
+                disabled={readOnly}
                 placeholder=""
               />
             </div>
@@ -607,7 +614,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               <Input
                 id="lastName"
                 {...register('lastName')}
-                disabled={readOnly || customerFound}
+                disabled={readOnly}
                 placeholder=""
               />
             </div>
@@ -617,7 +624,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               <Input
                 id="customerPhone"
                 {...register('customerPhone')}
-                disabled={readOnly || customerFound}
+                disabled={readOnly}
                 placeholder=""
               />
             </div>
@@ -628,7 +635,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               <Input
                 id="country"
                 {...register('country')}
-                disabled={readOnly || customerFound}
+                disabled={readOnly}
                 placeholder=""
               />
             </div>
@@ -637,7 +644,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               <Input
                 id="state"
                 {...register('state')}
-                disabled={readOnly || customerFound}
+                disabled={readOnly}
                 placeholder=""
               />
             </div>
@@ -647,7 +654,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               <Input
                 id="city"
                 {...register('city')}
-                disabled={readOnly || customerFound}
+                disabled={readOnly}
                 placeholder=""
               />
             </div>
@@ -656,7 +663,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               <Input
                 id="street"
                 {...register('street')}
-                disabled={readOnly || customerFound}
+                disabled={readOnly}
                 placeholder=""
               />
             </div>
@@ -666,7 +673,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               <Input
                 id="zipcode"
                 {...register('zipcode')}
-                disabled={readOnly || customerFound}
+                disabled={readOnly}
                 placeholder=""
               />
             </div>
