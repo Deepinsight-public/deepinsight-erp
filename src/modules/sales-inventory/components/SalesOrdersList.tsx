@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable, KPIWidget, StatusBadge, DateRangePicker } from '@/components';
 import { useToast } from '@/hooks/use-toast';
 import { fetchSalesOrders, fetchKPIData } from '../api/sales-orders';
-import { SalesOrderDTO, ListParams, KPIData } from '../types';
+import { SalesOrderDTO, ListParams, KPIData } from '../types/index';
 import { DateRange } from 'react-day-picker';
 
 export function SalesOrdersList() {
