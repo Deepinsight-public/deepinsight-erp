@@ -5,6 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Breadcrumbs, DataTable, StatusBadge } from '@/components';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InventorySearch } from '@/modules/inventory/components/InventorySearch';
+import { TransferManagement } from '@/modules/inventory/components/TransferManagement';
+import { InventoryCount } from '@/modules/inventory/components/InventoryCount';
 
 const mockInventoryItems = [
   {
@@ -42,6 +46,7 @@ const mockInventoryItems = [
 export default function Inventory() {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
+  const storeId = 'store-1'; // Would get from auth context
 
   const columns = [
     {
@@ -119,22 +124,10 @@ export default function Inventory() {
         <Breadcrumbs items={[{ title: t('inventory') }]} />
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">{t('inventory')}</h1>
+            <h1 className="text-3xl font-bold">库存管理 (Inventory Management)</h1>
             <p className="text-muted-foreground mt-2">
-              Monitor stock levels and manage inventory transfers.
+              Comprehensive inventory operations including search, transfers, counts, and purchase management.
             </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
-              Transfer In
-            </Button>
-            <Button variant="outline">
-              Transfer Out
-            </Button>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Item
-            </Button>
           </div>
         </div>
       </div>
@@ -152,25 +145,45 @@ export default function Inventory() {
         </div>
       )}
 
-      <div className="flex gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search inventory..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Button variant="outline">Filter</Button>
-        <Button variant="outline">Export</Button>
-      </div>
+      <Tabs defaultValue="search" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="search">库存查询</TabsTrigger>
+          <TabsTrigger value="transfers">调拨管理</TabsTrigger>
+          <TabsTrigger value="counts">盘点管理</TabsTrigger>
+          <TabsTrigger value="purchase">采购管理</TabsTrigger>
+        </TabsList>
 
-      <DataTable
-        data={mockInventoryItems}
-        columns={columns}
-        onRowClick={handleRowClick}
-      />
+        <TabsContent value="search" className="space-y-6">
+          <InventorySearch 
+            onSearch={(filters) => console.log('Search filters:', filters)}
+            onExport={() => console.log('Exporting inventory...')}
+          />
+          <DataTable
+            data={mockInventoryItems}
+            columns={columns}
+            onRowClick={handleRowClick}
+            title="库存清单 (Inventory List)"
+          />
+        </TabsContent>
+
+        <TabsContent value="transfers">
+          <TransferManagement storeId={storeId} />
+        </TabsContent>
+
+        <TabsContent value="counts">
+          <InventoryCount storeId={storeId} />
+        </TabsContent>
+
+        <TabsContent value="purchase">
+          <div className="text-center py-8 text-muted-foreground">
+            <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Purchase management is available in the Purchase Requests section.</p>
+            <Button variant="outline" className="mt-4" onClick={() => window.location.href = '/store/purchase-requests'}>
+              Go to Purchase Requests
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
