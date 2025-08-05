@@ -15,7 +15,6 @@ import { exportToCSV, exportToXLSX } from '@/modules/crm-analytics/utils/exportU
 export default function Customers() {
   const { t } = useTranslation();
   const [searchInput, setSearchInput] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -42,13 +41,12 @@ export default function Customers() {
     setRefreshTrigger(prev => prev + 1);
   };
 
-  const handleSearch = () => {
-    setSearchTerm(searchInput);
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
   };
 
   const handleClearSearch = () => {
     setSearchInput('');
-    setSearchTerm('');
   };
 
   const handleExport = async (format: 'csv' | 'xlsx') => {
@@ -90,8 +88,7 @@ export default function Customers() {
           <Input
             placeholder="Search customers..."
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-10 pr-10"
           />
           {searchInput && (
@@ -103,9 +100,6 @@ export default function Customers() {
             </button>
           )}
         </div>
-        <Button onClick={handleSearch}>
-          Search
-        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline">
@@ -129,7 +123,7 @@ export default function Customers() {
       <CustomerList 
         onCustomerClick={handleCustomerClick} 
         onCustomerEdit={handleCustomerEdit}
-        searchTerm={searchTerm}
+        searchTerm={searchInput}
         refreshTrigger={refreshTrigger}
       />
       
