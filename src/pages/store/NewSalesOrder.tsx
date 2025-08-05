@@ -7,7 +7,7 @@ export default function NewSalesOrder() {
   const navigate = useNavigate();
 
   const handleSave = (order: SalesOrderDTO) => {
-    navigate(`/store/sales-orders/${order.id}`);
+    navigate(`/store/sales-orders/success?id=${order.id}`);
   };
 
   const handleCancel = () => {
