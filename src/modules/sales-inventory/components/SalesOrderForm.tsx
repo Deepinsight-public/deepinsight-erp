@@ -270,12 +270,22 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
   useEffect(() => {
     const loadStaff = async () => {
       try {
-        // Mock API call - replace with actual staff lookup
-        const response = await fetch('/store/staff');
-        if (response.ok) {
-          const staff = await response.json();
-          setStaffOptions(staff);
+        // Use Supabase to get staff from profiles table
+        const { data: staff, error } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .not('full_name', 'is', null);
+
+        if (error) {
+          throw error;
         }
+
+        const staffOptions = staff?.map(s => ({
+          id: s.user_id,
+          name: s.full_name || 'Unknown'
+        })) || [];
+
+        setStaffOptions(staffOptions);
       } catch (error) {
         console.error('Failed to load staff:', error);
         // Mock data for demo
