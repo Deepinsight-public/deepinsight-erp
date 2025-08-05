@@ -398,6 +398,66 @@ export type Database = {
           },
         ]
       }
+      purchase_requests: {
+        Row: {
+          allocation_id: string
+          created_at: string
+          id: string
+          items: Json
+          status: string
+          store_id: string
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          allocation_id: string
+          created_at?: string
+          id?: string
+          items: Json
+          status?: string
+          store_id: string
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          allocation_id?: string
+          created_at?: string
+          id?: string
+          items?: Json
+          status?: string
+          store_id?: string
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: []
+      }
+      purchase_turns: {
+        Row: {
+          created_at: string
+          current_store_id: string
+          id: string
+          round_number: number
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_store_id: string
+          id?: string
+          round_number?: number
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          current_store_id?: string
+          id?: string
+          round_number?: number
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: []
+      }
       sales_order_items: {
         Row: {
           created_at: string
@@ -688,6 +748,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      warehouse_allocations: {
+        Row: {
+          created_at: string
+          id: string
+          qty_left: number
+          qty_total: number
+          sku: string
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          qty_left: number
+          qty_total: number
+          sku: string
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          qty_left?: number
+          qty_total?: number
+          sku?: string
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
