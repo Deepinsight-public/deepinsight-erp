@@ -166,6 +166,16 @@ export const fetchSalesOrders = async (params: ListParams = {}) => {
     query = query.lte('created_at', params.dateTo);
   }
 
+  // Add pagination support
+  if (params.limit) {
+    query = query.limit(params.limit);
+  }
+
+  if (params.page && params.limit) {
+    const offset = (params.page - 1) * params.limit;
+    query = query.range(offset, offset + params.limit - 1);
+  }
+
   const { data, error } = await query;
   if (error) throw error;
 

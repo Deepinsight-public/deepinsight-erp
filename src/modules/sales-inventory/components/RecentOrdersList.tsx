@@ -1,0 +1,174 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { DollarSign, Package, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DataTable, KPIWidget, StatusBadge } from '@/components';
+import { useToast } from '@/hooks/use-toast';
+import { fetchSalesOrders, fetchKPIData } from '../api/sales-orders';
+import { SalesOrderDTO, KPIData } from '../types/index';
+
+export function RecentOrdersList() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [orders, setOrders] = useState<SalesOrderDTO[]>([]);
+  const [kpiData, setKpiData] = useState<KPIData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Load recent orders (limit to 20)
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [ordersData, kpiDataResult] = await Promise.all([
+        fetchSalesOrders({ limit: 20 }),
+        fetchKPIData()
+      ]);
+
+      // Transform data to match our DTO structure
+      const transformedOrders: SalesOrderDTO[] = ordersData.map(order => ({
+        id: order.id,
+        orderNumber: order.order_number,
+        customerName: order.customer_name,
+        customerEmail: order.customer_email,
+        customerPhone: order.customer_phone,
+        orderDate: order.created_at,
+        orderType: 'retail', // Default for now
+        status: order.status as SalesOrderDTO['status'],
+        subTotal: order.total_amount - order.tax_amount + order.discount_amount,
+        discountAmount: order.discount_amount,
+        taxAmount: order.tax_amount,
+        totalAmount: order.total_amount,
+        lines: [] // Not needed for list view
+      }));
+
+      setOrders(transformedOrders);
+      setKpiData(kpiDataResult);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load sales orders',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const columns = [
+    {
+      key: 'orderNumber',
+      title: 'Order No.',
+      render: (value: string) => (
+        <span className="font-medium text-primary">{value}</span>
+      ),
+    },
+    {
+      key: 'customerName',
+      title: 'Customer',
+      render: (value: string) => value || 'Walk-in Customer'
+    },
+    {
+      key: 'orderDate',
+      title: 'Date',
+      render: (value: string) => new Date(value).toLocaleDateString()
+    },
+    {
+      key: 'status',
+      title: 'Status',
+      render: (value: string) => (
+        <StatusBadge status={value as any} />
+      ),
+    },
+    {
+      key: 'totalAmount',
+      title: 'Total Amount',
+      render: (value: number) => (
+        <span className="font-medium">${value.toFixed(2)}</span>
+      ),
+    },
+    {
+      key: 'actions',
+      title: 'Actions',
+      render: (_: any, record: SalesOrderDTO) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(`/store/sales-orders/${record.id}`)}
+        >
+          View
+        </Button>
+      ),
+    },
+  ];
+
+  const handleRowClick = (order: SalesOrderDTO) => {
+    navigate(`/store/sales-orders/${order.id}`);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* KPI Widgets */}
+      {kpiData && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <KPIWidget
+            title="Today's Sales"
+            value={kpiData.todaySales ?? 0}
+            icon={DollarSign}
+            format="currency"
+          />
+          <KPIWidget
+            title="Today's Orders"
+            value={(kpiData.todayOrderCount || 0).toString()}
+            icon={Package}
+          />
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Recent Sales Orders</h1>
+          <p className="text-muted-foreground mt-2">
+            Latest 20 sales orders from your store.
+          </p>
+        </div>
+        <Button onClick={() => navigate('/store/sales-orders/new')}>
+          New Order
+        </Button>
+      </div>
+
+      {/* View Full History Banner */}
+      <Card className="bg-primary/5 border-primary/20">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-primary">Need to see more orders?</h3>
+              <p className="text-sm text-muted-foreground">View complete order history with advanced filters and search.</p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/store/sales-orders/history')}
+              className="ml-4"
+            >
+              View Full History
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Orders Table */}
+      <DataTable
+        data={orders}
+        columns={columns}
+        loading={loading}
+        onRowClick={handleRowClick}
+        title="Recent Orders"
+      />
+    </div>
+  );
+}

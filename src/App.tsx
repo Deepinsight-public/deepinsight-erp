@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import { StoreLayout } from "@/components/store/StoreLayout";
 import Dashboard from "./pages/store/Dashboard";
 import SalesOrders from "./pages/store/SalesOrders";
+import SalesOrdersHistory from "./pages/store/SalesOrdersHistory";
 import SalesOrderDetail from "./pages/store/SalesOrderDetail";
 import NewSalesOrder from "./pages/store/NewSalesOrder";
 import SalesOrderSuccess from "./pages/store/SalesOrderSuccess";
@@ -79,6 +80,7 @@ const App = () => (
                 
                 {/* Sales Orders */}
                 <Route path="sales-orders" element={<SalesOrders />} />
+                <Route path="sales-orders/history" element={<SalesOrdersHistory />} />
                 <Route path="sales-orders/new" element={<NewSalesOrder />} />
                 <Route path="sales-orders/success" element={<SalesOrderSuccess />} />
                 <Route path="sales-orders/:id" element={<SalesOrderDetail />} />
