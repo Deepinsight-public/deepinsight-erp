@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Plus, Trash2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -17,6 +19,32 @@ import { cn } from '@/lib/utils';
 import { SalesOrderDTO, SalesOrderLineDTO, ProductLookupItem } from '../types';
 import { fetchProductLookup, fetchStockLevel, createSalesOrder, updateSalesOrder } from '../api/sales-orders';
 import { supabase } from '@/integrations/supabase/client';
+
+// Form validation schema
+const SalesOrderFormSchema = z.object({
+  customerEmail: z.string().email('Please enter a valid email address').min(1, 'Email is required'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  fulfillmentType: z.enum(['walk-in', 'delivery']).optional(),
+  customerPhone: z.string().optional(),
+  country: z.string().optional(),
+  state: z.string().optional(),
+  city: z.string().optional(),
+  street: z.string().optional(),
+  zipcode: z.string().optional(),
+  warrantyYears: z.number().min(0).optional(),
+  warrantyAmount: z.number().min(0).optional(),
+  accessory: z.string().optional(),
+  otherFee: z.number().min(0).optional(),
+  otherServices: z.string().optional(),
+  paymentMethod: z.string().optional(),
+  paymentNote: z.string().optional(),
+  customerSource: z.string().optional(),
+  cashierId: z.string().optional(),
+  orderDate: z.string().optional()
+});
+
+type SalesOrderFormData = z.infer<typeof SalesOrderFormSchema>;
 
 interface SalesOrderFormProps {
   initialData?: SalesOrderDTO;
@@ -53,24 +81,11 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
   const [customerFound, setCustomerFound] = useState(false);
   const [isSearchingCustomer, setIsSearchingCustomer] = useState(false);
   
-  const { register, handleSubmit, watch, setValue, getValues } = useForm<SalesOrderDTO & CustomerInfo & {
-    orderType: 'retail' | 'wholesale';
-    fulfillmentType: 'walk-in' | 'delivery';
-    paymentMethod: string;
-    paymentNote: string;
-    customerSource: string;
-    cashierId: string;
-    warrantyYears: number;
-    warrantyAmount: number;
-    accessory: string;
-    otherServices: string;
-    otherFee: number;
-  }>({
+  const { register, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<SalesOrderFormData>({
+    resolver: zodResolver(SalesOrderFormSchema),
     defaultValues: {
       orderDate: initialData?.orderDate || new Date().toISOString().split('T')[0],
-      orderType: initialData?.orderType || 'retail',
-      fulfillmentType: initialData?.walkInDelivery as 'walk-in' | 'delivery' || 'walk-in',
-      customerName: initialData?.customerName || '',
+      fulfillmentType: (initialData?.walkInDelivery as 'walk-in' | 'delivery') || undefined,
       customerEmail: initialData?.customerEmail || '',
       customerPhone: initialData?.customerPhone || '',
       firstName: initialData?.customerFirst || '',
@@ -88,25 +103,38 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
       warrantyAmount: initialData?.warrantyAmount || 0,
       accessory: initialData?.accessory || '',
       otherServices: initialData?.otherServices || '',
-      otherFee: initialData?.otherFee || 0,
-      status: initialData?.status || 'draft',
-      ...initialData
+      otherFee: initialData?.otherFee || 0
     }
   });
 
-  // Calculate totals
-  const calculateTotals = (orderLines: SalesOrderLineDTO[]) => {
-    const subTotal = orderLines.reduce((sum, line) => sum + line.subTotal, 0);
-    const discountAmount = orderLines.reduce((sum, line) => 
+  // Calculate totals including fees
+  const calculateTotals = (orderLines: SalesOrderLineDTO[], warrantyAmount?: number, accessoryFee?: number, otherFee?: number, taxPct = 10) => {
+    const linesSum = orderLines.reduce((sum, line) => sum + line.subTotal, 0);
+    const linesDiscount = orderLines.reduce((sum, line) => 
       sum + (line.unitPrice * line.quantity * line.discountPercent / 100), 0
     );
-    const taxAmount = (subTotal - discountAmount) * 0.1; // 10% tax
-    const totalAmount = subTotal - discountAmount + taxAmount;
-
-    return { subTotal, discountAmount, taxAmount, totalAmount };
+    const linesSubTotal = linesSum - linesDiscount;
+    
+    const extras = (warrantyAmount ?? 0) + (accessoryFee ?? 0) + (otherFee ?? 0);
+    const subTotal = linesSubTotal + extras;
+    const taxAmount = subTotal * (taxPct / 100);
+    const grandTotal = subTotal + taxAmount;
+    
+    return { 
+      subTotal: linesSubTotal, 
+      discountAmount: linesDiscount, 
+      taxAmount, 
+      totalAmount: grandTotal,
+      extrasTotal: extras
+    };
   };
 
-  const totals = calculateTotals(lines);
+  const totals = calculateTotals(
+    lines, 
+    watch('warrantyAmount'), 
+    parseFloat(watch('accessory') || '0'), 
+    watch('otherFee')
+  );
 
   // Add new line item
   const handleAddItem = async (productId: string, quantity: number) => {
@@ -202,7 +230,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         warranty_years: formData.warrantyYears || 1,
         warranty_amount: formData.warrantyAmount || 0,
         walk_in_delivery: formData.fulfillmentType || 'walk-in',
-        accessory: formData.accessory,
+        accessory: formData.accessory || '',
         other_services: formData.otherServices,
         other_fee: formData.otherFee || 0,
         payment_method: formData.paymentMethod,
@@ -716,7 +744,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
             </div>
             
             <div>
-              <Label>Walk-in / Delivery</Label>
+              <Label>Walk-in / Delivery *</Label>
               <RadioGroup
                 value={watch('fulfillmentType')}
                 onValueChange={(value) => setValue('fulfillmentType', value as 'walk-in' | 'delivery')}
@@ -732,6 +760,9 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                   <Label htmlFor="delivery">Delivery</Label>
                 </div>
               </RadioGroup>
+              {!watch('fulfillmentType') && !readOnly && (
+                <p className="text-xs text-destructive mt-1">Please choose walk-in or delivery</p>
+              )}
             </div>
             
             <div>
@@ -834,7 +865,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               <Input
                 id="accessory"
                 type="number"
-                {...register('accessory', { valueAsNumber: true })}
+                {...register('accessory')}
                 disabled={readOnly}
                 min="0"
                 step="0.01"
@@ -900,13 +931,19 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
             <span>{lines.reduce((sum, line) => sum + line.quantity, 0)}</span>
           </div>
           <div className="flex justify-between">
-            <span>Sub-total:</span>
+            <span>Items Sub-total:</span>
             <span>${totals.subTotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
             <span>Discount:</span>
             <span>-${totals.discountAmount.toFixed(2)}</span>
           </div>
+          {totals.extrasTotal > 0 && (
+            <div className="flex justify-between">
+              <span>Extras (Warranty + Accessory + Other):</span>
+              <span>${totals.extrasTotal.toFixed(2)}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span>Tax (10%):</span>
             <span>${totals.taxAmount.toFixed(2)}</span>
@@ -931,7 +968,17 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
             Save Draft
           </Button>
           <Button
-            onClick={() => handleSave('submitted')}
+            onClick={() => {
+              if (!watch('fulfillmentType')) {
+                toast({
+                  title: 'Validation Error',
+                  description: 'Please choose walk-in or delivery',
+                  variant: 'destructive'
+                });
+                return;
+              }
+              handleSave('submitted');
+            }}
             disabled={loading || lines.length === 0}
           >
             Submit Order
