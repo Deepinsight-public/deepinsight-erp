@@ -75,8 +75,7 @@ export default function Customers() {
             className="pl-10"
           />
         </div>
-        <Button onClick={handleSearch} variant="outline">
-          <Search className="h-4 w-4 mr-2" />
+        <Button onClick={handleSearch}>
           Search
         </Button>
         <DropdownMenu>
