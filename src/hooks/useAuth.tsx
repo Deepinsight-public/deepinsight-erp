@@ -1,12 +1,18 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { UserRole, UserProfile, UserRoleData } from '@/lib/types/auth';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  profile: UserProfile | null;
+  roles: UserRoleData[];
+  primaryRole: UserRole | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  hasRole: (role: UserRole) => boolean;
+  hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -14,7 +20,43 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [roles, setRoles] = useState<UserRoleData[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Fetch user profile and roles
+  const fetchUserData = async (userId: string) => {
+    try {
+      // Fetch profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        return;
+      }
+
+      setProfile(profileData as UserProfile);
+
+      // Fetch user roles
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (rolesError) {
+        console.error('Error fetching roles:', rolesError);
+        return;
+      }
+
+      setRoles((rolesData || []) as UserRoleData[]);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -23,15 +65,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
 
-        // Defer any additional data fetching
-        if (event === 'SIGNED_IN' && session?.user) {
+        if (session?.user) {
+          // Defer data fetching to prevent deadlocks
           setTimeout(() => {
-            // Any additional user data fetching can go here
-            console.log('User signed in:', session.user.email);
+            fetchUserData(session.user.id);
           }, 0);
+        } else {
+          // Clear profile and roles when signed out
+          setProfile(null);
+          setRoles([]);
         }
+        
+        setLoading(false);
       }
     );
 
@@ -39,11 +85,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserData(session.user.id);
+      }
+      
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Helper functions
+  const primaryRole = roles.length > 0 ? roles[0].role : null;
+
+  const hasRole = (role: UserRole): boolean => {
+    return roles.some(r => r.role === role);
+  };
+
+  const hasPermission = (permission: string): boolean => {
+    // Implementation based on ROLE_PERMISSIONS from auth types
+    const userPermissions = roles.flatMap(role => {
+      switch (role.role) {
+        case 'hq_admin':
+          return ['view_all', 'manage_all', 'create_stores', 'manage_users'];
+        case 'warehouse_admin':
+          return ['view_warehouse', 'manage_inventory', 'create_transfers'];
+        case 'store_manager':
+          return ['view_store', 'manage_store', 'create_orders', 'manage_staff'];
+        case 'store_staff':
+          return ['view_store', 'create_orders', 'view_inventory'];
+        default:
+          return [];
+      }
+    });
+    
+    return userPermissions.includes(permission);
+  };
 
   const signOut = async () => {
     try {
@@ -74,8 +152,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     user,
     session,
+    profile,
+    roles,
+    primaryRole,
     loading,
     signOut,
+    hasRole,
+    hasPermission,
   };
 
   return (

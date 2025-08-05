@@ -600,6 +600,44 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          store_id: string | null
+          updated_at: string
+          user_id: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["user_role"]
+          store_id?: string | null
+          updated_at?: string
+          user_id: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          store_id?: string | null
+          updated_at?: string
+          user_id?: string
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -611,6 +649,21 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"]
           store_id: string
         }[]
+      }
+      get_user_roles: {
+        Args: { user_uuid: string }
+        Returns: {
+          role: Database["public"]["Enums"]["user_role"]
+          store_id: string
+          warehouse_id: string
+        }[]
+      }
+      has_role: {
+        Args: {
+          user_uuid: string
+          check_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
       }
       initialize_order_pool: {
         Args: Record<PropertyKey, never>
@@ -627,6 +680,8 @@ export type Database = {
         | "warehouse_employee"
         | "hq_admin"
         | "hq_manager"
+        | "warehouse_admin"
+        | "store_staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -763,6 +818,8 @@ export const Constants = {
         "warehouse_employee",
         "hq_admin",
         "hq_manager",
+        "warehouse_admin",
+        "store_staff",
       ],
     },
   },

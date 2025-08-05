@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingOverlay } from '@/components';
 import { useToast } from '@/hooks/use-toast';
+import { UserRole, ROLE_DISPLAY_NAMES } from '@/lib/types/auth';
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
@@ -16,19 +18,37 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('store_staff');
+  const [selectedStore, setSelectedStore] = useState('');
+  const [stores, setStores] = useState<Array<{id: string, store_name: string}>>([]);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkAuth = async () => {
+    // Check if user is already logged in and load stores
+    const initializeAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         navigate('/store/dashboard');
+        return;
+      }
+
+      // Load available stores for signup
+      const { data: storesData } = await supabase
+        .from('stores')
+        .select('id, store_name')
+        .eq('status', 'active')
+        .order('store_name');
+      
+      if (storesData) {
+        setStores(storesData);
+        if (storesData.length > 0) {
+          setSelectedStore(storesData[0].id);
+        }
       }
     };
-    checkAuth();
+    initializeAuth();
   }, [navigate]);
 
   // Cleanup auth state utility
@@ -116,6 +136,24 @@ export default function Auth() {
       }
 
       if (data.user) {
+        // Create user role entry
+        const roleData = {
+          user_id: data.user.id,
+          role: selectedRole,
+          store_id: (selectedRole === 'store_staff' || selectedRole === 'store_manager') ? selectedStore : null,
+          warehouse_id: selectedRole === 'warehouse_admin' ? null : null // Future warehouse support
+        };
+
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert([roleData]);
+
+        if (roleError) {
+          console.error('Error creating user role:', roleError);
+          setError('Account created but role assignment failed. Please contact support.');
+          return;
+        }
+
         if (data.user.email_confirmed_at) {
           toast({
             title: 'Success',
@@ -242,6 +280,39 @@ export default function Auth() {
                     disabled={loading}
                   />
                 </div>
+
+                <div>
+                  <Label htmlFor="role-select">角色</Label>
+                  <Select value={selectedRole} onValueChange={(value: UserRole) => setSelectedRole(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择角色" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="store_staff">{ROLE_DISPLAY_NAMES.store_staff.zh}</SelectItem>
+                      <SelectItem value="store_manager">{ROLE_DISPLAY_NAMES.store_manager.zh}</SelectItem>
+                      <SelectItem value="warehouse_admin">{ROLE_DISPLAY_NAMES.warehouse_admin.zh}</SelectItem>
+                      <SelectItem value="hq_admin">{ROLE_DISPLAY_NAMES.hq_admin.zh}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {(selectedRole === 'store_staff' || selectedRole === 'store_manager') && (
+                  <div>
+                    <Label htmlFor="store-select">门店</Label>
+                    <Select value={selectedStore} onValueChange={setSelectedStore}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择门店" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {stores.map((store) => (
+                          <SelectItem key={store.id} value={store.id}>
+                            {store.store_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {error && (
                   <Alert variant="destructive">
