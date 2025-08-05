@@ -200,7 +200,24 @@ export const fetchSalesOrder = async (id: string): Promise<SalesOrderDTO> => {
     customerName: order.customer_name,
     customerEmail: order.customer_email,
     customerPhone: order.customer_phone,
-    orderDate: order.created_at,
+    customerFirst: order.customer_first,
+    customerLast: order.customer_last,
+    addrCountry: order.addr_country,
+    addrState: order.addr_state,
+    addrCity: order.addr_city,
+    addrStreet: order.addr_street,
+    addrZipcode: order.addr_zipcode,
+    warrantyYears: order.warranty_years,
+    warrantyAmount: order.warranty_amount,
+    walkInDelivery: order.walk_in_delivery,
+    accessory: order.accessory,
+    otherServices: order.other_services,
+    otherFee: order.other_fee,
+    paymentMethod: order.payment_method,
+    paymentNote: order.payment_note,
+    customerSource: order.customer_source,
+    cashierId: order.cashier_id,
+    orderDate: order.order_date || order.created_at,
     orderType: 'retail', // Default for now
     status: order.status as SalesOrderDTO['status'],
     subTotal: order.total_amount - order.tax_amount + order.discount_amount,
@@ -216,7 +233,11 @@ export const fetchSalesOrder = async (id: string): Promise<SalesOrderDTO> => {
       unitPrice: line.unit_price,
       discountPercent: line.discount_amount > 0 ? (line.discount_amount / (line.unit_price * line.quantity)) * 100 : 0,
       subTotal: line.total_amount
-    }))
+    })),
+    createdAt: order.created_at,
+    updatedAt: order.updated_at,
+    createdBy: order.created_by,
+    storeId: order.store_id
   };
 };
 

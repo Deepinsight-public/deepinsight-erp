@@ -428,8 +428,11 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
     }
   }, [setValue, toast]);
 
-  // Debounced email search
+  // Debounced email search - only for new orders
   useEffect(() => {
+    // Don't search if we have initial data (viewing existing order)
+    if (initialData?.id) return;
+    
     const email = watch('customerEmail');
     const timeoutId = setTimeout(() => {
       if (email && !customerFound) {
@@ -438,7 +441,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [watch('customerEmail'), searchCustomerByEmail, customerFound]);
+  }, [watch('customerEmail'), searchCustomerByEmail, customerFound, initialData?.id]);
 
   // Load staff options
   useEffect(() => {
