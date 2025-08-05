@@ -460,6 +460,19 @@ function AddItemDialog({ open, onClose, onAdd, onProductSearch, productOptions }
             searchPlaceholder="Type to search..."
             onSearchChange={onProductSearch}
             className="w-full"
+            popoverClassName="min-w-[340px] w-full"
+            renderOption={(option) => {
+              const product = productOptions.find(p => p.id === option.value);
+              if (!product) return option.label;
+              return (
+                <div className="flex flex-col">
+                  <span className="font-medium">{product.sku} – {product.productName}</span>
+                  <span className="text-sm text-muted-foreground">
+                    ${product.price.toFixed(2)} • Stock: {product.availableStock}
+                  </span>
+                </div>
+              );
+            }}
           />
         </div>
         <div>

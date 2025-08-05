@@ -31,6 +31,8 @@ interface SelectWithSearchProps {
   className?: string;
   disabled?: boolean;
   onSearchChange?: (search: string) => void;
+  popoverClassName?: string;
+  renderOption?: (option: Option) => React.ReactNode;
 }
 
 export function SelectWithSearch({
@@ -43,6 +45,8 @@ export function SelectWithSearch({
   className,
   disabled = false,
   onSearchChange,
+  popoverClassName,
+  renderOption,
 }: SelectWithSearchProps) {
   const [open, setOpen] = useState(false);
 
@@ -62,7 +66,7 @@ export function SelectWithSearch({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
+      <PopoverContent className={cn('w-[200px] p-0', popoverClassName)}>
         <Command>
           <CommandInput 
             placeholder={searchPlaceholder}
@@ -79,14 +83,15 @@ export function SelectWithSearch({
                     onValueChange(currentValue === value ? '' : currentValue);
                     setOpen(false);
                   }}
+                  className="px-3 py-2 hover:bg-primary/5 cursor-pointer"
                 >
                   <Check
                     className={cn(
-                      'mr-2 h-4 w-4',
+                      'mr-2 h-4 w-4 shrink-0',
                       value === option.value ? 'opacity-100' : 'opacity-0'
                     )}
                   />
-                  {option.label}
+                  {renderOption ? renderOption(option) : option.label}
                 </CommandItem>
               ))}
             </CommandGroup>
