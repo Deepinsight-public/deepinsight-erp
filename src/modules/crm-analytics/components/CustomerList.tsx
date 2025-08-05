@@ -29,20 +29,15 @@ export function CustomerList({ onCustomerClick }: CustomerListProps) {
 
   const columns = [
     {
-      key: 'customerNumber',
-      title: 'Customer ID',
-      render: (value: string) => (
-        <span className="font-medium text-primary">{value}</span>
-      ),
-      width: '120px',
-    },
-    {
       key: 'name',
       title: 'Name',
-      render: (value: string) => (
-        <span className="font-medium">{value}</span>
+      render: (value: string, record: Customer) => (
+        <div className="flex flex-col">
+          <span className="font-medium">{value}</span>
+          <span className="text-sm text-muted-foreground">{record.customerNumber}</span>
+        </div>
       ),
-      width: '150px',
+      width: '200px',
     },
     {
       key: 'phone',
