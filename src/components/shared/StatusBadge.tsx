@@ -12,6 +12,8 @@ type StatusType =
   | 'shipped'
   | 'delivered'
   | 'draft'
+  | 'submitted'
+  | 'confirmed'
   | 'ordered'
   | 'received'
   | 'diagnosing'
@@ -79,6 +81,16 @@ const statusConfig: Record<StatusType, {
     label: 'Draft',
     variant: 'secondary',
     className: 'bg-muted text-muted-foreground',
+  },
+  submitted: {
+    label: 'Submitted',
+    variant: 'outline',
+    className: 'bg-warning text-warning-foreground',
+  },
+  confirmed: {
+    label: 'Confirmed',
+    variant: 'default',
+    className: 'bg-primary text-primary-foreground',
   },
   ordered: {
     label: 'Ordered',
