@@ -83,7 +83,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
       paymentNote: '',
       customerSource: '',
       cashierId: '',
-      warrantyYears: 0,
+      warrantyYears: 1,
       warrantyAmount: 0,
       accessory: '',
       otherServices: '',
@@ -409,7 +409,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                 id="firstName"
                 {...register('firstName')}
                 disabled={readOnly || customerFound}
-                placeholder="John"
+                placeholder=""
               />
             </div>
             <div>
@@ -418,7 +418,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                 id="lastName"
                 {...register('lastName')}
                 disabled={readOnly || customerFound}
-                placeholder="Smith"
+                placeholder=""
               />
             </div>
             
@@ -428,7 +428,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                 id="customerPhone"
                 {...register('customerPhone')}
                 disabled={readOnly || customerFound}
-                placeholder="+1 (555) 123-4567"
+                placeholder=""
               />
             </div>
             <div />
@@ -439,7 +439,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                 id="country"
                 {...register('country')}
                 disabled={readOnly || customerFound}
-                placeholder="United States"
+                placeholder=""
               />
             </div>
             <div>
@@ -448,7 +448,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                 id="state"
                 {...register('state')}
                 disabled={readOnly || customerFound}
-                placeholder="California"
+                placeholder=""
               />
             </div>
             
@@ -458,7 +458,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                 id="city"
                 {...register('city')}
                 disabled={readOnly || customerFound}
-                placeholder="San Francisco"
+                placeholder=""
               />
             </div>
             <div>
@@ -467,7 +467,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                 id="street"
                 {...register('street')}
                 disabled={readOnly || customerFound}
-                placeholder="123 Main St"
+                placeholder=""
               />
             </div>
             
@@ -477,7 +477,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                 id="zipcode"
                 {...register('zipcode')}
                 disabled={readOnly || customerFound}
-                placeholder="94105"
+                placeholder=""
               />
             </div>
           </div>
@@ -630,12 +630,15 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
             </div>
             
             <div>
-              <Label htmlFor="accessory">Accessory</Label>
+              <Label htmlFor="accessory">Accessory Fee ($)</Label>
               <Input
                 id="accessory"
-                {...register('accessory')}
+                type="number"
+                {...register('accessory', { valueAsNumber: true })}
                 disabled={readOnly}
-                placeholder="Optional accessories..."
+                min="0"
+                step="0.01"
+                placeholder="0.00"
               />
             </div>
             
