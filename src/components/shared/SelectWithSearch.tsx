@@ -66,7 +66,7 @@ export function SelectWithSearch({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn('w-[200px] p-0', popoverClassName)}>
+      <PopoverContent className={cn('p-0', popoverClassName)} style={{ width: 'var(--radix-popover-trigger-width)' }}>
         <Command>
           <CommandInput 
             placeholder={searchPlaceholder}
