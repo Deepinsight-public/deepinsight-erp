@@ -18,6 +18,7 @@ import SalesOrderDetail from "./pages/store/SalesOrderDetail";
 import NewSalesOrder from "./pages/store/NewSalesOrder";
 import SalesOrderSuccess from "./pages/store/SalesOrderSuccess";
 import PurchaseRequests from "./pages/store/PurchaseRequests";
+import NewPurchaseRequest from "./pages/store/NewPurchaseRequest";
 import Inventory from "./pages/store/Inventory";
 import Customers from "./pages/store/Customers";
 import {
@@ -87,6 +88,7 @@ const App = () => (
                 
                 {/* Purchase Requests */}
                 <Route path="purchase-requests" element={<PurchaseRequests />} />
+                <Route path="purchase-requests/new" element={<NewPurchaseRequest />} />
                 <Route path="purchase-requests/:id" element={<PurchaseRequestDetail />} />
                 
                 {/* Inventory */}
