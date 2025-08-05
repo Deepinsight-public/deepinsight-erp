@@ -135,9 +135,10 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
       
       onSave?.(savedOrder);
     } catch (error) {
+      console.error('Error saving sales order:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save order',
+        description: `Failed to save order: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive'
       });
     } finally {

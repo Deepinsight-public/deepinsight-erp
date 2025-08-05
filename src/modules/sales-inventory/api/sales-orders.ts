@@ -89,44 +89,59 @@ export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDT
 };
 
 export const updateSalesOrder = async (id: string, dto: SalesOrderDTO): Promise<SalesOrderDTO> => {
-  const { data: order, error: orderError } = await supabase
-    .from('sales_orders')
-    .update({
-      customer_name: dto.customerName,
-      customer_email: dto.customerEmail,
-      customer_phone: dto.customerPhone,
-      status: dto.status,
-      total_amount: dto.totalAmount,
-      discount_amount: dto.discountAmount,
-      tax_amount: dto.taxAmount
-    })
-    .eq('id', id)
-    .select()
-    .single();
+  try {
+    console.log('Updating sales order:', id, dto);
+    
+    const { data: order, error: orderError } = await supabase
+      .from('sales_orders')
+      .update({
+        customer_name: dto.customerName,
+        customer_email: dto.customerEmail,
+        customer_phone: dto.customerPhone,
+        status: dto.status,
+        total_amount: dto.totalAmount,
+        discount_amount: dto.discountAmount,
+        tax_amount: dto.taxAmount
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-  if (orderError) throw orderError;
+    if (orderError) {
+      console.error('Order update error:', orderError);
+      throw orderError;
+    }
 
-  // Delete existing lines and insert new ones
-  await supabase.from('sales_order_items').delete().eq('sales_order_id', id);
-  
-  if (dto.lines.length > 0) {
-    const { error: linesError } = await supabase
-      .from('sales_order_items')
-      .insert(
-        dto.lines.map(line => ({
-          sales_order_id: id,
-          product_id: line.productId,
-          quantity: line.quantity,
-          unit_price: line.unitPrice,
-          discount_amount: (line.unitPrice * line.quantity * line.discountPercent) / 100,
-          total_amount: line.subTotal
-        }))
-      );
+    console.log('Order updated successfully:', order);
 
-    if (linesError) throw linesError;
+    // Delete existing lines and insert new ones
+    await supabase.from('sales_order_items').delete().eq('sales_order_id', id);
+    
+    if (dto.lines.length > 0) {
+      const { error: linesError } = await supabase
+        .from('sales_order_items')
+        .insert(
+          dto.lines.map(line => ({
+            sales_order_id: id,
+            product_id: line.productId,
+            quantity: line.quantity,
+            unit_price: line.unitPrice,
+            discount_amount: (line.unitPrice * line.quantity * line.discountPercent) / 100,
+            total_amount: line.subTotal
+          }))
+        );
+
+      if (linesError) {
+        console.error('Order lines update error:', linesError);
+        throw linesError;
+      }
+    }
+
+    return { ...dto, id, orderNumber: order.order_number };
+  } catch (error) {
+    console.error('Failed to update sales order:', error);
+    throw error;
   }
-
-  return dto;
 };
 
 export const fetchSalesOrders = async (params: ListParams = {}) => {
