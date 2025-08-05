@@ -5,14 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Breadcrumbs } from '@/components';
 import { CustomerList } from '@/modules/crm-analytics/components/CustomerList';
+import { AddCustomerDialog } from '@/modules/crm-analytics/components/AddCustomerDialog';
 import { Customer } from '@/modules/crm-analytics/types/customer';
 
 export default function Customers() {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const handleCustomerClick = (customer: Customer) => {
     console.log('Navigate to customer:', customer.id);
+  };
+
+  const handleCustomerAdded = (customer: Customer) => {
+    console.log('Customer added:', customer);
+    // Refresh the customer list by triggering a re-render
+    window.location.reload();
   };
 
   return (
@@ -26,7 +34,7 @@ export default function Customers() {
               Manage customer relationships and track customer activity.
             </p>
           </div>
-          <Button>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Customer
           </Button>
@@ -47,7 +55,13 @@ export default function Customers() {
         <Button variant="outline">Export</Button>
       </div>
 
-      <CustomerList onCustomerClick={handleCustomerClick} />
+      <CustomerList onCustomerClick={handleCustomerClick} searchTerm={searchTerm} />
+      
+      <AddCustomerDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onCustomerAdded={handleCustomerAdded}
+      />
     </div>
   );
 }

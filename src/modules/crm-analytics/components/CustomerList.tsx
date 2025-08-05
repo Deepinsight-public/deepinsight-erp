@@ -5,9 +5,10 @@ import { getCustomers } from '../api/customers';
 
 interface CustomerListProps {
   onCustomerClick?: (customer: Customer) => void;
+  searchTerm?: string;
 }
 
-export function CustomerList({ onCustomerClick }: CustomerListProps) {
+export function CustomerList({ onCustomerClick, searchTerm }: CustomerListProps) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -72,9 +73,21 @@ export function CustomerList({ onCustomerClick }: CustomerListProps) {
     },
   ];
 
+  const filteredCustomers = customers.filter((customer) => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      customer.name.toLowerCase().includes(searchLower) ||
+      customer.email.toLowerCase().includes(searchLower) ||
+      customer.phone.toLowerCase().includes(searchLower) ||
+      customer.customerNumber.toLowerCase().includes(searchLower) ||
+      customer.deliveryAddress.toLowerCase().includes(searchLower)
+    );
+  });
+
   return (
     <DataTable
-      data={customers}
+      data={filteredCustomers}
       columns={columns}
       loading={loading}
       onRowClick={onCustomerClick}

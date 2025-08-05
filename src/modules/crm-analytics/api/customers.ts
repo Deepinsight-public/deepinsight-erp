@@ -1,7 +1,7 @@
 import { Customer } from '../types/customer';
 
 // Mock data with delivery addresses
-const mockCustomers: Customer[] = [
+let mockCustomers: Customer[] = [
   {
     id: '1',
     customerNumber: 'CUST-001',
@@ -72,4 +72,29 @@ export const searchCustomers = async (query: string): Promise<Customer[]> => {
     customer.customerNumber.toLowerCase().includes(lowerQuery) ||
     customer.phone.includes(query)
   );
+};
+
+export const addCustomer = async (customerData: {
+  name: string;
+  email: string;
+  phone: string;
+  deliveryAddress: string;
+}): Promise<Customer> => {
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const newCustomer: Customer = {
+    id: Date.now().toString(),
+    customerNumber: `CUST-${String(mockCustomers.length + 1).padStart(3, '0')}`,
+    name: customerData.name,
+    email: customerData.email,
+    phone: customerData.phone,
+    deliveryAddress: customerData.deliveryAddress,
+    numberOfOrders: 0,
+    status: 'active',
+    totalSpent: 0,
+    lastOrderDate: new Date().toISOString().split('T')[0],
+  };
+  
+  mockCustomers.push(newCustomer);
+  return newCustomer;
 };
