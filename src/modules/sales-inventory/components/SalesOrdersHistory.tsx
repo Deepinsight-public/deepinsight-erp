@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Download, ArrowLeft } from 'lucide-react';
+import { Search, Filter, Download, ArrowLeft, FileText, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { DataTable, StatusBadge, DateRangePicker } from '@/components';
 import { useToast } from '@/hooks/use-toast';
 import { fetchSalesOrders } from '../api/sales-orders';
@@ -151,6 +152,90 @@ export function SalesOrdersHistory() {
     }
   };
 
+  // Export functionality
+  const exportToCSV = () => {
+    const headers = ['Order Number', 'Customer', 'Email', 'Phone', 'Date', 'Status', 'Subtotal', 'Discount', 'Tax', 'Total'];
+    const csvData = orders.map(order => [
+      order.orderNumber,
+      order.customerName || 'Walk-in Customer',
+      order.customerEmail || '',
+      order.customerPhone || '',
+      new Date(order.orderDate).toLocaleDateString(),
+      order.status,
+      order.subTotal.toFixed(2),
+      order.discountAmount.toFixed(2),
+      order.taxAmount.toFixed(2),
+      order.totalAmount.toFixed(2)
+    ]);
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+
+    downloadFile(csvContent, 'sales-orders.csv', 'text/csv');
+  };
+
+  const exportToJSON = () => {
+    const jsonData = orders.map(order => ({
+      orderNumber: order.orderNumber,
+      customer: {
+        name: order.customerName || 'Walk-in Customer',
+        email: order.customerEmail || '',
+        phone: order.customerPhone || ''
+      },
+      orderDate: order.orderDate,
+      status: order.status,
+      amounts: {
+        subtotal: order.subTotal,
+        discount: order.discountAmount,
+        tax: order.taxAmount,
+        total: order.totalAmount
+      }
+    }));
+
+    const jsonContent = JSON.stringify(jsonData, null, 2);
+    downloadFile(jsonContent, 'sales-orders.json', 'application/json');
+  };
+
+  const exportToTSV = () => {
+    const headers = ['Order Number', 'Customer', 'Email', 'Phone', 'Date', 'Status', 'Subtotal', 'Discount', 'Tax', 'Total'];
+    const tsvData = orders.map(order => [
+      order.orderNumber,
+      order.customerName || 'Walk-in Customer',
+      order.customerEmail || '',
+      order.customerPhone || '',
+      new Date(order.orderDate).toLocaleDateString(),
+      order.status,
+      order.subTotal.toFixed(2),
+      order.discountAmount.toFixed(2),
+      order.taxAmount.toFixed(2),
+      order.totalAmount.toFixed(2)
+    ]);
+
+    const tsvContent = [headers, ...tsvData]
+      .map(row => row.join('\t'))
+      .join('\n');
+
+    downloadFile(tsvContent, 'sales-orders.tsv', 'text/tab-separated-values');
+  };
+
+  const downloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: 'Export Successful',
+      description: `Sales orders exported as ${filename}`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -216,10 +301,28 @@ export function SalesOrdersHistory() {
               placeholder="Select date range"
             />
 
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={orders.length === 0}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={exportToCSV}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportToTSV}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Export as TSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportToJSON}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export as JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardContent>
       </Card>
