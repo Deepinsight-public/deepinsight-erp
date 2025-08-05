@@ -64,6 +64,20 @@ export function CustomerList({ onCustomerClick, searchTerm }: CustomerListProps)
       width: '250px',
     },
     {
+      key: 'status',
+      title: 'Status',
+      render: (value: string) => (
+        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+          value === 'active' 
+            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+        }`}>
+          {value.charAt(0).toUpperCase() + value.slice(1)}
+        </span>
+      ),
+      width: '100px',
+    },
+    {
       key: 'numberOfOrders',
       title: 'Number of Orders',
       render: (value: number) => (
