@@ -13,8 +13,8 @@ import { toast } from 'sonner';
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email address'),
-  phone: z.string().min(1, 'Phone is required'),
-  address: z.string().min(1, 'Address is required'),
+  phone: z.string().optional(),
+  address: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -60,7 +60,13 @@ export function EditCustomerDialog({
 
     try {
       setLoading(true);
-      const updatedCustomer = await updateCustomer(customer.id, data);
+      const updateData = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone || '',
+        address: data.address || '',
+      };
+      const updatedCustomer = await updateCustomer(customer.id, updateData);
       onCustomerUpdated(updatedCustomer);
       onOpenChange(false);
       toast.success('Customer updated successfully');
