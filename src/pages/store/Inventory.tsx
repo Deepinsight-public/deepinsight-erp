@@ -124,7 +124,7 @@ export default function Inventory() {
         <Breadcrumbs items={[{ title: t('inventory') }]} />
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">库存管理 (Inventory Management)</h1>
+            <h1 className="text-3xl font-bold">Inventory Management</h1>
             <p className="text-muted-foreground mt-2">
               Comprehensive inventory operations including search, transfers, counts, and purchase management.
             </p>
@@ -147,10 +147,10 @@ export default function Inventory() {
 
       <Tabs defaultValue="search" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="search">库存查询</TabsTrigger>
-          <TabsTrigger value="transfers">调拨管理</TabsTrigger>
-          <TabsTrigger value="counts">盘点管理</TabsTrigger>
-          <TabsTrigger value="purchase">采购管理</TabsTrigger>
+          <TabsTrigger value="search">{t('inventory.search.title')}</TabsTrigger>
+          <TabsTrigger value="transfers">{t('inventory.transfers.title')}</TabsTrigger>
+          <TabsTrigger value="counts">{t('inventory.count.title')}</TabsTrigger>
+          <TabsTrigger value="purchase">{t('purchaseRequests')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="search" className="space-y-6">
@@ -162,7 +162,7 @@ export default function Inventory() {
             data={mockInventoryItems}
             columns={columns}
             onRowClick={handleRowClick}
-            title="库存清单 (Inventory List)"
+            title="Inventory List"
           />
         </TabsContent>
 

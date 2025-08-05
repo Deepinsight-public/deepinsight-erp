@@ -42,7 +42,7 @@ export function InventorySearch({ onSearch, onExport }: InventorySearchProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Package className="h-5 w-5" />
-          库存查询 (Inventory Search)
+          Inventory Search
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

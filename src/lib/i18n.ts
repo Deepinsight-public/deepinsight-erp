@@ -39,6 +39,24 @@ const resources = {
       completed: 'Completed',
       cancelled: 'Cancelled',
       
+      // Inventory
+      'inventory.search.title': 'Inventory Search',
+      'inventory.search.sku': 'SKU/UPC/Model/Serial',
+      'inventory.search.placeholder': 'Enter SKU, UPC, Model or Serial Number',
+      'inventory.search.results': 'Search Results',
+      'inventory.list.title': 'Inventory List',
+      'inventory.list.onHand': 'On Hand',
+      'inventory.list.allocated': 'Allocated',
+      'inventory.list.available': 'Available',
+      'inventory.transfers.title': 'Transfer Management',
+      'inventory.transfers.out': 'Transfer Out',
+      'inventory.transfers.in': 'Transfer In',
+      'inventory.transfers.records': 'Transfer Records',
+      'inventory.count.title': 'Inventory Count',
+      'inventory.count.scan': 'RFID/Barcode Scan',
+      'inventory.count.differences': 'Count Differences',
+      'inventory.count.history': 'Count History',
+      
       // Store
       storeName: 'Store Name',
       notifications: 'Notifications',
@@ -83,6 +101,24 @@ const resources = {
       pending: '待处理',
       completed: '已完成',
       cancelled: '已取消',
+      
+      // Inventory
+      'inventory.search.title': '库存查询',
+      'inventory.search.sku': 'SKU/UPC/型号/序列号',
+      'inventory.search.placeholder': '输入SKU、UPC、型号或序列号',
+      'inventory.search.results': '搜索结果',
+      'inventory.list.title': '库存清单',
+      'inventory.list.onHand': '现有库存',
+      'inventory.list.allocated': '已分配',
+      'inventory.list.available': '可用',
+      'inventory.transfers.title': '调拨管理',
+      'inventory.transfers.out': '调货申请',
+      'inventory.transfers.in': '调货接收',
+      'inventory.transfers.records': '调拨记录',
+      'inventory.count.title': '盘点管理',
+      'inventory.count.scan': 'RFID/条码扫描',
+      'inventory.count.differences': '盘点差异',
+      'inventory.count.history': '盘点历史',
       
       // Store
       storeName: '门店名称',

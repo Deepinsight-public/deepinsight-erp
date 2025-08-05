@@ -194,7 +194,7 @@ export function InventoryCount({ storeId }: InventoryCountProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ClipboardList className="h-5 w-5" />
-          盘点管理 (Inventory Count Management)
+          Inventory Count Management
         </CardTitle>
       </CardHeader>
       <CardContent>

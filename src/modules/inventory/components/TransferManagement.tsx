@@ -140,7 +140,7 @@ export function TransferManagement({ storeId }: TransferManagementProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ArrowRightLeft className="h-5 w-5" />
-          调拨管理 (Transfer Management)
+          Transfer Management
         </CardTitle>
       </CardHeader>
       <CardContent>
