@@ -48,6 +48,7 @@ export default function SalesOrderDetail() {
       title: 'Success',
       description: 'Order updated successfully'
     });
+    navigate('/store/sales-orders');
   };
 
   const isDraft = order?.status === 'draft';
