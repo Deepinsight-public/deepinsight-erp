@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, Download, FileText, FileSpreadsheet, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -19,6 +19,7 @@ export default function Customers() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleCustomerClick = (customer: Customer) => {
     console.log('Navigate to customer:', customer.id);
@@ -27,7 +28,7 @@ export default function Customers() {
   const handleCustomerAdded = (customer: Customer) => {
     console.log('Customer added:', customer);
     // Refresh the customer list by triggering a re-render
-    window.location.reload();
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const handleCustomerEdit = (customer: Customer) => {
@@ -38,11 +39,16 @@ export default function Customers() {
   const handleCustomerUpdated = (customer: Customer) => {
     console.log('Customer updated:', customer);
     // Refresh the customer list by triggering a re-render
-    window.location.reload();
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const handleSearch = () => {
     setSearchTerm(searchInput);
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setSearchTerm('');
   };
 
   const handleExport = async (format: 'csv' | 'xlsx') => {
@@ -86,8 +92,16 @@ export default function Customers() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="pl-10"
+            className="pl-10 pr-10"
           />
+          {searchInput && (
+            <button
+              onClick={handleClearSearch}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
         <Button onClick={handleSearch}>
           Search
@@ -115,7 +129,8 @@ export default function Customers() {
       <CustomerList 
         onCustomerClick={handleCustomerClick} 
         onCustomerEdit={handleCustomerEdit}
-        searchTerm={searchTerm} 
+        searchTerm={searchTerm}
+        refreshTrigger={refreshTrigger}
       />
       
       <AddCustomerDialog

@@ -9,9 +9,10 @@ interface CustomerListProps {
   onCustomerClick?: (customer: Customer) => void;
   onCustomerEdit?: (customer: Customer) => void;
   searchTerm?: string;
+  refreshTrigger?: number;
 }
 
-export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm }: CustomerListProps) {
+export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm, refreshTrigger }: CustomerListProps) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +30,7 @@ export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm }: Cu
     };
 
     loadCustomers();
-  }, []);
+  }, [refreshTrigger]);
 
   const columns = [
     {
