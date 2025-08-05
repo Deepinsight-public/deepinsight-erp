@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { DataTable } from '@/components';
+import { Button } from '@/components/ui/button';
+import { Pencil } from 'lucide-react';
 import { Customer } from '../types/customer';
 import { getCustomers } from '../api/customers';
 
 interface CustomerListProps {
   onCustomerClick?: (customer: Customer) => void;
+  onCustomerEdit?: (customer: Customer) => void;
   searchTerm?: string;
 }
 
-export function CustomerList({ onCustomerClick, searchTerm }: CustomerListProps) {
+export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm }: CustomerListProps) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,7 +38,7 @@ export function CustomerList({ onCustomerClick, searchTerm }: CustomerListProps)
       render: (value: string, record: Customer) => (
         <div className="flex flex-col">
           <span className="font-medium">{value}</span>
-          <span className="text-sm text-muted-foreground">{record.customerNumber}</span>
+          <span className="text-sm text-muted-foreground">{record.customer_code || record.id.substring(0, 8)}</span>
         </div>
       ),
       width: '200px',
@@ -48,17 +51,17 @@ export function CustomerList({ onCustomerClick, searchTerm }: CustomerListProps)
     {
       key: 'email',
       title: 'Email',
-      render: (value: string) => (
-        <span className="text-muted-foreground">{value}</span>
+      render: (value: string | null) => (
+        <span className="text-muted-foreground">{value || '-'}</span>
       ),
       width: '200px',
     },
     {
-      key: 'deliveryAddress',
+      key: 'address',
       title: 'Delivery Address',
-      render: (value: string) => (
-        <span className="text-sm text-muted-foreground truncate block max-w-[200px]" title={value}>
-          {value}
+      render: (value: string | null) => (
+        <span className="text-sm text-muted-foreground truncate block max-w-[200px]" title={value || ''}>
+          {value || '-'}
         </span>
       ),
       width: '250px',
@@ -78,12 +81,22 @@ export function CustomerList({ onCustomerClick, searchTerm }: CustomerListProps)
       width: '100px',
     },
     {
-      key: 'numberOfOrders',
-      title: 'Number of Orders',
-      render: (value: number) => (
-        <span className="font-medium">{value}</span>
+      key: 'actions',
+      title: 'Actions',
+      render: (value: any, record: Customer) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onCustomerEdit?.(record);
+          }}
+          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
       ),
-      width: '120px',
+      width: '80px',
     },
   ];
 
@@ -92,10 +105,10 @@ export function CustomerList({ onCustomerClick, searchTerm }: CustomerListProps)
     const searchLower = searchTerm.toLowerCase();
     return (
       customer.name.toLowerCase().includes(searchLower) ||
-      customer.email.toLowerCase().includes(searchLower) ||
-      customer.phone.toLowerCase().includes(searchLower) ||
-      customer.customerNumber.toLowerCase().includes(searchLower) ||
-      customer.deliveryAddress.toLowerCase().includes(searchLower)
+      (customer.email && customer.email.toLowerCase().includes(searchLower)) ||
+      (customer.phone && customer.phone.toLowerCase().includes(searchLower)) ||
+      (customer.customer_code && customer.customer_code.toLowerCase().includes(searchLower)) ||
+      (customer.address && customer.address.toLowerCase().includes(searchLower))
     );
   });
 

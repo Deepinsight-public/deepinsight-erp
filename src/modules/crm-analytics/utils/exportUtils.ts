@@ -1,22 +1,33 @@
 import * as XLSX from 'xlsx';
 import { Customer } from '../types/customer';
 
+const mapCustomerForExport = (customer: Customer) => ({
+  'Customer ID': customer.customer_code || customer.id.substring(0, 8),
+  'Name': customer.name,
+  'Email': customer.email || '',
+  'Phone': customer.phone || '',
+  'Delivery Address': customer.address || '',
+  'Status': customer.status,
+  'Created At': customer.created_at,
+});
+
 export const exportToCSV = (customers: Customer[], filename: string = 'customers') => {
-  const headers = ['Customer ID', 'Name', 'Phone', 'Email', 'Delivery Address', 'Status', 'Number of Orders', 'Total Spent', 'Last Order Date'];
+  const headers = ['Customer ID', 'Name', 'Phone', 'Email', 'Delivery Address', 'Status', 'Created At'];
   
   const csvContent = [
     headers.join(','),
-    ...customers.map(customer => [
-      customer.customerNumber,
-      `"${customer.name}"`,
-      customer.phone,
-      customer.email,
-      `"${customer.deliveryAddress}"`,
-      customer.status,
-      customer.numberOfOrders,
-      customer.totalSpent,
-      customer.lastOrderDate
-    ].join(','))
+    ...customers.map(customer => {
+      const mapped = mapCustomerForExport(customer);
+      return [
+        mapped['Customer ID'],
+        `"${mapped['Name']}"`,
+        mapped['Phone'],
+        mapped['Email'],
+        `"${mapped['Delivery Address']}"`,
+        mapped['Status'],
+        mapped['Created At']
+      ].join(',');
+    })
   ].join('\n');
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -31,17 +42,7 @@ export const exportToCSV = (customers: Customer[], filename: string = 'customers
 };
 
 export const exportToXLSX = (customers: Customer[], filename: string = 'customers') => {
-  const worksheet = XLSX.utils.json_to_sheet(customers.map(customer => ({
-    'Customer ID': customer.customerNumber,
-    'Name': customer.name,
-    'Phone': customer.phone,
-    'Email': customer.email,
-    'Delivery Address': customer.deliveryAddress,
-    'Status': customer.status,
-    'Number of Orders': customer.numberOfOrders,
-    'Total Spent': customer.totalSpent,
-    'Last Order Date': customer.lastOrderDate
-  })));
+  const worksheet = XLSX.utils.json_to_sheet(customers.map(mapCustomerForExport));
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Customers');

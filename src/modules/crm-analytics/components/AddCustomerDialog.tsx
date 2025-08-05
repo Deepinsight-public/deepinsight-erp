@@ -23,7 +23,7 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
     name: '',
     email: '',
     phone: '',
-    deliveryAddress: '',
+    address: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +35,7 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
       setLoading(true);
       const newCustomer = await addCustomer(formData);
       onCustomerAdded(newCustomer);
-      setFormData({ name: '', email: '', phone: '', deliveryAddress: '' });
+      setFormData({ name: '', email: '', phone: '', address: '' });
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to add customer:', error);
@@ -86,11 +86,11 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="deliveryAddress">Delivery Address</Label>
+            <Label htmlFor="address">Delivery Address</Label>
             <Textarea
-              id="deliveryAddress"
-              value={formData.deliveryAddress}
-              onChange={(e) => handleInputChange('deliveryAddress', e.target.value)}
+              id="address"
+              value={formData.address}
+              onChange={(e) => handleInputChange('address', e.target.value)}
               placeholder="Enter delivery address"
               rows={3}
             />

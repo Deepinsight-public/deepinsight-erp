@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Breadcrumbs } from '@/components';
 import { CustomerList } from '@/modules/crm-analytics/components/CustomerList';
 import { AddCustomerDialog } from '@/modules/crm-analytics/components/AddCustomerDialog';
+import { EditCustomerDialog } from '@/modules/crm-analytics/components/EditCustomerDialog';
 import { Customer } from '@/modules/crm-analytics/types/customer';
 import { getCustomers } from '@/modules/crm-analytics/api/customers';
 import { exportToCSV, exportToXLSX } from '@/modules/crm-analytics/utils/exportUtils';
@@ -16,6 +17,8 @@ export default function Customers() {
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
   const handleCustomerClick = (customer: Customer) => {
     console.log('Navigate to customer:', customer.id);
@@ -23,6 +26,17 @@ export default function Customers() {
 
   const handleCustomerAdded = (customer: Customer) => {
     console.log('Customer added:', customer);
+    // Refresh the customer list by triggering a re-render
+    window.location.reload();
+  };
+
+  const handleCustomerEdit = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleCustomerUpdated = (customer: Customer) => {
+    console.log('Customer updated:', customer);
     // Refresh the customer list by triggering a re-render
     window.location.reload();
   };
@@ -98,12 +112,23 @@ export default function Customers() {
         </DropdownMenu>
       </div>
 
-      <CustomerList onCustomerClick={handleCustomerClick} searchTerm={searchTerm} />
+      <CustomerList 
+        onCustomerClick={handleCustomerClick} 
+        onCustomerEdit={handleCustomerEdit}
+        searchTerm={searchTerm} 
+      />
       
       <AddCustomerDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onCustomerAdded={handleCustomerAdded}
+      />
+      
+      <EditCustomerDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        customer={editingCustomer}
+        onCustomerUpdated={handleCustomerUpdated}
       />
     </div>
   );
