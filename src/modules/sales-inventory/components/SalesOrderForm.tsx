@@ -173,6 +173,46 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
     setLoading(true);
     try {
       const formData = getValues();
+      
+      // Save customer information to customers table
+      if (formData.customerEmail && !customerFound) {
+        try {
+          const { data: currentProfile } = await supabase.auth.getUser();
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('store_id')
+            .eq('user_id', currentProfile.user?.id)
+            .single();
+
+          if (profile?.store_id) {
+            const customerData = {
+              store_id: profile.store_id,
+              name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim(),
+              email: formData.customerEmail,
+              phone: formData.customerPhone || null,
+              address: [
+                formData.street,
+                formData.city,
+                formData.state,
+                formData.zipcode,
+                formData.country
+              ].filter(Boolean).join(', ') || null,
+              created_by: currentProfile.user?.id
+            };
+
+            const { error: customerError } = await supabase
+              .from('customers')
+              .insert(customerData);
+
+            if (customerError) {
+              console.warn('Failed to save customer:', customerError);
+            }
+          }
+        } catch (customerError) {
+          console.warn('Error saving customer:', customerError);
+        }
+      }
+
       const orderData: SalesOrderDTO = {
         ...formData,
         status,
