@@ -328,15 +328,21 @@ export const fetchStockLevel = async (sku: string): Promise<StockLevel> => {
   };
 };
 
-export const fetchKPIData = async (): Promise<KPIData> => {
-  const today = new Date().toISOString().split('T')[0];
+export const fetchKPIData = async (date?: string): Promise<KPIData> => {
+  // Use provided date or today in Singapore timezone
+  const { toZonedTime, formatInTimeZone } = await import('date-fns-tz');
+  const singaporeTimeZone = 'Asia/Singapore';
+  
+  const targetDate = date ? new Date(date) : new Date();
+  const singaporeDate = toZonedTime(targetDate, singaporeTimeZone);
+  const dateStr = formatInTimeZone(singaporeDate, singaporeTimeZone, 'yyyy-MM-dd');
   
   const { data, error } = await supabase
     .from('sales_orders')
     .select('total_amount')
-    .gte('created_at', `${today}T00:00:00`)
-    .lt('created_at', `${today}T23:59:59`)
-    .neq('status', 'cancelled');
+    .gte('created_at', `${dateStr}T00:00:00+08:00`)
+    .lt('created_at', `${dateStr}T23:59:59+08:00`)
+    .in('status', ['submitted', 'confirmed', 'shipped', 'completed']);
 
   if (error) throw error;
 
