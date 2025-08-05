@@ -18,8 +18,8 @@ export function PurchaseRequestsList() {
   const [loading, setLoading] = useState(true);
 
   // Mock store ID - in real app this would come from auth context
-  const currentStoreId = 'store-123';
-  const currentWarehouseId = 'warehouse-123';
+  const currentStoreId = '22222222-2222-2222-2222-222222222222';
+  const currentWarehouseId = '11111111-1111-1111-1111-111111111111';
 
   const loadData = async () => {
     setLoading(true);
