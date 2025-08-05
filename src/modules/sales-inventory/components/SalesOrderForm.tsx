@@ -465,11 +465,13 @@ function AddItemDialog({ open, onClose, onAdd, onProductSearch, productOptions }
               const product = productOptions.find(p => p.id === option.value);
               if (!product) return option.label;
               return (
-                <div className="flex flex-col">
-                  <span className="font-medium">{product.sku} – {product.productName}</span>
-                  <span className="text-sm text-muted-foreground">
-                    ${product.price.toFixed(2)} • Stock: {product.availableStock}
-                  </span>
+                <div className="flex items-center justify-between w-full">
+                  <span className="font-medium truncate flex-1">{product.sku} – {product.productName}</span>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground ml-2">
+                    <span className="font-medium">${product.price.toFixed(2)}</span>
+                    <span>•</span>
+                    <span>Stock: {product.availableStock}</span>
+                  </div>
                 </div>
               );
             }}
