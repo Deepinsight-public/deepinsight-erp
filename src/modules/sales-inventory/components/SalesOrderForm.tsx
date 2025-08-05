@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { SalesOrderDTO, SalesOrderLineDTO, ProductLookupItem } from '../types';
 import { fetchProductLookup, fetchStockLevel, createSalesOrder, updateSalesOrder } from '../api/sales-orders';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SalesOrderFormProps {
   initialData?: SalesOrderDTO;
@@ -210,61 +211,38 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
 
     setIsSearchingCustomer(true);
     try {
-      const response = await fetch(`/store/customers?email=${encodeURIComponent(email)}`);
-      if (response.ok) {
-        const customers = await response.json();
-        if (customers.length > 0) {
-          const customer = customers[0];
-          setCustomerFound(true);
-          
-          // Parse customer name (assuming full name is stored in 'name' field)
-          const nameParts = customer.name ? customer.name.split(' ') : [];
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
+      // Use Supabase to search for customer by email
+      const { data: customers, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', email)
+        .limit(1);
 
-          console.log("Found the email");
-          console.log(nameParts);
-          
-          // Parse address (assuming address is stored as a string or object)
-          let addressParts: {
-            street?: string;
-            city?: string;
-            state?: string;
-            country?: string;
-            zipcode?: string;
-          } = {};
-          
-          if (typeof customer.address === 'string') {
-            // If address is a string, try to parse it
-            const addressStr = customer.address;
-            addressParts = {
-              street: addressStr,
-              city: '',
-              state: '',
-              country: '',
-              zipcode: ''
-            };
-          } else if (customer.address && typeof customer.address === 'object') {
-            addressParts = customer.address;
-          }
-          
-          // Auto-fill form fields with customer data
-          setValue('firstName', firstName);
-          setValue('lastName', lastName);
-          setValue('customerPhone', customer.phone || '');
-          setValue('country', addressParts.country || '');
-          setValue('state', addressParts.state || '');
-          setValue('city', addressParts.city || '');
-          setValue('street', addressParts.street || '');
-          setValue('zipcode', addressParts.zipcode || '');
-          
-          toast({
-            title: 'Customer Found',
-            description: `Auto-filled details for ${firstName} ${lastName}`
-          });
-        } else {
-          setCustomerFound(false);
-        }
+      if (error) {
+        throw error;
+      }
+
+      if (customers && customers.length > 0) {
+        const customer = customers[0];
+        setCustomerFound(true);
+        
+        // Parse customer name from full_name field
+        const nameParts = customer.full_name ? customer.full_name.split(' ') : [];
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        console.log("Found customer:", customer);
+        console.log("Name parts:", nameParts);
+        
+        // Auto-fill form fields with customer data
+        setValue('firstName', firstName);
+        setValue('lastName', lastName);
+        setValue('customerPhone', customer.phone || '');
+        
+        toast({
+          title: 'Customer Found',
+          description: `Auto-filled details for ${firstName} ${lastName}`
+        });
       } else {
         setCustomerFound(false);
       }
