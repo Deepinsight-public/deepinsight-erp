@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Edit, Printer, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Breadcrumbs, LoadingOverlay } from '@/components';
 import { SalesOrderForm } from '@/modules/sales-inventory/components/SalesOrderForm';
+import { InvoiceView } from '@/modules/sales-inventory/components/InvoiceView';
 import { fetchSalesOrder } from '@/modules/sales-inventory/api/sales-orders';
 import { SalesOrderDTO } from '@/modules/sales-inventory/types';
 import { useToast } from '@/hooks/use-toast';
@@ -92,7 +94,7 @@ export default function SalesOrderDetail() {
           <div>
             <h1 className="text-3xl font-bold">{order.orderNumber}</h1>
             <p className="text-muted-foreground mt-2">
-              Sales order details and line items
+              Sales order details and invoice
             </p>
           </div>
           <div className="flex gap-2">
@@ -116,18 +118,31 @@ export default function SalesOrderDetail() {
         </div>
       </div>
 
-      <SalesOrderForm
-        initialData={order}
-        onSave={handleSave}
-        onCancel={() => {
-          if (editMode) {
-            setEditMode(false);
-          } else {
-            navigate('/store/sales-orders');
-          }
-        }}
-        readOnly={!canEdit}
-      />
+      <Tabs defaultValue="details" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="invoice">Invoice</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="details" className="mt-6">
+          <SalesOrderForm
+            initialData={order}
+            onSave={handleSave}
+            onCancel={() => {
+              if (editMode) {
+                setEditMode(false);
+              } else {
+                navigate('/store/sales-orders');
+              }
+            }}
+            readOnly={!canEdit}
+          />
+        </TabsContent>
+        
+        <TabsContent value="invoice" className="mt-6">
+          <InvoiceView order={order} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
