@@ -162,14 +162,10 @@ export const fetchPurchaseQueue = async (warehouseId: string, currentStoreId: st
     throw new Error('No purchase turn found for warehouse');
   }
 
-  // Get ordered stores from sequence table
+  // Get ordered stores from sequence table with separate store name fetch
   const { data: sequenceData, error: sequenceError } = await supabase
     .from('warehouse_store_sequence')
-    .select(`
-      store_id,
-      seq,
-      stores!inner(store_name)
-    `)
+    .select('store_id, seq')
     .eq('warehouse_id', warehouseId)
     .order('seq', { ascending: true });
 
@@ -181,10 +177,22 @@ export const fetchPurchaseQueue = async (warehouseId: string, currentStoreId: st
     throw new Error('No stores found in warehouse sequence');
   }
 
-  // Build queue with positions
+  // Fetch store names separately to avoid join issues
+  const storeIds = sequenceData.map(item => item.store_id);
+  const { data: storesData, error: storesError } = await supabase
+    .from('stores')
+    .select('id, store_name')
+    .in('id', storeIds);
+
+  if (storesError) {
+    throw new Error(`Failed to fetch store names: ${storesError.message}`);
+  }
+
+  // Build queue with positions by combining the data
+  const storeNameMap = new Map(storesData?.map(store => [store.id, store.store_name]) || []);
   const queue: QueuePosition[] = sequenceData.map((item, index) => ({
     storeId: item.store_id,
-    storeName: (item.stores as any).store_name,
+    storeName: storeNameMap.get(item.store_id) || 'Unknown Store',
     position: index + 1
   }));
 
