@@ -169,23 +169,7 @@ export function CustomerInteractions() {
   );
 }
 
-export function AfterSalesReturns() {
-  const { t } = useTranslation();
-  return (
-    <StorePageStub
-      title="After-Sales Returns"
-      description="Manage product returns and warranty claims."
-      breadcrumbs={[{ title: t('afterSales') }]}
-      features={[
-        'Return request processing',
-        'Warranty validation',
-        'Return reason tracking',
-        'Refund processing',
-        'Exchange handling'
-      ]}
-    />
-  );
-}
+// AfterSalesReturns moved to @/modules/after-sales/components/AfterSalesReturns
 
 export function AfterSalesReturnDetail() {
   const { t } = useTranslation();

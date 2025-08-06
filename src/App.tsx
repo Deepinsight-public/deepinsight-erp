@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 // Store Layout and Pages
+import { AfterSalesReturns } from "@/modules/after-sales/components/AfterSalesReturns";
 import { StoreLayout } from "@/components/store/StoreLayout";
 import Dashboard from "./pages/store/Dashboard";
 import SalesOrders from "./pages/store/SalesOrders";
@@ -30,7 +31,6 @@ import {
   ProductLookup,
   CustomerDetail,
   CustomerInteractions,
-  AfterSalesReturns,
   AfterSalesReturnDetail,
   AfterSalesScrap,
   Repairs,
