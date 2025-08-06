@@ -17,16 +17,15 @@ export const returnFormSchema = z.object({
   reason: z.string().min(1, 'Return reason is required'),
   refundAmount: z.number().positive('Refund amount must be greater than 0'),
 }).refine((data) => {
-  console.log('Validation refine - data:', data);
   if (data.returnType === 'store') {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const isValid = data.customerEmail && emailRegex.test(data.customerEmail) && data.customerFirst && data.customerLast;
-    console.log('Store validation result:', isValid);
     return isValid;
   }
   if (data.returnType === 'warehouse') {
-    const isValid = data.warehouseId && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(data.warehouseId);
-    console.log('Warehouse validation result:', isValid, 'warehouseId:', data.warehouseId);
+    // Simple UUID format check (8-4-4-4-12 pattern)
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    const isValid = data.warehouseId && uuidRegex.test(data.warehouseId);
     return isValid;
   }
   return true;
