@@ -136,6 +136,26 @@ export default function Auth() {
       }
 
       if (data.user) {
+        // Create user profile entry first
+        const profileData = {
+          user_id: data.user.id,
+          email: data.user.email,
+          full_name: fullName,
+          role: selectedRole,
+          store_id: (selectedRole === 'store_staff' || selectedRole === 'store_manager') ? selectedStore : null,
+          is_active: true
+        };
+
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([profileData]);
+
+        if (profileError) {
+          console.error('Error creating user profile:', profileError);
+          setError('Account created but profile setup failed. Please contact support.');
+          return;
+        }
+
         // Create user role entry
         const roleData = {
           user_id: data.user.id,
