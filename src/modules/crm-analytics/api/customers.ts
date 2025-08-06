@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '../types/customer';
 
-export const getCustomers = async (searchQuery?: string): Promise<Customer[]> => {
+export const getCustomers = async (): Promise<Customer[]> => {
   // Get user profile to get store_id
   const { data: profile } = await supabase
     .from('profiles')
@@ -13,17 +13,11 @@ export const getCustomers = async (searchQuery?: string): Promise<Customer[]> =>
     throw new Error('User store not found');
   }
 
-  // Get customers with optional search
-  let query = supabase
+  // Get customers
+  const { data: customersData, error: customersError } = await supabase
     .from('customers')
     .select('*')
-    .eq('store_id', profile.store_id);
-
-  if (searchQuery && searchQuery.trim()) {
-    query = query.or(`name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,phone.ilike.%${searchQuery}%,customer_code.ilike.%${searchQuery}%`);
-  }
-
-  const { data: customersData, error: customersError } = await query
+    .eq('store_id', profile.store_id)
     .order('created_at', { ascending: false });
 
   if (customersError) throw customersError;

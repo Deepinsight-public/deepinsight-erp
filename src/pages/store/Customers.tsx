@@ -51,14 +51,13 @@ export default function Customers() {
 
   const handleExport = async (format: 'csv' | 'xlsx') => {
     try {
-      // Use existing customers data instead of refetching
-      const data = await getCustomers();
+      const customers = await getCustomers();
       const filename = `customers-${new Date().toISOString().split('T')[0]}`;
       
       if (format === 'csv') {
-        exportToCSV(data, filename);
+        exportToCSV(customers, filename);
       } else {
-        exportToXLSX(data, filename);
+        exportToXLSX(customers, filename);
       }
     } catch (error) {
       console.error('Export failed:', error);
