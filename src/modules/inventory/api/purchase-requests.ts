@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { 
+  WarehouseInventoryItem,
   WarehouseAllocation, 
   PurchaseTurn, 
   PurchaseRequest, 
@@ -7,7 +8,9 @@ import {
   CreatePurchaseRequestDTO,
   PurchaseRequestListParams,
   PurchaseQueue,
-  QueuePosition
+  QueuePosition,
+  PurchaseSubmitDTO,
+  PurchaseSubmitItem
 } from '../types/purchase-requests';
 
 // Get current warehouse allocations
@@ -33,6 +36,36 @@ export const fetchWarehouseAllocations = async (warehouseId?: string): Promise<W
     sku: item.sku,
     qtyTotal: item.qty_total,
     qtyLeft: item.qty_left,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at
+  }));
+};
+
+// Get warehouse inventory items
+export const fetchWarehouseInventory = async (warehouseId: string, search?: string): Promise<WarehouseInventoryItem[]> => {
+  let query = supabase
+    .from('warehouse_inventory')
+    .select('*')
+    .eq('warehouse_id', warehouseId)
+    .gt('qty_available', 0);
+
+  if (search) {
+    query = query.or(`sku.ilike.%${search}%,name.ilike.%${search}%`);
+  }
+
+  const { data, error } = await query.order('name', { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to fetch warehouse inventory: ${error.message}`);
+  }
+
+  return data.map(item => ({
+    id: item.id,
+    warehouseId: item.warehouse_id,
+    sku: item.sku,
+    name: item.name,
+    price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
+    qtyAvailable: item.qty_available,
     createdAt: item.created_at,
     updatedAt: item.updated_at
   }));
@@ -199,15 +232,17 @@ export const fetchPurchaseQueue = async (warehouseId: string, currentStoreId: st
   // Find current store's position
   const yourPosition = queue.find(q => q.storeId === currentStoreId)?.position || 0;
 
-  // Get allocations
+  // Get allocations and warehouse inventory
   const allocations = await fetchWarehouseAllocations(warehouseId);
+  const warehouseInventory = await fetchWarehouseInventory(warehouseId);
 
   return {
     currentStoreId: turn.currentStoreId,
     roundNumber: turn.roundNumber,
     queue,
     yourPosition,
-    allocations
+    allocations,
+    warehouseInventory
   };
 };
 
@@ -254,4 +289,97 @@ const advanceToNextStore = async (warehouseId: string): Promise<void> => {
   if (updateError) {
     throw new Error(`Failed to advance turn: ${updateError.message}`);
   }
+};
+
+// Submit purchase request with warehouse inventory deduction
+export const submitPurchaseRequest = async (
+  storeId: string,
+  requestData: PurchaseSubmitDTO
+): Promise<PurchaseRequest> => {
+  // First check if it's the store's turn
+  const canOrder = await canStoreOrder(storeId, requestData.warehouseId);
+  if (!canOrder) {
+    throw new Error('It is not your store\'s turn to place an order');
+  }
+
+  // Validate stock availability
+  const inventoryIds = requestData.items.map(item => item.inventoryId);
+  const { data: inventoryItems, error: inventoryError } = await supabase
+    .from('warehouse_inventory')
+    .select('*')
+    .in('id', inventoryIds);
+
+  if (inventoryError) {
+    throw new Error(`Failed to fetch inventory: ${inventoryError.message}`);
+  }
+
+  // Check stock availability
+  for (const item of requestData.items) {
+    const inventoryItem = inventoryItems?.find(inv => inv.id === item.inventoryId);
+    if (!inventoryItem) {
+      throw new Error(`Inventory item not found: ${item.inventoryId}`);
+    }
+    if (inventoryItem.qty_available < item.qty) {
+      throw new Error(`Insufficient stock for ${inventoryItem.sku}. Available: ${inventoryItem.qty_available}, Requested: ${item.qty}`);
+    }
+  }
+
+  // Create purchase request items from warehouse inventory
+  const purchaseItems: PurchaseRequestItem[] = requestData.items.map(item => {
+    const inventoryItem = inventoryItems?.find(inv => inv.id === item.inventoryId);
+    return {
+      sku: inventoryItem?.sku || '',
+      qty: item.qty
+    };
+  });
+
+  // Create the purchase request
+  const { data, error } = await supabase
+    .from('purchase_requests')
+    .insert({
+      store_id: storeId,
+      warehouse_id: requestData.warehouseId,
+      allocation_id: requestData.items[0]?.inventoryId || '', // Using first item as allocation reference
+      items: purchaseItems as any,
+      status: 'pending'
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create purchase request: ${error.message}`);
+  }
+
+  // Deduct stock from warehouse inventory
+  for (const item of requestData.items) {
+    const inventoryItem = inventoryItems?.find(inv => inv.id === item.inventoryId);
+    if (inventoryItem) {
+      const newQty = inventoryItem.qty_available - item.qty;
+      const { error: updateError } = await supabase
+        .from('warehouse_inventory')
+        .update({
+          qty_available: newQty,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', item.inventoryId);
+
+      if (updateError) {
+        throw new Error(`Failed to update inventory: ${updateError.message}`);
+      }
+    }
+  }
+
+  // Advance to next store in round-robin
+  await advanceToNextStore(requestData.warehouseId);
+
+  return {
+    id: data.id,
+    storeId: data.store_id,
+    warehouseId: data.warehouse_id,
+    allocationId: data.allocation_id,
+    items: data.items as unknown as PurchaseRequestItem[],
+    status: data.status as PurchaseRequest['status'],
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
 };

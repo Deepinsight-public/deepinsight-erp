@@ -830,6 +830,39 @@ export type Database = {
         }
         Relationships: []
       }
+      warehouse_inventory: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          price: number
+          qty_available: number
+          sku: string
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          price: number
+          qty_available?: number
+          sku: string
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          price?: number
+          qty_available?: number
+          sku?: string
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: []
+      }
       warehouse_store_sequence: {
         Row: {
           created_at: string

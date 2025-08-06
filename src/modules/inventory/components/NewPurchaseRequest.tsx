@@ -7,52 +7,30 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components';
 import { useToast } from '@/hooks/use-toast';
-import { fetchWarehouseAllocations, createPurchaseRequest } from '../api/purchase-requests';
-import { WarehouseAllocation, PurchaseRequestItem } from '../types/purchase-requests';
-
-interface AllocationWithProduct extends WarehouseAllocation {
-  product?: {
-    productName: string;
-    brand: string;
-    category: string;
-    price: number;
-  };
-}
+import { fetchWarehouseInventory, submitPurchaseRequest } from '../api/purchase-requests';
+import { WarehouseInventoryItem, PurchaseSubmitItem } from '../types/purchase-requests';
 
 export function NewPurchaseRequest() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [allocations, setAllocations] = useState<AllocationWithProduct[]>([]);
-  const [selectedItems, setSelectedItems] = useState<PurchaseRequestItem[]>([]);
+  const [inventory, setInventory] = useState<WarehouseInventoryItem[]>([]);
+  const [selectedItems, setSelectedItems] = useState<PurchaseSubmitItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   // Mock store/warehouse IDs - in real app these would come from auth context
   const currentStoreId = '22222222-2222-2222-2222-222222222222';
-  const currentWarehouseId = '11111111-1111-1111-1111-111111111111';
+  const currentWarehouseId = '00000000-0000-0000-0000-000000000001';
 
   useEffect(() => {
-    loadAllocations();
+    loadInventory();
   }, []);
 
-  const loadAllocations = async () => {
+  const loadInventory = async () => {
     setLoading(true);
     try {
-      const data = await fetchWarehouseAllocations(currentWarehouseId);
-      
-      // Mock product data lookup (in real app this would be a proper join/lookup)
-      const mockProducts = {
-        'SKU001': { productName: 'iPhone 15 Pro Max', brand: 'Apple', category: 'Smartphones', price: 1199.99 },
-        'SKU002': { productName: 'Samsung Galaxy S24', brand: 'Samsung', category: 'Smartphones', price: 999.99 },
-        'SKU003': { productName: 'MacBook Air M2', brand: 'Apple', category: 'Laptops', price: 1299.99 }
-      };
-
-      const allocationsWithProducts = data.map(allocation => ({
-        ...allocation,
-        product: mockProducts[allocation.sku as keyof typeof mockProducts]
-      }));
-
-      setAllocations(allocationsWithProducts);
+      const data = await fetchWarehouseInventory(currentWarehouseId);
+      setInventory(data);
     } catch (error) {
       toast({
         title: 'Error',
@@ -64,21 +42,21 @@ export function NewPurchaseRequest() {
     }
   };
 
-  const updateSelectedQuantity = (sku: string, qty: number) => {
+  const updateSelectedQuantity = (inventoryId: string, qty: number) => {
     setSelectedItems(prev => {
-      const existing = prev.find(item => item.sku === sku);
+      const existing = prev.find(item => item.inventoryId === inventoryId);
       if (qty <= 0) {
-        return prev.filter(item => item.sku !== sku);
+        return prev.filter(item => item.inventoryId !== inventoryId);
       }
       if (existing) {
-        return prev.map(item => item.sku === sku ? { ...item, qty } : item);
+        return prev.map(item => item.inventoryId === inventoryId ? { ...item, qty } : item);
       }
-      return [...prev, { sku, qty }];
+      return [...prev, { inventoryId, qty }];
     });
   };
 
-  const getSelectedQty = (sku: string) => {
-    const item = selectedItems.find(item => item.sku === sku);
+  const getSelectedQty = (inventoryId: string) => {
+    const item = selectedItems.find(item => item.inventoryId === inventoryId);
     return item?.qty || 0;
   };
 
@@ -94,12 +72,8 @@ export function NewPurchaseRequest() {
 
     setSubmitting(true);
     try {
-      // For demo, just use the first allocation ID
-      const allocationId = allocations[0]?.id || '';
-      
-      await createPurchaseRequest(currentStoreId, {
+      await submitPurchaseRequest(currentStoreId, {
         warehouseId: currentWarehouseId,
-        allocationId,
         items: selectedItems
       });
 
@@ -129,39 +103,39 @@ export function NewPurchaseRequest() {
       ),
     },
     {
-      key: 'product',
+      key: 'name',
       title: 'Product',
-      render: (product: any) => (
+      render: (name: string, record: WarehouseInventoryItem) => (
         <div>
-          <div className="font-medium">{product?.productName || 'Unknown Product'}</div>
+          <div className="font-medium">{name}</div>
           <div className="text-sm text-muted-foreground">
-            {product?.brand} • {product?.category}
+            SKU: {record.sku}
           </div>
         </div>
       ),
     },
     {
-      key: 'qtyLeft',
+      key: 'qtyAvailable',
       title: 'Available',
       render: (value: number) => (
         <Badge variant="secondary">{value} units</Badge>
       ),
     },
     {
-      key: 'product',
+      key: 'price',
       title: 'Price',
-      render: (product: any) => (
+      render: (price: number) => (
         <span className="font-medium">
-          ${product?.price?.toFixed(2) || '0.00'}
+          ${price.toFixed(2)}
         </span>
       ),
     },
     {
-      key: 'sku',
+      key: 'id',
       title: 'Select Quantity',
-      render: (sku: string, record: AllocationWithProduct) => {
-        const selectedQty = getSelectedQty(sku);
-        const maxQty = record.qtyLeft;
+      render: (inventoryId: string, record: WarehouseInventoryItem) => {
+        const selectedQty = getSelectedQty(inventoryId);
+        const maxQty = record.qtyAvailable;
         
         return (
           <div className="flex items-center gap-2">
@@ -169,7 +143,7 @@ export function NewPurchaseRequest() {
               variant="outline"
               size="icon"
               className="h-8 w-8"
-              onClick={() => updateSelectedQuantity(sku, Math.max(0, selectedQty - 1))}
+              onClick={() => updateSelectedQuantity(inventoryId, Math.max(0, selectedQty - 1))}
               disabled={selectedQty <= 0}
             >
               <Minus className="h-4 w-4" />
@@ -180,7 +154,7 @@ export function NewPurchaseRequest() {
               value={selectedQty}
               onChange={(e) => {
                 const qty = parseInt(e.target.value) || 0;
-                updateSelectedQuantity(sku, Math.min(maxQty, Math.max(0, qty)));
+                updateSelectedQuantity(inventoryId, Math.min(maxQty, Math.max(0, qty)));
               }}
               className="w-20 text-center"
               min="0"
@@ -191,7 +165,7 @@ export function NewPurchaseRequest() {
               variant="outline"
               size="icon"
               className="h-8 w-8"
-              onClick={() => updateSelectedQuantity(sku, Math.min(maxQty, selectedQty + 1))}
+              onClick={() => updateSelectedQuantity(inventoryId, Math.min(maxQty, selectedQty + 1))}
               disabled={selectedQty >= maxQty}
             >
               <Plus className="h-4 w-4" />
@@ -203,6 +177,10 @@ export function NewPurchaseRequest() {
   ];
 
   const totalItems = selectedItems.reduce((sum, item) => sum + item.qty, 0);
+  const totalCost = selectedItems.reduce((sum, item) => {
+    const inventoryItem = inventory.find(inv => inv.id === item.inventoryId);
+    return sum + (inventoryItem?.price || 0) * item.qty;
+  }, 0);
 
   return (
     <div className="space-y-6">
@@ -239,12 +217,12 @@ export function NewPurchaseRequest() {
         <CardHeader>
           <CardTitle>Available Inventory</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Select quantities from warehouse allocation
+            Select quantities from warehouse inventory
           </p>
         </CardHeader>
         <CardContent className="p-0">
           <DataTable
-            data={allocations}
+            data={inventory}
             columns={columns}
             loading={loading}
             title="Available Products"
@@ -256,25 +234,25 @@ export function NewPurchaseRequest() {
       {selectedItems.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Selected Items ({totalItems} total)</CardTitle>
+            <CardTitle>Selected Items ({totalItems} total items • ${totalCost.toFixed(2)})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {selectedItems.map(item => {
-                const allocation = allocations.find(a => a.sku === item.sku);
+                const inventoryItem = inventory.find(inv => inv.id === item.inventoryId);
                 return (
-                  <div key={item.sku} className="flex justify-between items-center p-3 bg-secondary/50 rounded-lg">
+                  <div key={item.inventoryId} className="flex justify-between items-center p-3 bg-secondary/50 rounded-lg">
                     <div>
-                      <span className="font-medium">{item.sku}</span>
+                      <span className="font-medium">{inventoryItem?.sku}</span>
                       <span className="text-muted-foreground ml-2">
-                        {allocation?.product?.productName}
+                        {inventoryItem?.name}
                       </span>
                     </div>
                     <div className="text-right">
                       <span className="font-medium">{item.qty} units</span>
-                      {allocation?.product?.price && (
+                      {inventoryItem?.price && (
                         <div className="text-sm text-muted-foreground">
-                          ${(allocation.product.price * item.qty).toFixed(2)}
+                          ${(inventoryItem.price * item.qty).toFixed(2)}
                         </div>
                       )}
                     </div>

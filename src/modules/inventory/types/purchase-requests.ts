@@ -1,3 +1,14 @@
+export interface WarehouseInventoryItem {
+  id: string;
+  warehouseId: string;
+  sku: string;
+  name: string;
+  price: number;
+  qtyAvailable: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface WarehouseAllocation {
   id: string;
   warehouseId: string;
@@ -33,10 +44,20 @@ export interface PurchaseRequest {
   updatedAt: string;
 }
 
+export interface PurchaseSubmitItem {
+  inventoryId: string;
+  qty: number;
+}
+
 export interface CreatePurchaseRequestDTO {
   warehouseId: string;
   allocationId: string;
   items: PurchaseRequestItem[];
+}
+
+export interface PurchaseSubmitDTO {
+  warehouseId: string;
+  items: PurchaseSubmitItem[];
 }
 
 export interface QueuePosition {
@@ -51,6 +72,7 @@ export interface PurchaseQueue {
   queue: QueuePosition[];
   yourPosition: number;
   allocations: WarehouseAllocation[];
+  warehouseInventory: WarehouseInventoryItem[];
 }
 
 export interface PurchaseRequestListParams {
