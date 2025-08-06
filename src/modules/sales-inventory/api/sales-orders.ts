@@ -499,7 +499,7 @@ export const fetchKPIData = async (date?: string): Promise<KPIData> => {
     .select('total_amount')
     .gte('order_date', `${targetDate}T00:00:00.000Z`)
     .lt('order_date', `${targetDate}T23:59:59.999Z`)
-    .eq('status', 'completed');
+    .in('status', ['submitted', 'completed']); // Include both submitted and completed orders
 
   if (error) throw error;
 
