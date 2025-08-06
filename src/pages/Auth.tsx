@@ -152,7 +152,8 @@ export default function Auth() {
 
         if (profileError) {
           console.error('Error creating user profile:', profileError);
-          setError('Account created but profile setup failed. Please contact support.');
+          console.error('Profile data that failed:', profileData);
+          setError(`Account created but profile setup failed: ${profileError.message}. Please contact support.`);
           return;
         }
 
