@@ -20,7 +20,7 @@ export function NewPurchaseRequest() {
 
   // Mock store/warehouse IDs - in real app these would come from auth context
   const currentStoreId = '550e8400-e29b-41d4-a716-446655440000'; // 测试门店
-  const currentWarehouseId = '00000000-0000-0000-0000-000000000001';
+  const currentWarehouseId = '11111111-1111-1111-1111-111111111111';
 
   useEffect(() => {
     loadInventory();

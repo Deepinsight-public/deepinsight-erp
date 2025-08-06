@@ -97,8 +97,12 @@ export const fetchPurchaseTurn = async (warehouseId: string): Promise<PurchaseTu
 
 // Check if current store can place order (is their turn)
 export const canStoreOrder = async (storeId: string, warehouseId: string): Promise<boolean> => {
+  console.log('Checking if store can order:', { storeId, warehouseId });
   const turn = await fetchPurchaseTurn(warehouseId);
-  return turn?.currentStoreId === storeId;
+  console.log('Current turn:', turn);
+  const canOrder = turn?.currentStoreId === storeId;
+  console.log('Can order result:', canOrder);
+  return canOrder;
 };
 
 // Get purchase requests for a store
