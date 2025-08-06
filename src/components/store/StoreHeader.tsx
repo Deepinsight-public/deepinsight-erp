@@ -125,19 +125,21 @@ export function StoreHeader() {
                   <User className="h-4 w-4" />
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm font-medium hidden md:block">{user?.email || 'User'}</span>
+              <span className="text-sm font-medium hidden md:block">
+                {profile?.full_name || user?.email || 'User'}
+              </span>
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem onClick={() => setProfileDialogOpen(true)}>
               <User className="h-4 w-4 mr-2" />
-              <span>个人资料</span>
+              <span>{t('profile')}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
-              <span>退出登录</span>
+              <span>{t('logout')}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

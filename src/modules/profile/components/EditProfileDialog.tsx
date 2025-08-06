@@ -26,8 +26,8 @@ import { updateProfile } from '../api/profile';
 import { ProfileFormData } from '../types';
 
 const formSchema = z.object({
-  full_name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email address'),
+  full_name: z.string().min(1, 'profile.edit.nameRequired'),
+  email: z.string().email('profile.edit.emailInvalid'),
   phone: z.string().optional(),
 });
 
@@ -70,8 +70,8 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
       });
 
       toast({
-        title: 'Success',
-        description: 'Profile updated successfully',
+        title: t('auth.success'),
+        description: t('profile.edit.success'),
       });
       
       onOpenChange(false);
@@ -80,7 +80,7 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
     } catch (error) {
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to update profile',
+        description: error instanceof Error ? error.message : t('profile.edit.error'),
         variant: 'destructive',
       });
     }
@@ -90,7 +90,7 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>编辑个人资料</DialogTitle>
+          <DialogTitle>{t('profile.edit.title')}</DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
@@ -100,9 +100,9 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
               name="full_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>姓名</FormLabel>
+                  <FormLabel>{t('profile.edit.name')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="请输入姓名" {...field} />
+                    <Input placeholder={t('profile.edit.namePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -114,9 +114,9 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>邮箱</FormLabel>
+                  <FormLabel>{t('profile.edit.email')}</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="请输入邮箱" {...field} />
+                    <Input type="email" placeholder={t('profile.edit.emailPlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -128,9 +128,9 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>电话</FormLabel>
+                  <FormLabel>{t('profile.edit.phone')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="请输入电话号码" {...field} />
+                    <Input placeholder={t('profile.edit.phonePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -143,10 +143,10 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
                 variant="outline"
                 onClick={() => onOpenChange(false)}
               >
-                取消
+                {t('cancel')}
               </Button>
               <Button type="submit">
-                保存
+                {t('save')}
               </Button>
             </DialogFooter>
           </form>

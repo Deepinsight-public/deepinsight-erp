@@ -90,6 +90,19 @@ const resources = {
       'auth.checkEmailToComplete': 'Please check your email and click the confirmation link to complete your registration',
       'auth.emailConfirmationRequired': 'Email confirmation required. Please check your email and click the confirmation link before signing in.',
 
+      // Profile
+      'profile.edit.title': 'Edit Profile',
+      'profile.edit.name': 'Name',
+      'profile.edit.email': 'Email',
+      'profile.edit.phone': 'Phone',
+      'profile.edit.namePlaceholder': 'Enter your name',
+      'profile.edit.emailPlaceholder': 'Enter your email',
+      'profile.edit.phonePlaceholder': 'Enter your phone number',
+      'profile.edit.nameRequired': 'Name is required',
+      'profile.edit.emailInvalid': 'Invalid email address',
+      'profile.edit.success': 'Profile updated successfully',
+      'profile.edit.error': 'Failed to update profile',
+
       // Store
       storeName: 'Store Name',
       notifications: 'Notifications',
@@ -185,6 +198,19 @@ const resources = {
       'auth.registrationSuccess': '注册成功',
       'auth.checkEmailToComplete': '请检查您的邮箱并点击确认链接以完成注册',
       'auth.emailConfirmationRequired': '需要邮箱确认。请先检查您的邮箱并点击确认链接，然后再登录。',
+
+      // Profile
+      'profile.edit.title': '编辑个人资料',
+      'profile.edit.name': '姓名',
+      'profile.edit.email': '邮箱',
+      'profile.edit.phone': '电话',
+      'profile.edit.namePlaceholder': '请输入姓名',
+      'profile.edit.emailPlaceholder': '请输入邮箱',
+      'profile.edit.phonePlaceholder': '请输入电话号码',
+      'profile.edit.nameRequired': '请输入姓名',
+      'profile.edit.emailInvalid': '邮箱格式不正确',
+      'profile.edit.success': '个人资料更新成功',
+      'profile.edit.error': '更新个人资料失败',
 
       // Store
       storeName: '门店名称',
