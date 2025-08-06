@@ -138,24 +138,6 @@ export default function Auth() {
       }
 
       if (data.user) {
-        // Create user role entry
-        const roleData = {
-          user_id: data.user.id,
-          role: selectedRole,
-          store_id: (selectedRole === 'store_staff' || selectedRole === 'store_manager' || selectedRole === 'store_employee') ? selectedStore : null,
-          warehouse_id: selectedRole === 'warehouse_admin' ? null : null // Future warehouse support
-        };
-
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert([roleData]);
-
-        if (roleError) {
-          console.error('Error creating user role:', roleError);
-          setError('Account created but role assignment failed. Please contact support.');
-          return;
-        }
-
         if (data.user.email_confirmed_at) {
           toast({
             title: 'Success',
