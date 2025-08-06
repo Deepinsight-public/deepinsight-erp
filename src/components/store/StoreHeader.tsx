@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bell, ChevronDown, Globe, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,12 +13,36 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 export function StoreHeader() {
   const { t, i18n } = useTranslation();
-  const { user, signOut } = useAuth();
-  const [storeName] = useState('测试门店'); 
+  const { user, profile, signOut } = useAuth();
+  const [storeName, setStoreName] = useState('测试门店'); 
   const [notificationCount] = useState(3);
+
+  // Fetch store name based on user's store_id
+  useEffect(() => {
+    const fetchStoreName = async () => {
+      if (profile?.store_id) {
+        try {
+          const { data, error } = await supabase
+            .from('stores')
+            .select('store_name')
+            .eq('id', profile.store_id)
+            .single();
+
+          if (data && !error) {
+            setStoreName(data.store_name);
+          }
+        } catch (error) {
+          console.error('Error fetching store name:', error);
+        }
+      }
+    };
+
+    fetchStoreName();
+  }, [profile?.store_id]);
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'zh' : 'en';
