@@ -14,8 +14,8 @@ import { getReturns } from '../api/returns';
 import { useToastService } from '@/components/shared/ToastService';
 
 export function AfterSalesReturns() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [returns, setReturns] = useState<Return[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -49,8 +49,8 @@ export function AfterSalesReturns() {
   };
 
   const handleReturnClick = (returnItem: Return) => {
-    // Navigate to return detail or open modal
-    console.log('Return clicked:', returnItem);
+    // Navigate to return detail page
+    navigate(`/store/after-sales/returns/${returnItem.id}`);
   };
 
   const handleCreateSuccess = () => {

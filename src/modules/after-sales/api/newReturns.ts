@@ -201,3 +201,46 @@ export const createAfterSalesReturn = async (returnData: ReturnFormData): Promis
     updatedAt: data.updated_at,
   };
 };
+
+export const getAfterSalesReturnById = async (returnId: string): Promise<AfterSalesReturn | null> => {
+  const { data, error } = await supabase
+    .from('after_sales_returns')
+    .select('*')
+    .eq('id', returnId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching return:', error);
+    throw error;
+  }
+
+  if (!data) return null;
+
+  // Fetch product details separately
+  const { data: productData } = await supabase
+    .from('products')
+    .select('sku, product_name, price')
+    .eq('id', data.product_id)
+    .maybeSingle();
+
+  return {
+    id: data.id,
+    storeId: data.store_id,
+    returnDate: data.return_date,
+    returnType: data.return_type as 'store' | 'warehouse',
+    warehouseId: data.warehouse_id,
+    customerEmail: data.customer_email,
+    customerFirst: data.customer_first,
+    customerLast: data.customer_last,
+    productId: data.product_id,
+    reason: data.reason,
+    refundAmount: Number(data.refund_amount),
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+    product: productData ? {
+      sku: productData.sku,
+      productName: productData.product_name,
+      price: productData.price || 0,
+    } : undefined,
+  };
+};

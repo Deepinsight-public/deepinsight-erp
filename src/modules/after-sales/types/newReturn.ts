@@ -62,4 +62,9 @@ export interface AfterSalesReturn {
   refundAmount: number;
   createdAt: string;
   updatedAt: string;
+  product?: {
+    sku: string;
+    productName: string;
+    price: number;
+  };
 }
