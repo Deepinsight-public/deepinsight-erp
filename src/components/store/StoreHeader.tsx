@@ -13,13 +13,15 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications';
+import { NotificationDropdown } from '@/components/shared/NotificationDropdown';
 import { supabase } from '@/integrations/supabase/client';
 
 export function StoreHeader() {
   const { t, i18n } = useTranslation();
   const { user, profile, signOut } = useAuth();
-  const [storeName, setStoreName] = useState('测试门店'); 
-  const [notificationCount] = useState(3);
+  const { unreadCount } = useNotifications();
+  const [storeName, setStoreName] = useState('测试门店');
 
   // Fetch store name based on user's store_id
   useEffect(() => {
@@ -97,17 +99,19 @@ export function StoreHeader() {
         </Button>
 
         {/* Notifications */}
-        <Button variant="ghost" size="sm" className="relative">
-          <Bell className="h-4 w-4" />
-          {notificationCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-            >
-              {notificationCount}
-            </Badge>
-          )}
-        </Button>
+        <NotificationDropdown>
+          <Button variant="ghost" size="sm" className="relative">
+            <Bell className="h-4 w-4" />
+            {unreadCount > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+              >
+                {unreadCount}
+              </Badge>
+            )}
+          </Button>
+        </NotificationDropdown>
 
         {/* User Menu */}
         <DropdownMenu>
