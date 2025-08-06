@@ -29,7 +29,6 @@ export function NotificationDropdown({ children }: NotificationDropdownProps) {
   } = useNotifications();
 
   const handleNotificationClick = (notification: Notification) => {
-    console.log('Notification clicked:', notification.id, 'isRead:', notification.is_read);
     if (!notification.is_read) {
       markAsRead(notification.id);
     }

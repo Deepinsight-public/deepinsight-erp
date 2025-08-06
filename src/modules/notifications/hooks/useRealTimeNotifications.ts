@@ -11,9 +11,7 @@ export function useRealTimeNotifications() {
 
   // Calculate unread count
   const unreadCount = useMemo(() => {
-    const count = notifications.filter(n => !n.is_read).length;
-    console.log('Real-time unread count:', count, 'Total notifications:', notifications.length);
-    return count;
+    return notifications.filter(n => !n.is_read).length;
   }, [notifications]);
 
   // Load initial notifications
@@ -53,8 +51,6 @@ export function useRealTimeNotifications() {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Real-time notification change:', payload);
-          
           if (payload.eventType === 'INSERT') {
             setNotifications(prev => [payload.new as Notification, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
@@ -80,7 +76,6 @@ export function useRealTimeNotifications() {
   }, [user]);
 
   const markAsRead = async (notificationId: string) => {
-    console.log('Marking notification as read:', notificationId);
     try {
       await notificationApi.markAsRead(notificationId);
       // Real-time subscription will handle the state update

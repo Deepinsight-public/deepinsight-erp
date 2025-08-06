@@ -33,7 +33,7 @@ export const notificationApi = {
     if (error) throw error;
   },
 
-  // Create new notification (for testing)
+  // Create new notification
   async createNotification(data: NotificationCreateData): Promise<Notification> {
     const { data: notification, error } = await supabase
       .from('notifications')
