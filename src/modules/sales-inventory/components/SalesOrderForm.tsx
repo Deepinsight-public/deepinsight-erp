@@ -552,7 +552,9 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
           <h2 className="text-lg font-semibold mb-4">Customer Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="customerEmail">Email (lookup key) *</Label>
+              <Label htmlFor="customerEmail">
+                Email (lookup key) <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="customerEmail"
                 type="email"
