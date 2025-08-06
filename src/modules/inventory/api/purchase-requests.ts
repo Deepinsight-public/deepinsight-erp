@@ -5,7 +5,9 @@ import {
   PurchaseRequest, 
   PurchaseRequestItem,
   CreatePurchaseRequestDTO,
-  PurchaseRequestListParams 
+  PurchaseRequestListParams,
+  PurchaseQueue,
+  QueuePosition
 } from '../types/purchase-requests';
 
 // Get current warehouse allocations
@@ -152,9 +154,96 @@ export const createPurchaseRequest = async (
   };
 };
 
+// Get purchase queue with positions for a warehouse
+export const fetchPurchaseQueue = async (warehouseId: string, currentStoreId: string): Promise<PurchaseQueue> => {
+  // Get current turn
+  const turn = await fetchPurchaseTurn(warehouseId);
+  if (!turn) {
+    throw new Error('No purchase turn found for warehouse');
+  }
+
+  // Get ordered stores from sequence table
+  const { data: sequenceData, error: sequenceError } = await supabase
+    .from('warehouse_store_sequence')
+    .select(`
+      store_id,
+      seq,
+      stores!inner(store_name)
+    `)
+    .eq('warehouse_id', warehouseId)
+    .order('seq', { ascending: true });
+
+  if (sequenceError) {
+    throw new Error(`Failed to fetch warehouse sequence: ${sequenceError.message}`);
+  }
+
+  if (!sequenceData || sequenceData.length === 0) {
+    throw new Error('No stores found in warehouse sequence');
+  }
+
+  // Build queue with positions
+  const queue: QueuePosition[] = sequenceData.map((item, index) => ({
+    storeId: item.store_id,
+    storeName: (item.stores as any).store_name,
+    position: index + 1
+  }));
+
+  // Find current store's position
+  const yourPosition = queue.find(q => q.storeId === currentStoreId)?.position || 0;
+
+  // Get allocations
+  const allocations = await fetchWarehouseAllocations(warehouseId);
+
+  return {
+    currentStoreId: turn.currentStoreId,
+    roundNumber: turn.roundNumber,
+    queue,
+    yourPosition,
+    allocations
+  };
+};
+
 // Advance to next store in round-robin
 const advanceToNextStore = async (warehouseId: string): Promise<void> => {
-  // TODO: Implement round-robin logic with database function
-  // This will advance to the next store in the round-robin sequence
-  console.log(`TODO: Advance turn for warehouse ${warehouseId}`);
+  // Get ordered stores from sequence
+  const { data: sequenceData, error: sequenceError } = await supabase
+    .from('warehouse_store_sequence')
+    .select('store_id, seq')
+    .eq('warehouse_id', warehouseId)
+    .order('seq', { ascending: true });
+
+  if (sequenceError || !sequenceData) {
+    throw new Error('Failed to fetch warehouse sequence');
+  }
+
+  // Get current turn
+  const turn = await fetchPurchaseTurn(warehouseId);
+  if (!turn) {
+    throw new Error('No purchase turn found');
+  }
+
+  // Find current store index
+  const currentIndex = sequenceData.findIndex(s => s.store_id === turn.currentStoreId);
+  if (currentIndex === -1) {
+    throw new Error('Current store not found in sequence');
+  }
+
+  // Calculate next store and round
+  const nextIndex = (currentIndex + 1) % sequenceData.length;
+  const nextStoreId = sequenceData[nextIndex].store_id;
+  const newRoundNumber = nextIndex === 0 ? turn.roundNumber + 1 : turn.roundNumber;
+
+  // Update purchase turn
+  const { error: updateError } = await supabase
+    .from('purchase_turns')
+    .update({
+      current_store_id: nextStoreId,
+      round_number: newRoundNumber,
+      updated_at: new Date().toISOString()
+    })
+    .eq('warehouse_id', warehouseId);
+
+  if (updateError) {
+    throw new Error(`Failed to advance turn: ${updateError.message}`);
+  }
 };

@@ -1,61 +1,42 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, CheckCircle, XCircle, AlertCircle, Plus } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, AlertCircle, Plus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DataTable, StatusBadge } from '@/components';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { fetchPurchaseRequests, fetchPurchaseTurn, canStoreOrder } from '../api/purchase-requests';
-import { PurchaseRequest, PurchaseTurn } from '../types/purchase-requests';
+import { fetchPurchaseRequests, fetchPurchaseQueue } from '../api/purchase-requests';
+import { PurchaseRequest, PurchaseQueue, QueuePosition } from '../types/purchase-requests';
 
 export function PurchaseRequestsList() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { profile } = useAuth();
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
-  const [purchaseTurn, setPurchaseTurn] = useState<PurchaseTurn | null>(null);
-  const [canOrder, setCanOrder] = useState(false);
+  const [queueData, setQueueData] = useState<PurchaseQueue | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentStoreName, setCurrentStoreName] = useState<string>('');
 
   // Use actual store ID from auth context  
   const currentStoreId = profile?.store_id || '';
   const currentWarehouseId = '11111111-1111-1111-1111-111111111111';
+  
+  const isYourTurn = queueData?.currentStoreId === currentStoreId;
+  const currentTurnStore = queueData?.queue.find(q => q.storeId === queueData?.currentStoreId);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!currentStoreId) return;
     
     setLoading(true);
     try {
-      const [requestsData, turnData, canOrderResult] = await Promise.all([
+      const [requestsData, queueResult] = await Promise.all([
         fetchPurchaseRequests(currentStoreId),
-        fetchPurchaseTurn(currentWarehouseId),
-        canStoreOrder(currentStoreId, currentWarehouseId)
+        fetchPurchaseQueue(currentWarehouseId, currentStoreId)
       ]);
 
       setRequests(requestsData);
-      setPurchaseTurn(turnData);
-      setCanOrder(canOrderResult);
-
-      // Fetch current turn store name
-      if (turnData?.currentStoreId) {
-        try {
-          const { supabase } = await import('@/integrations/supabase/client');
-          const { data: storeData } = await supabase
-            .from('stores')
-            .select('store_name')
-            .eq('id', turnData.currentStoreId)
-            .single();
-          
-          if (storeData) {
-            setCurrentStoreName(storeData.store_name);
-          }
-        } catch (error) {
-          console.error('Error fetching store name:', error);
-        }
-      }
+      setQueueData(queueResult);
     } catch (error) {
       toast({
         title: 'Error',
@@ -65,11 +46,22 @@ export function PurchaseRequestsList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentStoreId, currentWarehouseId, toast]);
 
   useEffect(() => {
     loadData();
-  }, [currentStoreId]);
+  }, [loadData]);
+
+  // Poll for updates when not your turn
+  useEffect(() => {
+    if (!isYourTurn && queueData) {
+      const interval = setInterval(() => {
+        loadData();
+      }, 10000); // Poll every 10 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [isYourTurn, queueData, loadData]);
 
   const getStatusIcon = (status: PurchaseRequest['status']) => {
     switch (status) {
@@ -158,52 +150,75 @@ export function PurchaseRequestsList() {
         </div>
       </div>
 
-      {/* Turn Status Card */}
+      {/* Queue Status Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Current Turn Status
+            <Users className="h-5 w-5" />
+            Purchase Queue (Round {queueData?.roundNumber || 'N/A'})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <p className="text-sm text-muted-foreground">Current Turn</p>
               <p className="font-medium">
-                {purchaseTurn?.currentStoreId === currentStoreId 
-                  ? 'Your Store' 
-                  : currentStoreName || 'Loading...'
-                }
+                {isYourTurn ? 'Your Store' : currentTurnStore?.storeName || 'Loading...'}
               </p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Round Number</p>
-              <p className="font-medium">{purchaseTurn?.roundNumber || 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Your Status</p>
+              <p className="text-sm text-muted-foreground">Your Position</p>
               <div className="flex items-center gap-2">
-                {canOrder ? (
-                  <>
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span className="text-green-600 font-medium">Can Order</span>
-                  </>
-                ) : (
-                  <>
-                    <Clock className="h-4 w-4 text-yellow-500" />
-                    <span className="text-yellow-600 font-medium">Waiting Turn</span>
-                  </>
-                )}
+                <Badge variant={isYourTurn ? 'default' : 'secondary'} className="text-lg px-3 py-1">
+                  #{queueData?.yourPosition || 'N/A'}
+                </Badge>
               </div>
             </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Stores</p>
+              <p className="font-medium">{queueData?.queue.length || 0}</p>
+            </div>
           </div>
+
+          {/* Queue List */}
+          {queueData?.queue && (
+            <div className="space-y-2 mb-4">
+              <p className="text-sm font-medium text-muted-foreground">Queue Order:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {queueData.queue.map((store) => (
+                  <div 
+                    key={store.storeId}
+                    className={`flex items-center gap-3 p-3 rounded-lg border ${
+                      store.storeId === queueData.currentStoreId 
+                        ? 'bg-green-50 border-green-200' 
+                        : store.storeId === currentStoreId
+                          ? 'bg-blue-50 border-blue-200'
+                          : 'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <Badge variant="outline" className="min-w-[2rem] justify-center">
+                      {store.position}
+                    </Badge>
+                    <div className="flex-1">
+                      <p className="font-medium">{store.storeName}</p>
+                      {store.storeId === queueData.currentStoreId && (
+                        <p className="text-xs text-green-600">Current Turn</p>
+                      )}
+                      {store.storeId === currentStoreId && store.storeId !== queueData.currentStoreId && (
+                        <p className="text-xs text-blue-600">Your Store</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
-          {canOrder ? (
-            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          {isYourTurn ? (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-green-800">It's your turn to order!</p>
+                  <p className="font-medium text-green-800">轮到你抢单 (Round {queueData?.roundNumber})</p>
                   <p className="text-sm text-green-600">
                     You must place an order now to maintain the round-robin sequence.
                   </p>
@@ -218,15 +233,15 @@ export function PurchaseRequestsList() {
               </div>
             </div>
           ) : (
-            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <div className="flex items-center gap-3">
                 <Clock className="h-5 w-5 text-yellow-600" />
                 <div>
                   <p className="font-medium text-yellow-800">
-                    当前轮到 {currentStoreName} 下单，请稍候...
+                    当前顺位：第 {queueData?.yourPosition} 位，轮到 {currentTurnStore?.storeName} 后依次进行
                   </p>
                   <p className="text-sm text-yellow-600">
-                    Round {purchaseTurn?.roundNumber} - Please wait for your turn in the queue.
+                    Round {queueData?.roundNumber} - Please wait for your turn in the queue.
                   </p>
                 </div>
               </div>

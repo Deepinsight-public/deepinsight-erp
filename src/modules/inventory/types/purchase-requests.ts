@@ -39,6 +39,20 @@ export interface CreatePurchaseRequestDTO {
   items: PurchaseRequestItem[];
 }
 
+export interface QueuePosition {
+  storeId: string;
+  storeName: string;
+  position: number;
+}
+
+export interface PurchaseQueue {
+  currentStoreId: string;
+  roundNumber: number;
+  queue: QueuePosition[];
+  yourPosition: number;
+  allocations: WarehouseAllocation[];
+}
+
 export interface PurchaseRequestListParams {
   warehouseId?: string;
   status?: string;
