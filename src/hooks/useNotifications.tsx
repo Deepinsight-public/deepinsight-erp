@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from './useAuth';
 
 export interface Notification {
@@ -72,7 +72,10 @@ export function useNotifications() {
     }
   }, [user]);
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = useMemo(() => 
+    notifications.filter(n => !n.isRead).length, 
+    [notifications]
+  );
 
   const markAsRead = (notificationId: string) => {
     setNotifications(prev => 
