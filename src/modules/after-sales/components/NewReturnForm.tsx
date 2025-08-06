@@ -68,9 +68,17 @@ export function NewReturnForm() {
 
   const returnType = form.watch('returnType');
 
-  // Load warehouses when component mounts
+  // Load warehouses and initial products when component mounts
   React.useEffect(() => {
     getWarehouses().then(setWarehouseOptions).catch(console.error);
+    // Load initial products
+    searchProducts('').then(products => {
+      const options = products.map(product => ({
+        value: product.id,
+        label: `${product.sku} - ${product.productName} (Stock: ${product.availableStock})`,
+      }));
+      setProductOptions(options);
+    }).catch(console.error);
   }, []);
 
   const handleCustomerEmailSearch = async (email: string) => {
@@ -243,12 +251,12 @@ export function NewReturnForm() {
                             }}
                           />
                           {customerSuggestions.length > 0 && (
-                            <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg">
+                            <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
                               {customerSuggestions.map((customer) => (
                                 <button
                                   key={customer.id}
                                   type="button"
-                                  className="w-full px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground"
+                                  className="w-full px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground first:rounded-t-md last:rounded-b-md"
                                   onClick={() => handleCustomerSelect(customer)}
                                 >
                                   <div className="font-medium">{customer.name}</div>

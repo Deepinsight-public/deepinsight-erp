@@ -27,6 +27,12 @@ export const returnFormSchema = z.object({
 }, {
   message: 'Required fields based on return type are missing',
   path: ['returnType'],
+}).transform((data) => {
+  // Clear warehouseId when return type is store to avoid validation errors
+  if (data.returnType === 'store') {
+    return { ...data, warehouseId: undefined };
+  }
+  return data;
 });
 
 export type ReturnFormData = z.infer<typeof returnFormSchema>;
