@@ -193,21 +193,7 @@ export function AfterSalesReturnDetail() {
 }
 
 export function Repairs() {
-  const { t } = useTranslation();
-  return (
-    <StorePageStub
-      title="Repairs"
-      description="Manage repair services and track repair progress."
-      breadcrumbs={[{ title: t('repairs') }]}
-      features={[
-        'Repair request intake',
-        'Diagnosis tracking',
-        'Parts ordering',
-        'Labor time tracking',
-        'Customer updates'
-      ]}
-    />
-  );
+  return <div>Repairs page will be imported directly</div>;
 }
 
 export function RepairDetail() {

@@ -20,6 +20,9 @@ import NotFound from "./pages/NotFound";
 import { AfterSalesReturns } from "@/modules/after-sales/components/AfterSalesReturns";
 import NewAfterSalesReturn from "./pages/store/NewAfterSalesReturn";
 import AfterSalesReturnDetail from "./pages/store/AfterSalesReturnDetail";
+import Repairs from "./pages/store/Repairs";
+import NewRepair from "./pages/store/NewRepair";
+import RepairDetail from "./pages/store/RepairDetail";
 import { StoreLayout } from "@/components/store/StoreLayout";
 import Dashboard from "./pages/store/Dashboard";
 import SalesOrders from "./pages/store/SalesOrders";
@@ -41,8 +44,6 @@ import {
   CustomerDetail,
   CustomerInteractions,
   AfterSalesScrap,
-  Repairs,
-  RepairDetail,
   OrderSearch,
   CustomerReturns,
   HQReturns,
@@ -69,92 +70,92 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <ErrorBoundary>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              
-              {/* Password Reset Routes */}
-              <Route path="/auth/request" element={<RequestResetPage />} />
-              <Route path="/auth/request/sent" element={<ResetSentPage />} />
-              <Route path="/auth/reset/callback" element={<NewPasswordPage />} />
-              <Route path="/auth/reset/success" element={<ResetSuccessPage />} />
-              
-              {/* Protected Store Routes */}
-              <Route path="/store" element={
-                <ProtectedRoute>
-                  <StoreLayout />
-                </ProtectedRoute>
-              }>
-                <Route path="dashboard" element={<Dashboard />} />
-                
-                {/* Sales Orders */}
-                <Route path="sales-orders" element={<SalesOrders />} />
-                <Route path="sales-orders/history" element={<SalesOrdersHistory />} />
-                <Route path="sales-orders/new" element={<NewSalesOrder />} />
-                <Route path="sales-orders/success" element={<SalesOrderSuccess />} />
-                <Route path="sales-orders/:id" element={<SalesOrderDetail />} />
-                
-                {/* Purchase Requests */}
-                <Route path="purchase-requests" element={<PurchaseRequests />} />
-                <Route path="purchase-requests/new" element={<NewPurchaseRequest />} />
-                <Route path="purchase-requests/:id" element={<PurchaseRequestDetail />} />
-                
-                {/* Inventory */}
-                <Route path="inventory" element={<Inventory />} />
-                <Route path="inventory/transfer-in" element={<InventoryTransferIn />} />
-                <Route path="inventory/transfer-out" element={<InventoryTransferOut />} />
-                
-                {/* Products */}
-                <Route path="products" element={<Products />} />
-                <Route path="products/:id" element={<ProductDetail />} />
-                <Route path="products/lookup" element={<ProductLookup />} />
-                
-                {/* Customers/CRM */}
-                <Route path="customers" element={<Customers />} />
-                <Route path="customers/:id" element={<CustomerDetail />} />
-                <Route path="customers/:id/interactions" element={<CustomerInteractions />} />
-                
-                {/* After-Sales */}
-                <Route path="after-sales/returns" element={<AfterSalesReturns />} />
-                <Route path="after-sales/returns/new" element={<NewAfterSalesReturn />} />
-                <Route path="after-sales/returns/:id" element={<AfterSalesReturnDetail />} />
-                <Route path="after-sales/scrap" element={<AfterSalesScrap />} />
-                
-                {/* Repairs */}
-                <Route path="repairs" element={<Repairs />} />
-                <Route path="repairs/:id" element={<RepairDetail />} />
-                
-                {/* Order Search */}
-                <Route path="orders/search" element={<OrderSearch />} />
-                
-                {/* Returns */}
-                <Route path="customer-returns" element={<CustomerReturns />} />
-                <Route path="hq-returns" element={<HQReturns />} />
-                
-                {/* Scrap Management */}
-                <Route path="scrap" element={<ScrapManagement />} />
-                <Route path="scrap/new" element={<NewScrap />} />
-                
-                {/* Settings */}
-                <Route path="settings" element={<Settings />} />
-              </Route>
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                {/* Public routes */}
+                <Route index element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/auth/request" element={<RequestResetPage />} />
+                <Route path="/auth/sent" element={<ResetSentPage />} />
+                <Route path="/auth/reset" element={<NewPasswordPage />} />
+                <Route path="/auth/success" element={<ResetSuccessPage />} />
 
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </ErrorBoundary>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+                {/* Protected Store Routes */}
+                <Route path="/store" element={
+                  <ProtectedRoute>
+                    <StoreLayout />
+                  </ProtectedRoute>
+                }>
+                  <Route path="dashboard" element={<Dashboard />} />
+                  
+                  {/* Sales Orders */}
+                  <Route path="sales-orders" element={<SalesOrders />} />
+                  <Route path="sales-orders/history" element={<SalesOrdersHistory />} />
+                  <Route path="sales-orders/new" element={<NewSalesOrder />} />
+                  <Route path="sales-orders/success" element={<SalesOrderSuccess />} />
+                  <Route path="sales-orders/:id" element={<SalesOrderDetail />} />
+                  
+                  {/* Purchase Requests */}
+                  <Route path="purchase-requests" element={<PurchaseRequests />} />
+                  <Route path="purchase-requests/new" element={<NewPurchaseRequest />} />
+                  <Route path="purchase-requests/:id" element={<PurchaseRequestDetail />} />
+                  
+                  {/* Inventory */}
+                  <Route path="inventory" element={<Inventory />} />
+                  <Route path="inventory/transfer-in" element={<InventoryTransferIn />} />
+                  <Route path="inventory/transfer-out" element={<InventoryTransferOut />} />
+                  
+                  {/* Products */}
+                  <Route path="products" element={<Products />} />
+                  <Route path="products/:id" element={<ProductDetail />} />
+                  <Route path="products/lookup" element={<ProductLookup />} />
+                  
+                  {/* Customers/CRM */}
+                  <Route path="customers" element={<Customers />} />
+                  <Route path="customers/:id" element={<CustomerDetail />} />
+                  <Route path="customers/:id/interactions" element={<CustomerInteractions />} />
+                  
+                  {/* After-Sales */}
+                  <Route path="after-sales/returns" element={<AfterSalesReturns />} />
+                  <Route path="after-sales/returns/new" element={<NewAfterSalesReturn />} />
+                  <Route path="after-sales/returns/:id" element={<AfterSalesReturnDetail />} />
+                  <Route path="after-sales/scrap" element={<AfterSalesScrap />} />
+                  
+                  {/* Repairs */}
+                  <Route path="repairs" element={<Repairs />} />
+                  <Route path="repairs/new" element={<NewRepair />} />
+                  <Route path="repairs/:id" element={<RepairDetail />} />
+                  
+                  {/* Order Search */}
+                  <Route path="orders/search" element={<OrderSearch />} />
+                  
+                  {/* Returns */}
+                  <Route path="customer-returns" element={<CustomerReturns />} />
+                  <Route path="hq-returns" element={<HQReturns />} />
+                  
+                  {/* Scrap Management */}
+                  <Route path="scrap" element={<ScrapManagement />} />
+                  <Route path="scrap/new" element={<NewScrap />} />
+                  
+                  {/* Settings */}
+                  <Route path="settings" element={<Settings />} />
+                </Route>
 
-export default App;
+                {/* Catch-all route */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </AuthProvider>
+        </ErrorBoundary>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}

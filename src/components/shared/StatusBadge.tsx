@@ -19,7 +19,12 @@ type StatusType =
   | 'diagnosing'
   | 'repairing'
   | 'requested'
-  | 'discontinued';
+  | 'discontinued'
+  | 'warranty'
+  | 'paid'
+  | 'goodwill'
+  | 'in_progress'
+  | 'in progress';
 
 interface StatusBadgeProps {
   status: StatusType;
@@ -121,6 +126,31 @@ const statusConfig: Record<StatusType, {
     label: 'Discontinued',
     variant: 'destructive',
     className: 'bg-destructive text-destructive-foreground',
+  },
+  warranty: {
+    label: 'Warranty',
+    variant: 'default',
+    className: 'bg-success text-success-foreground',
+  },
+  paid: {
+    label: 'Paid',
+    variant: 'default',
+    className: 'bg-primary text-primary-foreground',
+  },
+  goodwill: {
+    label: 'Goodwill',
+    variant: 'outline',
+    className: 'bg-warning text-warning-foreground',
+  },
+  in_progress: {
+    label: 'In Progress',
+    variant: 'outline',
+    className: 'bg-warning text-warning-foreground',
+  },
+  'in progress': {
+    label: 'In Progress',
+    variant: 'outline',
+    className: 'bg-warning text-warning-foreground',
   },
 };
 
