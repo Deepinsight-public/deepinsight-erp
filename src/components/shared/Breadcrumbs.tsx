@@ -23,7 +23,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
       </NavLink>
       
       {items.map((item, index) => (
-        <React.Fragment key={`breadcrumb-${index}`}>
+        <div key={`breadcrumb-${index}`} className="flex items-center">
           <ChevronRight className="h-4 w-4" />
           {item.href ? (
             <NavLink 
@@ -35,7 +35,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
           ) : (
             <span className="text-foreground font-medium">{item.title}</span>
           )}
-        </React.Fragment>
+        </div>
       ))}
     </nav>
   );

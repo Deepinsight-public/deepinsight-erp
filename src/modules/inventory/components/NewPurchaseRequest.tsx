@@ -18,8 +18,8 @@ export function NewPurchaseRequest() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Mock store/warehouse IDs - in real app these would come from auth context
-  const currentStoreId = '550e8400-e29b-41d4-a716-446655440000'; // 测试门店
+  // Use actual user's store ID from auth instead of hardcoded values
+  const currentStoreId = '5acdc874-85be-48a8-97f0-60bd68c13e3d'; // 上海中心店 (current logged-in user)
   const currentWarehouseId = '11111111-1111-1111-1111-111111111111';
 
   useEffect(() => {
