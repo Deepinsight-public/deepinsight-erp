@@ -715,6 +715,130 @@ export type Database = {
           },
         ]
       }
+      scrap_audit: {
+        Row: {
+          action: string
+          actor_id: string
+          comment: string | null
+          created_at: string
+          header_id: string
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          comment?: string | null
+          created_at?: string
+          header_id: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          comment?: string | null
+          created_at?: string
+          header_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scrap_audit_header_id_fkey"
+            columns: ["header_id"]
+            isOneToOne: false
+            referencedRelation: "scrap_headers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scrap_headers: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          scrap_no: string
+          status: string
+          store_id: string
+          total_qty: number
+          total_value: number
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          scrap_no: string
+          status?: string
+          store_id: string
+          total_qty?: number
+          total_value?: number
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          scrap_no?: string
+          status?: string
+          store_id?: string
+          total_qty?: number
+          total_value?: number
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: []
+      }
+      scrap_lines: {
+        Row: {
+          attachment_id: string | null
+          batch_no: string | null
+          created_at: string
+          header_id: string
+          id: string
+          product_id: string
+          qty: number
+          reason: string
+          unit_cost: number
+          uom: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_id?: string | null
+          batch_no?: string | null
+          created_at?: string
+          header_id: string
+          id?: string
+          product_id: string
+          qty: number
+          reason: string
+          unit_cost: number
+          uom?: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_id?: string | null
+          batch_no?: string | null
+          created_at?: string
+          header_id?: string
+          id?: string
+          product_id?: string
+          qty?: number
+          reason?: string
+          unit_cost?: number
+          uom?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scrap_lines_header_id_fkey"
+            columns: ["header_id"]
+            isOneToOne: false
+            referencedRelation: "scrap_headers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           address: string | null
@@ -975,6 +1099,10 @@ export type Database = {
           created_at: string
           updated_at: string
         }[]
+      }
+      generate_scrap_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       get_user_profile: {
         Args: { user_uuid: string }
