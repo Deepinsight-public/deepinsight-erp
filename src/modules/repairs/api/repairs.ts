@@ -1,116 +1,122 @@
+import { supabase } from '@/integrations/supabase/client';
 import { Repair, RepairFilters, CreateRepairData } from '../types';
 
-// Mock data for now - replace with Supabase queries when repairs table is created
-const mockRepairs: Repair[] = [
-  {
-    id: '1',
-    repairId: 'REP-20241201-001',
-    date: '2024-12-01T10:00:00Z',
-    type: 'warranty',
-    product: {
-      id: 'prod-1',
-      name: 'iPhone 15 Pro',
-      sku: 'IPH15PRO-256'
-    },
-    status: 'in_progress',
-    description: 'Screen replacement due to manufacturing defect',
-    customerId: 'cust-1',
-    customerName: 'John Doe',
-    cost: 0,
-    estimatedCompletion: '2024-12-05T17:00:00Z',
-    createdAt: '2024-12-01T10:00:00Z',
-    updatedAt: '2024-12-01T10:00:00Z'
-  },
-  {
-    id: '2',
-    repairId: 'REP-20241130-002',
-    date: '2024-11-30T14:30:00Z',
-    type: 'paid',
-    product: {
-      id: 'prod-2',
-      name: 'MacBook Air M2',
-      sku: 'MBA-M2-512'
-    },
-    status: 'completed',
-    description: 'Battery replacement and keyboard cleaning',
-    customerId: 'cust-2',
-    customerName: 'Jane Smith',
-    cost: 299.99,
-    estimatedCompletion: '2024-12-02T17:00:00Z',
-    createdAt: '2024-11-30T14:30:00Z',
-    updatedAt: '2024-12-02T16:45:00Z'
-  },
-  {
-    id: '3',
-    repairId: 'REP-20241129-003',
-    date: '2024-11-29T09:15:00Z',
-    type: 'goodwill',
-    product: {
-      id: 'prod-3',
-      name: 'iPad Pro 12.9"',
-      sku: 'IPADPRO-129-1TB'
-    },
-    status: 'pending',
-    description: 'Customer satisfaction repair - minor screen scratch',
-    customerId: 'cust-3',
-    customerName: 'Mike Johnson',
-    cost: 0,
-    createdAt: '2024-11-29T09:15:00Z',
-    updatedAt: '2024-11-29T09:15:00Z'
-  }
-];
-
 export const getRepairs = async (filters?: RepairFilters): Promise<Repair[]> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  let filteredRepairs = [...mockRepairs];
+  // Get user profile to get store_id
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('store_id')
+    .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+    .single();
+
+  if (!profile?.store_id) {
+    throw new Error('User store not found');
+  }
+
+  let query = supabase
+    .from('repairs')
+    .select('*')
+    .eq('store_id', profile.store_id)
+    .order('created_at', { ascending: false });
 
   // Apply filters
   if (filters?.status) {
-    filteredRepairs = filteredRepairs.filter(repair => repair.status === filters.status);
+    query = query.eq('status', filters.status);
   }
 
   if (filters?.type) {
-    filteredRepairs = filteredRepairs.filter(repair => repair.type === filters.type);
+    query = query.eq('type', filters.type);
   }
 
   if (filters?.search) {
-    const searchLower = filters.search.toLowerCase();
-    filteredRepairs = filteredRepairs.filter(repair =>
-      repair.repairId.toLowerCase().includes(searchLower) ||
-      repair.description.toLowerCase().includes(searchLower) ||
-      repair.status.toLowerCase().includes(searchLower) ||
-      repair.product.name.toLowerCase().includes(searchLower)
-    );
+    query = query.or(`repair_id.ilike.%${filters.search}%,description.ilike.%${filters.search}%,status.ilike.%${filters.search}%`);
   }
 
-  return filteredRepairs;
+  if (filters?.dateFrom) {
+    query = query.gte('created_at', filters.dateFrom);
+  }
+
+  if (filters?.dateTo) {
+    query = query.lte('created_at', filters.dateTo);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+
+  // Transform data to match our Repair interface
+  return (data || []).map(item => ({
+    id: item.id,
+    repairId: item.repair_id,
+    date: item.created_at,
+    type: item.type as 'warranty' | 'paid' | 'goodwill',
+    product: {
+      id: item.product_id || '',
+      name: 'Product Name', // Will be populated when we add product lookup
+      sku: 'PRODUCT-SKU'
+    },
+    status: item.status as 'pending' | 'in_progress' | 'completed' | 'cancelled',
+    description: item.description || '',
+    customerId: item.customer_id,
+    customerName: item.customer_name,
+    cost: item.cost ? parseFloat(item.cost.toString()) : undefined,
+    estimatedCompletion: item.estimated_completion,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at,
+  }));
 };
 
 export const createRepair = async (repairData: CreateRepairData): Promise<Repair> => {
-  // Mock implementation - replace with actual Supabase insert when repairs table is created
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  const newRepair: Repair = {
-    id: `repair-${Date.now()}`,
-    repairId: `REP-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
-    date: new Date().toISOString(),
-    type: repairData.type,
-    product: {
-      id: repairData.productId,
-      name: 'Sample Product', // Would come from product lookup
-      sku: 'SAMPLE-SKU'
-    },
-    status: 'pending',
-    description: repairData.description,
-    customerId: repairData.customerId,
-    customerName: 'Sample Customer', // Would come from customer lookup
-    cost: repairData.cost,
-    estimatedCompletion: repairData.estimatedCompletion,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
+  // Get user profile to get store_id
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('store_id')
+    .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+    .single();
 
-  return newRepair;
+  if (!profile?.store_id) {
+    throw new Error('User store not found');
+  }
+
+  // Generate repair ID
+  const { data: repairIdData, error: repairIdError } = await supabase.rpc('generate_repair_id');
+  if (repairIdError) throw repairIdError;
+
+  const { data, error } = await supabase
+    .from('repairs')
+    .insert({
+      repair_id: repairIdData,
+      store_id: profile.store_id,
+      product_id: repairData.productId,
+      customer_id: repairData.customerId,
+      type: repairData.type,
+      description: repairData.description,
+      cost: repairData.cost,
+      estimated_completion: repairData.estimatedCompletion,
+      status: 'pending',
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    repairId: data.repair_id,
+    date: data.created_at,
+    type: data.type as 'warranty' | 'paid' | 'goodwill',
+    product: {
+      id: data.product_id || '',
+      name: 'Product Name', // Will be populated when we add product lookup
+      sku: 'PRODUCT-SKU'
+    },
+    status: data.status as 'pending' | 'in_progress' | 'completed' | 'cancelled',
+    description: data.description || '',
+    customerId: data.customer_id,
+    customerName: data.customer_name,
+    cost: data.cost ? parseFloat(data.cost.toString()) : undefined,
+    estimatedCompletion: data.estimated_completion,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
 };
