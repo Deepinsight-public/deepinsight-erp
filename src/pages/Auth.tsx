@@ -18,7 +18,7 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('store_staff');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('store_employee');
   const [selectedStore, setSelectedStore] = useState('');
   const [stores, setStores] = useState<Array<{id: string, store_name: string}>>([]);
   const [error, setError] = useState<string | null>(null);
@@ -142,7 +142,7 @@ export default function Auth() {
           email: data.user.email,
           full_name: fullName,
           role: selectedRole,
-          store_id: (selectedRole === 'store_staff' || selectedRole === 'store_manager') ? selectedStore : null,
+          store_id: (selectedRole === 'store_staff' || selectedRole === 'store_manager' || selectedRole === 'store_employee') ? selectedStore : null,
           is_active: true
         };
 
@@ -160,7 +160,7 @@ export default function Auth() {
         const roleData = {
           user_id: data.user.id,
           role: selectedRole,
-          store_id: (selectedRole === 'store_staff' || selectedRole === 'store_manager') ? selectedStore : null,
+          store_id: (selectedRole === 'store_staff' || selectedRole === 'store_manager' || selectedRole === 'store_employee') ? selectedStore : null,
           warehouse_id: selectedRole === 'warehouse_admin' ? null : null // Future warehouse support
         };
 
@@ -308,6 +308,7 @@ export default function Auth() {
                       <SelectValue placeholder="选择角色" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="store_employee">{ROLE_DISPLAY_NAMES.store_employee.zh}</SelectItem>
                       <SelectItem value="store_staff">{ROLE_DISPLAY_NAMES.store_staff.zh}</SelectItem>
                       <SelectItem value="store_manager">{ROLE_DISPLAY_NAMES.store_manager.zh}</SelectItem>
                       <SelectItem value="warehouse_admin">{ROLE_DISPLAY_NAMES.warehouse_admin.zh}</SelectItem>
@@ -316,7 +317,7 @@ export default function Auth() {
                   </Select>
                 </div>
 
-                {(selectedRole === 'store_staff' || selectedRole === 'store_manager') && (
+                {(selectedRole === 'store_staff' || selectedRole === 'store_manager' || selectedRole === 'store_employee') && (
                   <div>
                     <Label htmlFor="store-select">门店</Label>
                     <Select value={selectedStore} onValueChange={setSelectedStore}>
