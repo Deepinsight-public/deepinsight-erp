@@ -86,6 +86,9 @@ const resources = {
       'auth.checkEmailAgain': 'Please check your email',
       'auth.resendConfirmation': 'Resend confirmation email',
       'auth.registrationFailed': 'Registration failed',
+      'auth.registrationSuccess': 'Registration Successful',
+      'auth.checkEmailToComplete': 'Please check your email and click the confirmation link to complete your registration',
+      'auth.emailConfirmationRequired': 'Email confirmation required. Please check your email and click the confirmation link before signing in.',
 
       // Store
       storeName: 'Store Name',
@@ -179,6 +182,9 @@ const resources = {
       'auth.checkEmailAgain': '请检查您的邮箱',
       'auth.resendConfirmation': '重新发送确认邮件',
       'auth.registrationFailed': '注册失败',
+      'auth.registrationSuccess': '注册成功',
+      'auth.checkEmailToComplete': '请检查您的邮箱并点击确认链接以完成注册',
+      'auth.emailConfirmationRequired': '需要邮箱确认。请先检查您的邮箱并点击确认链接，然后再登录。',
 
       // Store
       storeName: '门店名称',

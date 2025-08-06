@@ -154,19 +154,22 @@ export default function Auth() {
       }
 
       if (data.user) {
-        if (data.user.email_confirmed_at) {
-          toast({
-            title: t('auth.success'),
-            description: t('auth.signUpSuccess')
-          });
-          window.location.href = '/store/dashboard';
-        } else {
-          toast({
-            title: t('auth.checkEmail'),
-            description: t('auth.checkEmailDesc')
-          });
-          setError(t('auth.emailConfirmation'));
-        }
+        // Always require email confirmation for new signups
+        toast({
+          title: t('auth.registrationSuccess'),
+          description: t('auth.checkEmailToComplete'),
+          duration: 10000, // Show longer to ensure user sees it
+        });
+        
+        // Clear form and show confirmation state
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        setFullName('');
+        setError(null);
+        
+        // Show confirmation message in error state for visibility
+        setError(t('auth.emailConfirmationRequired'));
       }
     } catch (error: any) {
       console.error('Signup error:', error);
