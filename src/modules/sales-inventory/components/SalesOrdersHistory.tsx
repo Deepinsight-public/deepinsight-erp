@@ -39,24 +39,8 @@ export function SalesOrdersHistory() {
 
       const ordersData = await fetchSalesOrders(params);
 
-      // Transform data to match our DTO structure
-      const transformedOrders: SalesOrderDTO[] = ordersData.map(order => ({
-        id: order.id,
-        orderNumber: order.order_number,
-        customerName: order.customer_name,
-        customerEmail: order.customer_email,
-        customerPhone: order.customer_phone,
-        orderDate: order.created_at,
-        orderType: 'retail', // Default for now
-        status: order.status as SalesOrderDTO['status'],
-        subTotal: order.total_amount - order.tax_amount + order.discount_amount,
-        discountAmount: order.discount_amount,
-        taxAmount: order.tax_amount,
-        totalAmount: order.total_amount,
-        lines: [] // Not needed for list view
-      }));
-
-      setOrders(transformedOrders);
+      // Orders data is already transformed DTOs from the API
+      setOrders(ordersData);
       setTotalOrders(ordersData.length);
       setCurrentPage(page);
     } catch (error) {

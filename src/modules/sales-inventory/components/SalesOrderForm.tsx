@@ -218,87 +218,47 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
 
       if (!profile?.store_id) throw new Error('User profile not found');
 
-      // Prepare order data for database
-      const orderData = {
-        order_number: initialData?.orderNumber || `ORD-${Date.now()}`,
-        customer_name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim(),
-        customer_first: formData.firstName,
-        customer_last: formData.lastName,
-        customer_email: formData.customerEmail,
-        customer_phone: formData.customerPhone,
-        addr_country: formData.country,
-        addr_state: formData.state,
-        addr_city: formData.city,
-        addr_street: formData.street,
-        addr_zipcode: formData.zipcode,
-        warranty_years: formData.warrantyYears || 1,
-        warranty_amount: formData.warrantyAmount || 0,
-        walk_in_delivery: formData.fulfillmentType || 'walk-in',
+      // Prepare order DTO
+      const orderDTO: SalesOrderDTO = {
+        id: initialData?.id,
+        orderNumber: initialData?.orderNumber || `ORD-${Date.now()}`,
+        customerName: `${formData.firstName || ''} ${formData.lastName || ''}`.trim(),
+        customerFirst: formData.firstName,
+        customerLast: formData.lastName,
+        customerEmail: formData.customerEmail,
+        customerPhone: formData.customerPhone,
+        addrCountry: formData.country,
+        addrState: formData.state,
+        addrCity: formData.city,
+        addrStreet: formData.street,
+        addrZipcode: formData.zipcode,
+        warrantyYears: formData.warrantyYears || 1,
+        warrantyAmount: formData.warrantyAmount || 0,
+        walkInDelivery: formData.fulfillmentType || 'walk-in',
         accessory: formData.accessory || '',
-        other_services: formData.otherServices,
-        other_fee: formData.otherFee || 0,
-        payment_method: formData.paymentMethod,
-        payment_note: formData.paymentNote,
-        customer_source: formData.customerSource,
-        total_amount: totals.totalAmount,
-        discount_amount: totals.discountAmount,
-        tax_amount: totals.taxAmount,
+        otherServices: formData.otherServices,
+        otherFee: formData.otherFee || 0,
+        paymentMethod: formData.paymentMethod,
+        paymentNote: formData.paymentNote,
+        customerSource: formData.customerSource,
+        totalAmount: totals.totalAmount,
+        discountAmount: totals.discountAmount,
+        taxAmount: totals.taxAmount,
+        subTotal: totals.subTotal,
         status,
-        order_date: new Date().toISOString(),
-        store_id: profile.store_id,
-        created_by: user.id,
-        cashier_id: formData.cashierId || user.id
+        orderDate: new Date().toISOString(),
+        orderType: 'retail',
+        storeId: profile.store_id,
+        createdBy: user.id,
+        cashierId: formData.cashierId || user.id,
+        lines
       };
 
       let savedOrder;
       if (initialData?.id) {
-        // Update existing order
-        const { data: updatedOrder, error } = await supabase
-          .from('sales_orders')
-          .update(orderData)
-          .eq('id', initialData.id)
-          .select()
-          .single();
-
-        if (error) throw error;
-        savedOrder = updatedOrder;
+        savedOrder = await updateSalesOrder(initialData.id, orderDTO);
       } else {
-        // Create new order
-        const { data: newOrder, error } = await supabase
-          .from('sales_orders')
-          .insert({ id: crypto.randomUUID(), ...orderData })
-          .select()
-          .single();
-
-        if (error) throw error;
-        savedOrder = newOrder;
-      }
-
-      // Save/update line items
-      if (lines.length > 0) {
-        // Delete existing line items if updating
-        if (initialData?.id) {
-          await supabase
-            .from('sales_order_items')
-            .delete()
-            .eq('sales_order_id', initialData.id);
-        }
-
-        // Insert new line items
-        const lineItemsData = lines.map(item => ({
-          sales_order_id: savedOrder.id,
-          product_id: item.productId,
-          quantity: item.quantity,
-          unit_price: item.unitPrice,
-          discount_amount: item.unitPrice * item.quantity * item.discountPercent / 100,
-          total_amount: item.subTotal
-        }));
-
-        const { error: lineItemsError } = await supabase
-          .from('sales_order_items')
-          .insert(lineItemsData);
-
-        if (lineItemsError) throw lineItemsError;
+        savedOrder = await createSalesOrder(orderDTO);
       }
 
       // Save/update customer information in customers table
@@ -308,7 +268,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
             .from('customers')
             .select('id')
             .eq('email', formData.customerEmail)
-            .single();
+            .maybeSingle();
 
           const customerData = {
             store_id: profile.store_id,
@@ -342,55 +302,29 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         }
       }
 
-      // Convert to DTO format for callback
-      const orderDTO: SalesOrderDTO = {
-        id: savedOrder.id,
-        orderNumber: savedOrder.order_number,
-        customerName: savedOrder.customer_name,
-        customerEmail: savedOrder.customer_email,
-        customerPhone: savedOrder.customer_phone,
-        customerFirst: savedOrder.customer_first,
-        customerLast: savedOrder.customer_last,
-        addrCountry: savedOrder.addr_country,
-        addrState: savedOrder.addr_state,
-        addrCity: savedOrder.addr_city,
-        addrStreet: savedOrder.addr_street,
-        addrZipcode: savedOrder.addr_zipcode,
-        warrantyYears: savedOrder.warranty_years,
-        warrantyAmount: savedOrder.warranty_amount,
-        walkInDelivery: savedOrder.walk_in_delivery,
-        accessory: savedOrder.accessory,
-        otherServices: savedOrder.other_services,
-        otherFee: savedOrder.other_fee,
-        paymentMethod: savedOrder.payment_method,
-        paymentNote: savedOrder.payment_note,
-        customerSource: savedOrder.customer_source,
-        cashierId: savedOrder.cashier_id,
-        totalAmount: savedOrder.total_amount,
-        discountAmount: savedOrder.discount_amount,
-        taxAmount: savedOrder.tax_amount,
-        status: savedOrder.status,
-        orderDate: savedOrder.order_date,
-        lines,
-        subTotal: totals.subTotal,
-        orderType: 'retail', // Default value
-        createdAt: savedOrder.created_at,
-        updatedAt: savedOrder.updated_at,
-        createdBy: savedOrder.created_by,
-        storeId: savedOrder.store_id
-      };
-
       toast({
         title: 'Success',
         description: `Order ${status === 'draft' ? 'saved as draft' : 'submitted'} successfully`
       });
       
-      onSave?.(orderDTO);
+      onSave?.(savedOrder);
     } catch (error) {
       console.error('Error saving sales order:', error);
+      
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        if (error.message.includes('INSUFFICIENT_STOCK')) {
+          // Extract SKU from error message
+          const match = error.message.match(/INSUFFICIENT_STOCK: (.+)/);
+          errorMessage = match ? match[1] : 'Insufficient stock for one or more items';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: 'Error',
-        description: `Failed to save order: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        description: `Failed to save order: ${errorMessage}`,
         variant: 'destructive'
       });
     } finally {
