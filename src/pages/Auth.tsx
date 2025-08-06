@@ -107,8 +107,22 @@ export default function Auth() {
     setLoading(true);
     setError(null);
 
+    // Form validation
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('密码不匹配 / Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    if (!fullName.trim()) {
+      setError('请输入姓名 / Name is required');
+      setLoading(false);
+      return;
+    }
+
+    // Role-based validation
+    if ((selectedRole === 'store_staff' || selectedRole === 'store_manager' || selectedRole === 'store_employee') && !selectedStore) {
+      setError('请选择门店 / Store selection is required for store roles');
       setLoading(false);
       return;
     }
@@ -140,16 +154,49 @@ export default function Auth() {
       if (data.user) {
         if (data.user.email_confirmed_at) {
           toast({
-            title: 'Success',
-            description: 'Account created successfully!'
+            title: '注册成功 / Account created',
+            description: '账户创建成功，正在跳转... / Account created successfully, redirecting...'
           });
           window.location.href = '/store/dashboard';
         } else {
           toast({
-            title: 'Check your email',
-            description: 'Please check your email for a confirmation link.'
+            title: '请检查邮箱 / Check your email',
+            description: '账户已创建，请查看邮箱确认链接 / Account created. Please check your email for confirmation.'
           });
+          setError('请检查您的邮箱并点击确认链接激活账户。如果没有收到邮件，请检查垃圾邮件文件夹。/ Please check your email and click the confirmation link to activate your account. If you don\'t receive the email, check your spam folder.');
         }
+      }
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      setError(`注册失败 / Registration failed: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      setError('请先输入邮箱地址 / Please enter your email address first');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/store/dashboard`
+        }
+      });
+
+      if (error) {
+        setError(error.message);
+      } else {
+        toast({
+          title: '确认邮件已重发 / Confirmation email resent',
+          description: '请检查您的邮箱 / Please check your email'
+        });
       }
     } catch (error: any) {
       setError(error.message);
@@ -301,7 +348,22 @@ export default function Auth() {
 
                 {error && (
                   <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
+                    <AlertDescription>
+                      {error}
+                      {error.includes('请检查您的邮箱') && (
+                        <div className="mt-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleResendConfirmation}
+                            disabled={loading}
+                          >
+                            重新发送确认邮件 / Resend confirmation email
+                          </Button>
+                        </div>
+                      )}
+                    </AlertDescription>
                   </Alert>
                 )}
 
