@@ -6,22 +6,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DataTable, StatusBadge } from '@/components';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { fetchPurchaseRequests, fetchPurchaseTurn, canStoreOrder } from '../api/purchase-requests';
 import { PurchaseRequest, PurchaseTurn } from '../types/purchase-requests';
 
 export function PurchaseRequestsList() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { profile } = useAuth();
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
   const [purchaseTurn, setPurchaseTurn] = useState<PurchaseTurn | null>(null);
   const [canOrder, setCanOrder] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentStoreName, setCurrentStoreName] = useState<string>('');
 
-  // Mock store ID - in real app this would come from auth context
-  const currentStoreId = '22222222-2222-2222-2222-222222222222';
+  // Use actual store ID from auth context  
+  const currentStoreId = profile?.store_id || '';
   const currentWarehouseId = '11111111-1111-1111-1111-111111111111';
 
   const loadData = async () => {
+    if (!currentStoreId) return;
+    
     setLoading(true);
     try {
       const [requestsData, turnData, canOrderResult] = await Promise.all([
@@ -33,6 +38,24 @@ export function PurchaseRequestsList() {
       setRequests(requestsData);
       setPurchaseTurn(turnData);
       setCanOrder(canOrderResult);
+
+      // Fetch current turn store name
+      if (turnData?.currentStoreId) {
+        try {
+          const { supabase } = await import('@/integrations/supabase/client');
+          const { data: storeData } = await supabase
+            .from('stores')
+            .select('store_name')
+            .eq('id', turnData.currentStoreId)
+            .single();
+          
+          if (storeData) {
+            setCurrentStoreName(storeData.store_name);
+          }
+        } catch (error) {
+          console.error('Error fetching store name:', error);
+        }
+      }
     } catch (error) {
       toast({
         title: 'Error',
@@ -46,7 +69,7 @@ export function PurchaseRequestsList() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [currentStoreId]);
 
   const getStatusIcon = (status: PurchaseRequest['status']) => {
     switch (status) {
@@ -150,7 +173,7 @@ export function PurchaseRequestsList() {
               <p className="font-medium">
                 {purchaseTurn?.currentStoreId === currentStoreId 
                   ? 'Your Store' 
-                  : `Store ${purchaseTurn?.currentStoreId?.slice(0, 8) || 'N/A'}`
+                  : currentStoreName || 'Loading...'
                 }
               </p>
             </div>
@@ -176,7 +199,7 @@ export function PurchaseRequestsList() {
             </div>
           </div>
           
-          {canOrder && (
+          {canOrder ? (
             <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
@@ -192,6 +215,20 @@ export function PurchaseRequestsList() {
                   <Plus className="h-4 w-4 mr-2" />
                   Create Order
                 </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Clock className="h-5 w-5 text-yellow-600" />
+                <div>
+                  <p className="font-medium text-yellow-800">
+                    当前轮到 {currentStoreName} 下单，请稍候...
+                  </p>
+                  <p className="text-sm text-yellow-600">
+                    Round {purchaseTurn?.roundNumber} - Please wait for your turn in the queue.
+                  </p>
+                </div>
               </div>
             </div>
           )}
