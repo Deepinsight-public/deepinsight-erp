@@ -13,86 +13,94 @@ export const getReturns = async (filters?: ReturnFilters): Promise<Return[]> => 
     throw new Error('User store not found');
   }
 
-  // For now, return mock data until the returns table migration is executed
-  // TODO: Replace with actual database query once migration is approved
-  const mockReturns: Return[] = [
-    {
-      id: '1',
-      returnNumber: 'RET-001',
-      date: new Date().toISOString(),
-      numberOfItems: 2,
-      status: 'pending',
-      totalMap: 299.99,
-      refundAmount: 250.00,
-      reason: 'Defective product',
-      orderId: 'ORD-123',
-      customerId: 'CUST-456',
-      customerName: 'John Doe',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: '2',
-      returnNumber: 'RET-002',
-      date: new Date(Date.now() - 86400000).toISOString(),
-      numberOfItems: 1,
-      status: 'approved',
-      totalMap: 149.99,
-      refundAmount: 149.99,
-      reason: 'Changed mind',
-      orderId: 'ORD-124',
-      customerId: 'CUST-457',
-      customerName: 'Jane Smith',
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      updatedAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-  ];
+  let query = supabase
+    .from('returns')
+    .select('*')
+    .eq('store_id', profile.store_id)
+    .order('created_at', { ascending: false });
 
-  // Apply filters to mock data
-  let filteredReturns = mockReturns;
-
+  // Apply filters
   if (filters?.status) {
-    filteredReturns = filteredReturns.filter(r => r.status === filters.status);
+    query = query.eq('status', filters.status);
   }
 
   if (filters?.search) {
-    const searchLower = filters.search.toLowerCase();
-    filteredReturns = filteredReturns.filter(r => 
-      r.returnNumber.toLowerCase().includes(searchLower) ||
-      r.reason.toLowerCase().includes(searchLower) ||
-      r.status.toLowerCase().includes(searchLower)
-    );
+    query = query.or(`return_number.ilike.%${filters.search}%,reason.ilike.%${filters.search}%,status.ilike.%${filters.search}%`);
   }
 
   if (filters?.dateFrom) {
-    filteredReturns = filteredReturns.filter(r => r.date >= filters.dateFrom!);
+    query = query.gte('created_at', filters.dateFrom);
   }
 
   if (filters?.dateTo) {
-    filteredReturns = filteredReturns.filter(r => r.date <= filters.dateTo!);
+    query = query.lte('created_at', filters.dateTo);
   }
 
-  return filteredReturns;
+  const { data, error } = await query;
+
+  if (error) throw error;
+
+  // Transform data to match our Return interface
+  return (data || []).map(item => ({
+    id: item.id,
+    returnNumber: item.return_number || `RET-${item.id.slice(0, 8).toUpperCase()}`,
+    date: item.created_at,
+    numberOfItems: item.number_of_items || 0,
+    status: item.status as 'pending' | 'approved' | 'rejected' | 'completed',
+    totalMap: parseFloat(item.total_map?.toString() || '0'),
+    refundAmount: parseFloat(item.refund_amount?.toString() || '0'),
+    reason: item.reason || '',
+    orderId: item.order_id,
+    customerId: item.customer_id,
+    customerName: item.customer_name,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at,
+  }));
 };
 
 export const createReturn = async (returnData: CreateReturnData): Promise<Return> => {
-  // For now, return mock data until the returns table migration is executed
-  // TODO: Replace with actual database insert once migration is approved
-  const newReturn: Return = {
-    id: Math.random().toString(36).substr(2, 9),
-    returnNumber: `RET-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-    date: new Date().toISOString(),
-    numberOfItems: returnData.items.length,
-    status: 'pending',
-    totalMap: returnData.totalMap,
-    refundAmount: returnData.refundAmount,
-    reason: returnData.reason,
-    orderId: returnData.orderId,
-    customerId: returnData.customerId,
-    customerName: 'Customer Name', // Would be fetched from customer_id in real implementation
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+  // Get user profile to get store_id
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('store_id')
+    .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+    .single();
 
-  return newReturn;
+  if (!profile?.store_id) {
+    throw new Error('User store not found');
+  }
+
+  const { data, error } = await supabase
+    .from('returns')
+    .insert({
+      store_id: profile.store_id,
+      order_id: returnData.orderId,
+      customer_id: returnData.customerId,
+      reason: returnData.reason,
+      total_map: returnData.totalMap,
+      refund_amount: returnData.refundAmount,
+      number_of_items: returnData.items.length,
+      status: 'pending',
+      items: returnData.items,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    returnNumber: data.return_number || `RET-${data.id.slice(0, 8).toUpperCase()}`,
+    date: data.created_at,
+    numberOfItems: data.number_of_items || 0,
+    status: data.status as 'pending' | 'approved' | 'rejected' | 'completed',
+    totalMap: parseFloat(data.total_map?.toString() || '0'),
+    refundAmount: parseFloat(data.refund_amount?.toString() || '0'),
+    reason: data.reason || '',
+    orderId: data.order_id,
+    customerId: data.customer_id,
+    customerName: data.customer_name,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
 };

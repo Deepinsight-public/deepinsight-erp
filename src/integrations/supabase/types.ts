@@ -458,6 +458,57 @@ export type Database = {
         }
         Relationships: []
       }
+      returns: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          customer_name: string | null
+          id: string
+          items: Json | null
+          number_of_items: number | null
+          order_id: string | null
+          reason: string
+          refund_amount: number | null
+          return_number: string | null
+          status: string
+          store_id: string
+          total_map: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          id?: string
+          items?: Json | null
+          number_of_items?: number | null
+          order_id?: string | null
+          reason: string
+          refund_amount?: number | null
+          return_number?: string | null
+          status?: string
+          store_id: string
+          total_map?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          id?: string
+          items?: Json | null
+          number_of_items?: number | null
+          order_id?: string | null
+          reason?: string
+          refund_amount?: number | null
+          return_number?: string | null
+          status?: string
+          store_id?: string
+          total_map?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sales_order_items: {
         Row: {
           created_at: string
