@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UserRole, ROLE_DISPLAY_NAMES } from '@/lib/types/auth';
 
 export default function Auth() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -89,8 +91,8 @@ export default function Auth() {
 
       if (data.user) {
         toast({
-          title: 'Success',
-          description: 'Successfully signed in!'
+          title: t('auth.success'),
+          description: t('auth.signInSuccess')
         });
         // Force page reload for clean state
         window.location.href = '/store/dashboard';
@@ -109,20 +111,20 @@ export default function Auth() {
 
     // Form validation
     if (password !== confirmPassword) {
-      setError('密码不匹配 / Passwords do not match');
+      setError(t('auth.passwordMismatch'));
       setLoading(false);
       return;
     }
 
     if (!fullName.trim()) {
-      setError('请输入姓名 / Name is required');
+      setError(t('auth.nameRequired'));
       setLoading(false);
       return;
     }
 
     // Role-based validation
     if ((selectedRole === 'store_staff' || selectedRole === 'store_manager' || selectedRole === 'store_employee') && !selectedStore) {
-      setError('请选择门店 / Store selection is required for store roles');
+      setError(t('auth.storeRequired'));
       setLoading(false);
       return;
     }
@@ -154,21 +156,21 @@ export default function Auth() {
       if (data.user) {
         if (data.user.email_confirmed_at) {
           toast({
-            title: '注册成功 / Account created',
-            description: '账户创建成功，正在跳转... / Account created successfully, redirecting...'
+            title: t('auth.success'),
+            description: t('auth.signUpSuccess')
           });
           window.location.href = '/store/dashboard';
         } else {
           toast({
-            title: '请检查邮箱 / Check your email',
-            description: '账户已创建，请查看邮箱确认链接 / Account created. Please check your email for confirmation.'
+            title: t('auth.checkEmail'),
+            description: t('auth.checkEmailDesc')
           });
-          setError('请检查您的邮箱并点击确认链接激活账户。如果没有收到邮件，请检查垃圾邮件文件夹。/ Please check your email and click the confirmation link to activate your account. If you don\'t receive the email, check your spam folder.');
+          setError(t('auth.emailConfirmation'));
         }
       }
     } catch (error: any) {
       console.error('Signup error:', error);
-      setError(`注册失败 / Registration failed: ${error.message}`);
+      setError(`${t('auth.registrationFailed')}: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -176,7 +178,7 @@ export default function Auth() {
 
   const handleResendConfirmation = async () => {
     if (!email) {
-      setError('请先输入邮箱地址 / Please enter your email address first');
+      setError(t('auth.enterEmail'));
       return;
     }
 
@@ -194,8 +196,8 @@ export default function Auth() {
         setError(error.message);
       } else {
         toast({
-          title: '确认邮件已重发 / Confirmation email resent',
-          description: '请检查您的邮箱 / Please check your email'
+          title: t('auth.confirmationResent'),
+          description: t('auth.checkEmailAgain')
         });
       }
     } catch (error: any) {
@@ -211,23 +213,23 @@ export default function Auth() {
       
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">欢迎使用ERP系统</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t('auth.welcome')}</CardTitle>
           <CardDescription>
-            登录或注册以访问销售订单管理系统
+            {t('auth.description')}
           </CardDescription>
         </CardHeader>
         
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">登录</TabsTrigger>
-              <TabsTrigger value="signup">注册</TabsTrigger>
+              <TabsTrigger value="signin">{t('auth.signIn')}</TabsTrigger>
+              <TabsTrigger value="signup">{t('auth.signUp')}</TabsTrigger>
             </TabsList>
             
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div>
-                  <Label htmlFor="signin-email">邮箱</Label>
+                  <Label htmlFor="signin-email">{t('auth.email')}</Label>
                   <Input
                     id="signin-email"
                     type="email"
@@ -239,7 +241,7 @@ export default function Auth() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="signin-password">密码</Label>
+                  <Label htmlFor="signin-password">{t('auth.password')}</Label>
                   <Input
                     id="signin-password"
                     type="password"
@@ -257,7 +259,7 @@ export default function Auth() {
                 )}
 
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? '登录中...' : '登录'}
+                  {loading ? t('auth.signingIn') : t('auth.signIn')}
                 </Button>
               </form>
             </TabsContent>
@@ -265,7 +267,7 @@ export default function Auth() {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div>
-                  <Label htmlFor="signup-name">姓名</Label>
+                  <Label htmlFor="signup-name">{t('auth.name')}</Label>
                   <Input
                     id="signup-name"
                     type="text"
@@ -277,7 +279,7 @@ export default function Auth() {
                 </div>
 
                 <div>
-                  <Label htmlFor="signup-email">邮箱</Label>
+                  <Label htmlFor="signup-email">{t('auth.email')}</Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -289,7 +291,7 @@ export default function Auth() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="signup-password">密码</Label>
+                  <Label htmlFor="signup-password">{t('auth.password')}</Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -301,7 +303,7 @@ export default function Auth() {
                 </div>
 
                 <div>
-                  <Label htmlFor="confirm-password">确认密码</Label>
+                  <Label htmlFor="confirm-password">{t('auth.confirmPassword')}</Label>
                   <Input
                     id="confirm-password"
                     type="password"
@@ -313,27 +315,27 @@ export default function Auth() {
                 </div>
 
                 <div>
-                  <Label htmlFor="role-select">角色</Label>
+                  <Label htmlFor="role-select">{t('auth.role')}</Label>
                   <Select value={selectedRole} onValueChange={(value: UserRole) => setSelectedRole(value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="选择角色" />
+                      <SelectValue placeholder={t('auth.selectRole')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="store_employee">{ROLE_DISPLAY_NAMES.store_employee.zh}</SelectItem>
-                      <SelectItem value="store_staff">{ROLE_DISPLAY_NAMES.store_staff.zh}</SelectItem>
-                      <SelectItem value="store_manager">{ROLE_DISPLAY_NAMES.store_manager.zh}</SelectItem>
-                      <SelectItem value="warehouse_admin">{ROLE_DISPLAY_NAMES.warehouse_admin.zh}</SelectItem>
-                      <SelectItem value="hq_admin">{ROLE_DISPLAY_NAMES.hq_admin.zh}</SelectItem>
+                      <SelectItem value="store_employee">{ROLE_DISPLAY_NAMES.store_employee.en}</SelectItem>
+                      <SelectItem value="store_staff">{ROLE_DISPLAY_NAMES.store_staff.en}</SelectItem>
+                      <SelectItem value="store_manager">{ROLE_DISPLAY_NAMES.store_manager.en}</SelectItem>
+                      <SelectItem value="warehouse_admin">{ROLE_DISPLAY_NAMES.warehouse_admin.en}</SelectItem>
+                      <SelectItem value="hq_admin">{ROLE_DISPLAY_NAMES.hq_admin.en}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {(selectedRole === 'store_staff' || selectedRole === 'store_manager' || selectedRole === 'store_employee') && (
                   <div>
-                    <Label htmlFor="store-select">门店</Label>
+                    <Label htmlFor="store-select">{t('auth.store')}</Label>
                     <Select value={selectedStore} onValueChange={setSelectedStore}>
                       <SelectTrigger>
-                        <SelectValue placeholder="选择门店" />
+                        <SelectValue placeholder={t('auth.selectStore')} />
                       </SelectTrigger>
                       <SelectContent>
                         {stores.map((store) => (
@@ -350,7 +352,7 @@ export default function Auth() {
                   <Alert variant="destructive">
                     <AlertDescription>
                       {error}
-                      {error.includes('请检查您的邮箱') && (
+                      {error.includes(t('auth.emailConfirmation')) && (
                         <div className="mt-2">
                           <Button
                             type="button"
@@ -359,7 +361,7 @@ export default function Auth() {
                             onClick={handleResendConfirmation}
                             disabled={loading}
                           >
-                            重新发送确认邮件 / Resend confirmation email
+                            {t('auth.resendConfirmation')}
                           </Button>
                         </div>
                       )}
@@ -368,7 +370,7 @@ export default function Auth() {
                 )}
 
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? '注册中...' : '注册'}
+                  {loading ? t('auth.signingUp') : t('auth.signUp')}
                 </Button>
               </form>
             </TabsContent>
