@@ -24,7 +24,7 @@ export function CreateReturnDialog({ open, onOpenChange, onSuccess }: CreateRetu
     refundAmount: '',
     items: [{ productId: '', quantity: '', reason: '' }]
   });
-  const { showToast } = useToastService();
+  const { showSuccess, showError } = useToastService();
 
   const handleSubmit = async () => {
     try {
@@ -44,7 +44,7 @@ export function CreateReturnDialog({ open, onOpenChange, onSuccess }: CreateRetu
       };
 
       await createReturn(returnData);
-      showToast('Return created successfully', 'success');
+      showSuccess('Return created successfully');
       onOpenChange(false);
       onSuccess?.();
       
@@ -59,7 +59,7 @@ export function CreateReturnDialog({ open, onOpenChange, onSuccess }: CreateRetu
       });
     } catch (error) {
       console.error('Error creating return:', error);
-      showToast('Failed to create return', 'error');
+      showError('Failed to create return');
     } finally {
       setLoading(false);
     }
