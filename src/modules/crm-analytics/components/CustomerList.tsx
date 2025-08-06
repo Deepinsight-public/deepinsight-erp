@@ -20,7 +20,7 @@ export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm, refr
     const loadCustomers = async () => {
       try {
         setLoading(true);
-        const data = await getCustomers();
+        const data = await getCustomers(searchTerm);
         setCustomers(data);
       } catch (error) {
         console.error('Failed to load customers:', error);
@@ -30,7 +30,7 @@ export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm, refr
     };
 
     loadCustomers();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, searchTerm]);
 
   const columns = [
     {
@@ -101,21 +101,9 @@ export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm, refr
     },
   ];
 
-  const filteredCustomers = customers.filter((customer) => {
-    if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      customer.name.toLowerCase().includes(searchLower) ||
-      (customer.email && customer.email.toLowerCase().includes(searchLower)) ||
-      (customer.phone && customer.phone.toLowerCase().includes(searchLower)) ||
-      (customer.customer_code && customer.customer_code.toLowerCase().includes(searchLower)) ||
-      (customer.address && customer.address.toLowerCase().includes(searchLower))
-    );
-  });
-
   return (
     <DataTable
-      data={filteredCustomers}
+      data={customers}
       columns={columns}
       loading={loading}
       onRowClick={onCustomerClick}
