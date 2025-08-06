@@ -542,6 +542,54 @@ export type Database = {
         }
         Relationships: []
       }
+      repairs: {
+        Row: {
+          cost: number | null
+          created_at: string
+          customer_id: string | null
+          customer_name: string | null
+          description: string
+          estimated_completion: string | null
+          id: string
+          product_id: string
+          repair_id: string
+          status: string
+          store_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          description: string
+          estimated_completion?: string | null
+          id?: string
+          product_id: string
+          repair_id: string
+          status?: string
+          store_id: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          description?: string
+          estimated_completion?: string | null
+          id?: string
+          product_id?: string
+          repair_id?: string
+          status?: string
+          store_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       returns: {
         Row: {
           created_at: string
@@ -1135,6 +1183,10 @@ export type Database = {
           created_at: string
           updated_at: string
         }[]
+      }
+      generate_repair_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       generate_scrap_number: {
         Args: Record<PropertyKey, never>
