@@ -444,14 +444,12 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
 
   // Product search
   const handleProductSearch = async (search: string) => {
-    if (!search.trim()) {
-      setProductOptions([]);
-      return;
-    }
+    console.log('handleProductSearch called with:', search);
     
     try {
       const { searchAvailableProducts } = await import('../api/products');
       const products = await searchAvailableProducts(search);
+      console.log('Setting product options:', products);
       setProductOptions(products);
     } catch (error) {
       console.error('Failed to search products:', error);
@@ -969,6 +967,7 @@ function AddItemDialog({ open, onClose, onAdd, onProductSearch, productOptions }
   // Load initial products when dialog opens
   useEffect(() => {
     if (open) {
+      console.log('Dialog opened, loading initial products');
       // Load all available products initially
       onProductSearch('');
     } else {

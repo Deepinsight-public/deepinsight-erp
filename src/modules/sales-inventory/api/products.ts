@@ -44,17 +44,16 @@ export const searchAvailableProducts = async (search: string): Promise<ProductLo
   const products = (data || [])
     .map(product => {
       const inventory = product.inventory?.[0];
-      const availableStock = (inventory?.quantity || 0) - (inventory?.reserved_quantity || 0);
+      const availableStock = inventory ? (inventory.quantity || 0) - (inventory.reserved_quantity || 0) : 0;
       
       return {
         id: product.id,
         sku: product.sku,
         productName: product.product_name,
         price: product.price || 0,
-        availableStock
+        availableStock: Math.max(0, availableStock) // Ensure non-negative
       };
     })
-    .filter(product => product.availableStock >= 0) // Show products even with 0 stock
     .sort((a, b) => b.availableStock - a.availableStock);
 
   console.log('Processed products:', products);
