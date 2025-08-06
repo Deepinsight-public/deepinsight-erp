@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { StoreLayout } from '@/components/store/StoreLayout';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,6 +15,7 @@ import { useToastService } from '@/components/shared/ToastService';
 
 export function AfterSalesReturns() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [returns, setReturns] = useState<Return[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -70,7 +72,7 @@ export function AfterSalesReturns() {
             Manage product returns and warranty claims
           </p>
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)}>
+        <Button onClick={() => navigate('/store/after-sales/returns/new')}>
           <Plus className="h-4 w-4 mr-2" />
           Create Return
         </Button>

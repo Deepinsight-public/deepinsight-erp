@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 
 // Store Layout and Pages
 import { AfterSalesReturns } from "@/modules/after-sales/components/AfterSalesReturns";
+import NewAfterSalesReturn from "./pages/store/NewAfterSalesReturn";
 import { StoreLayout } from "@/components/store/StoreLayout";
 import Dashboard from "./pages/store/Dashboard";
 import SalesOrders from "./pages/store/SalesOrders";
@@ -108,6 +109,7 @@ const App = () => (
                 
                 {/* After-Sales */}
                 <Route path="after-sales/returns" element={<AfterSalesReturns />} />
+                <Route path="after-sales/returns/new" element={<NewAfterSalesReturn />} />
                 <Route path="after-sales/returns/:id" element={<AfterSalesReturnDetail />} />
                 <Route path="after-sales/scrap" element={<AfterSalesScrap />} />
                 

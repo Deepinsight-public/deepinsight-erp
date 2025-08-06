@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      after_sales_returns: {
+        Row: {
+          created_at: string
+          customer_email: string | null
+          customer_first: string | null
+          customer_last: string | null
+          id: string
+          product_id: string
+          reason: string
+          refund_amount: number
+          return_date: string
+          return_type: string
+          store_id: string
+          updated_at: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_email?: string | null
+          customer_first?: string | null
+          customer_last?: string | null
+          id?: string
+          product_id: string
+          reason: string
+          refund_amount: number
+          return_date?: string
+          return_type: string
+          store_id: string
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string | null
+          customer_first?: string | null
+          customer_last?: string | null
+          id?: string
+          product_id?: string
+          reason?: string
+          refund_amount?: number
+          return_date?: string
+          return_type?: string
+          store_id?: string
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Relationships: []
+      }
       csv_import_logs: {
         Row: {
           completed_at: string | null
