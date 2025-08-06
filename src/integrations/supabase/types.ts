@@ -835,6 +835,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_sales_order_with_stock_deduction: {
+        Args: { order_data: Json; line_items: Json[] }
+        Returns: {
+          id: string
+          order_number: string
+          customer_name: string
+          customer_email: string
+          customer_phone: string
+          customer_first: string
+          customer_last: string
+          addr_country: string
+          addr_state: string
+          addr_city: string
+          addr_street: string
+          addr_zipcode: string
+          order_date: string
+          status: string
+          total_amount: number
+          discount_amount: number
+          tax_amount: number
+          warranty_years: number
+          warranty_amount: number
+          walk_in_delivery: string
+          accessory: string
+          other_services: string
+          other_fee: number
+          payment_method: string
+          payment_note: string
+          customer_source: string
+          cashier_id: string
+          store_id: string
+          created_by: string
+          created_at: string
+          updated_at: string
+        }[]
+      }
       get_user_profile: {
         Args: { user_uuid: string }
         Returns: {
