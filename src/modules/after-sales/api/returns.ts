@@ -88,6 +88,26 @@ export const createReturn = async (returnData: CreateReturnData): Promise<Return
 
   if (error) throw error;
 
+  // Create notification for the new return
+  const { data: currentUser } = await supabase.auth.getUser();
+  if (currentUser.user) {
+    await supabase
+      .from('notifications')
+      .insert({
+        user_id: currentUser.user.id,
+        type: 'product_return',
+        title: 'New Product Return Created',
+        message: `Return ${data.return_number || `RET-${data.id.slice(0, 8).toUpperCase()}`} has been created for ${returnData.items.length} item(s)`,
+        metadata: {
+          return_id: data.id,
+          return_number: data.return_number || `RET-${data.id.slice(0, 8).toUpperCase()}`,
+          customer_id: returnData.customerId,
+          total_amount: returnData.refundAmount,
+          item_count: returnData.items.length
+        }
+      });
+  }
+
   return {
     id: data.id,
     returnNumber: data.return_number || `RET-${data.id.slice(0, 8).toUpperCase()}`,
