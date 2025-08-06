@@ -7,7 +7,7 @@ export const returnFormSchema = z.object({
   returnType: z.enum(['store', 'warehouse'], {
     message: 'Return type is required',
   }),
-  customerEmail: z.string().email().optional(),
+  customerEmail: z.string().optional(),
   customerFirst: z.string().optional(),
   customerLast: z.string().optional(),
   warehouseId: z.string().optional(),
@@ -18,7 +18,8 @@ export const returnFormSchema = z.object({
   refundAmount: z.number().positive('Refund amount must be greater than 0'),
 }).refine((data) => {
   if (data.returnType === 'store') {
-    return data.customerEmail && data.customerFirst && data.customerLast;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return data.customerEmail && emailRegex.test(data.customerEmail) && data.customerFirst && data.customerLast;
   }
   if (data.returnType === 'warehouse') {
     return data.warehouseId && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(data.warehouseId);
