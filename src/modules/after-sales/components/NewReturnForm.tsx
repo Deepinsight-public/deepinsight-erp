@@ -56,6 +56,12 @@ export function NewReturnForm() {
     defaultValues: {
       returnDate: new Date(),
       returnType: 'store',
+      customerEmail: '',
+      customerFirst: '',
+      customerLast: '',
+      warehouseId: '',
+      productId: '',
+      reason: '',
       refundAmount: 0,
     },
   });
