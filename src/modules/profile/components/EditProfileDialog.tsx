@@ -38,7 +38,7 @@ interface EditProfileDialogProps {
 
 export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps) {
   const { t } = useTranslation();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(formSchema),
@@ -74,8 +74,9 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
         description: t('profile.edit.success'),
       });
       
+      // Refresh the auth context to show updated data
+      await refreshProfile();
       onOpenChange(false);
-      // Auth context will automatically update on next render
     } catch (error) {
       toast({
         title: 'Error',
