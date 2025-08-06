@@ -10,11 +10,9 @@ export interface AvailableProduct {
 }
 
 export const searchAvailableProducts = async (search: string): Promise<ProductLookupItem[]> => {
-  if (!search.trim()) {
-    return [];
-  }
-
-  const { data, error } = await supabase
+  console.log('Searching for products with query:', search);
+  
+  let query = supabase
     .from('products')
     .select(`
       id,
@@ -26,14 +24,24 @@ export const searchAvailableProducts = async (search: string): Promise<ProductLo
         reserved_quantity
       )
     `)
-    .or(`sku.ilike.%${search}%,product_name.ilike.%${search}%`)
     .eq('is_active', true)
-    .not('inventory', 'is', null)
     .limit(20);
 
-  if (error) throw error;
+  // Only apply search filter if search term is provided
+  if (search && search.trim()) {
+    query = query.or(`sku.ilike.%${search}%,product_name.ilike.%${search}%`);
+  }
 
-  return (data || [])
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error fetching products:', error);
+    throw error;
+  }
+
+  console.log('Raw product data from database:', data);
+
+  const products = (data || [])
     .map(product => {
       const inventory = product.inventory?.[0];
       const availableStock = (inventory?.quantity || 0) - (inventory?.reserved_quantity || 0);
@@ -46,6 +54,9 @@ export const searchAvailableProducts = async (search: string): Promise<ProductLo
         availableStock
       };
     })
-    .filter(product => product.availableStock > 0)
+    .filter(product => product.availableStock >= 0) // Show products even with 0 stock
     .sort((a, b) => b.availableStock - a.availableStock);
+
+  console.log('Processed products:', products);
+  return products;
 };

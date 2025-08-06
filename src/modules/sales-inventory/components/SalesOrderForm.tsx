@@ -966,13 +966,16 @@ function AddItemDialog({ open, onClose, onAdd, onProductSearch, productOptions }
   const [selectedProduct, setSelectedProduct] = useState('');
   const [quantity, setQuantity] = useState(1);
 
-  // Clear selection when dialog closes
+  // Load initial products when dialog opens
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      // Load all available products initially
+      onProductSearch('');
+    } else {
       setSelectedProduct('');
       setQuantity(1);
     }
-  }, [open]);
+  }, [open, onProductSearch]);
 
   const handleAdd = () => {
     if (selectedProduct && quantity > 0) {
