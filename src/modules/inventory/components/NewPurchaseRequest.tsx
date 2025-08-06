@@ -19,7 +19,7 @@ export function NewPurchaseRequest() {
   const [submitting, setSubmitting] = useState(false);
 
   // Mock store/warehouse IDs - in real app these would come from auth context
-  const currentStoreId = '22222222-2222-2222-2222-222222222222';
+  const currentStoreId = '550e8400-e29b-41d4-a716-446655440000'; // 测试门店
   const currentWarehouseId = '00000000-0000-0000-0000-000000000001';
 
   useEffect(() => {
