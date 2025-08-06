@@ -29,8 +29,8 @@ export function NotificationDropdown({ children }: NotificationDropdownProps) {
   } = useNotifications();
 
   const handleNotificationClick = (notification: Notification) => {
-    console.log('Notification clicked:', notification.id, 'isRead:', notification.isRead);
-    if (!notification.isRead) {
+    console.log('Notification clicked:', notification.id, 'isRead:', notification.is_read);
+    if (!notification.is_read) {
       markAsRead(notification.id);
     }
   };
@@ -76,7 +76,7 @@ export function NotificationDropdown({ children }: NotificationDropdownProps) {
                   <div
                     className={cn(
                       "p-4 hover:bg-muted/50 cursor-pointer transition-colors",
-                      !notification.isRead && "bg-muted/30 border-l-2 border-l-primary"
+                      !notification.is_read && "bg-muted/30 border-l-2 border-l-primary"
                     )}
                     onClick={() => handleNotificationClick(notification)}
                   >
@@ -88,11 +88,11 @@ export function NotificationDropdown({ children }: NotificationDropdownProps) {
                         <div className="flex items-center justify-between">
                           <p className={cn(
                             "text-sm font-medium",
-                            !notification.isRead && "font-semibold"
+                            !notification.is_read && "font-semibold"
                           )}>
                             {notification.title}
                           </p>
-                          {!notification.isRead && (
+                          {!notification.is_read && (
                             <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
                           )}
                         </div>
@@ -101,7 +101,7 @@ export function NotificationDropdown({ children }: NotificationDropdownProps) {
                         </p>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" />
-                          {formatDistanceToNow(notification.createdAt, { addSuffix: true })}
+                          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                         </div>
                       </div>
                     </div>
