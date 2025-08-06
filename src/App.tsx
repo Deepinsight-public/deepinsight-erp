@@ -7,6 +7,12 @@ import { lazy } from "react";
 import { ErrorBoundary } from "@/components";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Auth from "@/pages/Auth";
+
+// Auth module pages
+import RequestResetPage from "@/modules/auth/pages/RequestResetPage";
+import ResetSentPage from "@/modules/auth/pages/ResetSentPage";
+import NewPasswordPage from "@/modules/auth/pages/NewPasswordPage";
+import ResetSuccessPage from "@/modules/auth/pages/ResetSuccessPage";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -74,6 +80,12 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              
+              {/* Password Reset Routes */}
+              <Route path="/auth/request" element={<RequestResetPage />} />
+              <Route path="/auth/request/sent" element={<ResetSentPage />} />
+              <Route path="/auth/reset/callback" element={<NewPasswordPage />} />
+              <Route path="/auth/reset/success" element={<ResetSuccessPage />} />
               
               {/* Protected Store Routes */}
               <Route path="/store" element={

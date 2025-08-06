@@ -89,6 +89,39 @@ const resources = {
       'auth.registrationSuccess': 'Registration Successful',
       'auth.checkEmailToComplete': 'Please check your email and click the confirmation link to complete your registration',
       'auth.emailConfirmationRequired': 'Email confirmation required. Please check your email and click the confirmation link before signing in.',
+      
+      // Password Reset
+      'auth.reset.request.title': 'Reset Password',
+      'auth.reset.request.description': 'Enter your email address and we\'ll send you a link to reset your password.',
+      'auth.reset.request.emailPlaceholder': 'Enter your email address',
+      'auth.reset.request.emailRequired': 'Valid email is required',
+      'auth.reset.request.send': 'Send Reset Link',
+      'auth.reset.request.sending': 'Sending...',
+      'auth.reset.request.error': 'Failed to send reset email',
+      
+      'auth.reset.sent.title': 'Check Your Email',
+      'auth.reset.sent.description': 'We\'ve sent a password reset link to:',
+      'auth.reset.sent.checkInbox': 'Check your inbox and click the link to reset your password.',
+      'auth.reset.sent.checkSpam': 'If you don\'t see the email, check your spam folder.',
+      'auth.reset.sent.backToLogin': 'Back to Login',
+      
+      'auth.reset.newPassword.title': 'Set New Password',
+      'auth.reset.newPassword.description': 'Choose a strong password for your account.',
+      'auth.reset.newPassword.password': 'New Password',
+      'auth.reset.newPassword.confirmPassword': 'Confirm New Password',
+      'auth.reset.newPassword.passwordPlaceholder': 'Enter new password',
+      'auth.reset.newPassword.confirmPasswordPlaceholder': 'Confirm new password',
+      'auth.reset.newPassword.save': 'Save New Password',
+      'auth.reset.newPassword.saving': 'Saving...',
+      'auth.reset.newPassword.error': 'Failed to update password',
+      'auth.reset.newPassword.invalidSession': 'Invalid or expired reset link',
+      'auth.reset.newPassword.sessionError': 'Session verification failed',
+      
+      'auth.reset.success.title': 'Password Updated',
+      'auth.reset.success.description': 'Your password has been successfully updated. You can now sign in with your new password.',
+      'auth.reset.success.backToLogin': 'Back to Login',
+      
+      'auth.forgotPassword': 'Forgot your password?',
 
       // Profile
       'profile.edit.title': 'Edit Profile',
@@ -198,6 +231,39 @@ const resources = {
       'auth.registrationSuccess': '注册成功',
       'auth.checkEmailToComplete': '请检查您的邮箱并点击确认链接以完成注册',
       'auth.emailConfirmationRequired': '需要邮箱确认。请先检查您的邮箱并点击确认链接，然后再登录。',
+      
+      // Password Reset
+      'auth.reset.request.title': '重置密码',
+      'auth.reset.request.description': '输入您的邮箱地址，我们将发送重置密码的链接给您。',
+      'auth.reset.request.emailPlaceholder': '请输入邮箱地址',
+      'auth.reset.request.emailRequired': '请输入有效的邮箱地址',
+      'auth.reset.request.send': '发送重置链接',
+      'auth.reset.request.sending': '发送中...',
+      'auth.reset.request.error': '发送重置邮件失败',
+      
+      'auth.reset.sent.title': '请查看邮箱',
+      'auth.reset.sent.description': '我们已将密码重置链接发送至：',
+      'auth.reset.sent.checkInbox': '请查看收件箱并点击链接重置密码。',
+      'auth.reset.sent.checkSpam': '如果没有收到邮件，请检查垃圾邮件文件夹。',
+      'auth.reset.sent.backToLogin': '返回登录',
+      
+      'auth.reset.newPassword.title': '设置新密码',
+      'auth.reset.newPassword.description': '为您的账户选择一个强密码。',
+      'auth.reset.newPassword.password': '新密码',
+      'auth.reset.newPassword.confirmPassword': '确认新密码',
+      'auth.reset.newPassword.passwordPlaceholder': '输入新密码',
+      'auth.reset.newPassword.confirmPasswordPlaceholder': '确认新密码',
+      'auth.reset.newPassword.save': '保存新密码',
+      'auth.reset.newPassword.saving': '保存中...',
+      'auth.reset.newPassword.error': '更新密码失败',
+      'auth.reset.newPassword.invalidSession': '无效或已过期的重置链接',
+      'auth.reset.newPassword.sessionError': '会话验证失败',
+      
+      'auth.reset.success.title': '密码已更新',
+      'auth.reset.success.description': '您的密码已成功更新。现在可以使用新密码登录。',
+      'auth.reset.success.backToLogin': '返回登录',
+      
+      'auth.forgotPassword': '忘记密码？',
 
       // Profile
       'profile.edit.title': '编辑个人资料',

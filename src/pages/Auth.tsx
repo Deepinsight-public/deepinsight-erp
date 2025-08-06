@@ -271,6 +271,18 @@ export default function Auth() {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? t('auth.signingIn') : t('auth.signIn')}
                 </Button>
+
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    onClick={() => window.location.href = '/auth/request'}
+                    className="text-sm text-muted-foreground hover:text-primary"
+                  >
+                    {t('auth.forgotPassword')}
+                  </Button>
+                </div>
               </form>
             </TabsContent>
             
