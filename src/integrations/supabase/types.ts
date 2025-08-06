@@ -830,6 +830,30 @@ export type Database = {
         }
         Relationships: []
       }
+      warehouse_store_sequence: {
+        Row: {
+          created_at: string
+          seq: number
+          store_id: string
+          updated_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          seq: number
+          store_id: string
+          updated_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          seq?: number
+          store_id?: string
+          updated_at?: string
+          warehouse_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
