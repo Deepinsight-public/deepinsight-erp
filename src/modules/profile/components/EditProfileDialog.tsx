@@ -75,8 +75,7 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
       });
       
       onOpenChange(false);
-      // Refresh page to update auth context
-      window.location.reload();
+      // Auth context will automatically update on next render
     } catch (error) {
       toast({
         title: 'Error',
