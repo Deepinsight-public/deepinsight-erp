@@ -130,6 +130,56 @@ export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDT
 export const updateSalesOrder = async (id: string, dto: SalesOrderDTO): Promise<SalesOrderDTO> => {
   const profile = await getUserProfile();
   
+  // Check if we're updating to 'submitted' status and need stock deduction
+  if (dto.status === 'submitted' && dto.lines && dto.lines.length > 0) {
+    // Get current order status to check if it was draft before
+    const { data: currentOrder } = await supabase
+      .from('sales_orders')
+      .select('status')
+      .eq('id', id)
+      .single();
+    
+    // If transitioning from draft to submitted, we need to deduct stock
+    if (currentOrder?.status === 'draft') {
+      try {
+        // Use a different approach: manually deduct stock for each line item
+        for (const line of dto.lines) {
+          // Check stock availability first
+          const { data: inventory } = await supabase
+            .from('inventory')
+            .select('quantity, reserved_quantity')
+            .eq('product_id', line.productId)
+            .eq('store_id', profile.store_id)
+            .single();
+          
+          if (!inventory) {
+            throw new Error(`INSUFFICIENT_STOCK: Product ${line.sku} not found in inventory`);
+          }
+          
+          const availableStock = inventory.quantity - inventory.reserved_quantity;
+          if (availableStock < line.quantity) {
+            throw new Error(`INSUFFICIENT_STOCK: Insufficient stock for ${line.sku}. Available: ${availableStock}, Requested: ${line.quantity}`);
+          }
+          
+          // Deduct stock
+          const { error: stockError } = await supabase
+            .from('inventory')
+            .update({ 
+              quantity: inventory.quantity - line.quantity,
+              updated_at: new Date().toISOString()
+            })
+            .eq('product_id', line.productId)
+            .eq('store_id', profile.store_id);
+          
+          if (stockError) throw stockError;
+        }
+      } catch (error) {
+        console.error('Error deducting stock during order update:', error);
+        throw error;
+      }
+    }
+  }
+  
   const orderData = {
     customer_name: dto.customerName,
     customer_email: dto.customerEmail,
