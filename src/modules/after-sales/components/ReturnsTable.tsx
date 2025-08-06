@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Return } from '../types';
+import type { AfterSalesReturn } from '../types/newReturn';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { 
   Table, 
@@ -15,16 +15,16 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ReturnsTableProps {
-  returns: Return[];
+  returns: AfterSalesReturn[];
   loading?: boolean;
-  onReturnClick?: (returnItem: Return) => void;
+  onReturnClick?: (returnItem: AfterSalesReturn) => void;
 }
 
-type SortField = 'date' | 'status' | 'totalMap' | 'refundAmount';
+type SortField = 'returnDate' | 'refundAmount' | 'reason';
 type SortDirection = 'asc' | 'desc';
 
 export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTableProps) {
-  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortField, setSortField] = useState<SortField>('returnDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const handleSort = (field: SortField) => {
@@ -58,21 +58,17 @@ export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTablePr
       let aValue: any, bValue: any;
       
       switch (sortField) {
-        case 'date':
-          aValue = new Date(a.date);
-          bValue = new Date(b.date);
-          break;
-        case 'status':
-          aValue = a.status;
-          bValue = b.status;
-          break;
-        case 'totalMap':
-          aValue = a.totalMap;
-          bValue = b.totalMap;
+        case 'returnDate':
+          aValue = new Date(a.returnDate);
+          bValue = new Date(b.returnDate);
           break;
         case 'refundAmount':
           aValue = a.refundAmount;
           bValue = b.refundAmount;
+          break;
+        case 'reason':
+          aValue = a.reason;
+          bValue = b.reason;
           break;
         default:
           return 0;
@@ -110,13 +106,13 @@ export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTablePr
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Return No.</TableHead>
-              <TableHead>{renderSortableHeader('Date', 'date')}</TableHead>
-              <TableHead>Number of Items</TableHead>
-              <TableHead>{renderSortableHeader('Status', 'status')}</TableHead>
-              <TableHead>{renderSortableHeader('Total MAP', 'totalMap')}</TableHead>
+              <TableHead>Return ID</TableHead>
+              <TableHead>{renderSortableHeader('Return Date', 'returnDate')}</TableHead>
+              <TableHead>Return Type</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Product</TableHead>
               <TableHead>{renderSortableHeader('Refund Amount', 'refundAmount')}</TableHead>
-              <TableHead>Reason</TableHead>
+              <TableHead>{renderSortableHeader('Reason', 'reason')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -133,28 +129,44 @@ export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTablePr
                   className={onReturnClick ? 'cursor-pointer hover:bg-muted/50' : ''}
                   onClick={() => onReturnClick?.(returnItem)}
                 >
-                  <TableCell className="font-medium">
-                    {returnItem.returnNumber}
+                  <TableCell className="font-medium font-mono text-sm">
+                    {returnItem.id.substring(0, 8)}...
                   </TableCell>
                   <TableCell>
-                    {format(new Date(returnItem.date), 'MMM dd, yyyy')}
+                    {format(new Date(returnItem.returnDate), 'MMM dd, yyyy')}
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm font-medium">{returnItem.numberOfItems}</span>
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                      {returnItem.returnType === 'store' ? 'Store Return' : 'Warehouse Return'}
+                    </span>
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={returnItem.status} />
+                    {returnItem.returnType === 'store' && returnItem.customerFirst && returnItem.customerLast ? (
+                      <div className="space-y-1">
+                        <div className="font-medium text-sm">{returnItem.customerFirst} {returnItem.customerLast}</div>
+                        <div className="text-xs text-muted-foreground">{returnItem.customerEmail}</div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">N/A</span>
+                    )}
                   </TableCell>
                   <TableCell>
-                    <span className="font-medium">${returnItem.totalMap.toFixed(2)}</span>
+                    {returnItem.product ? (
+                      <div className="space-y-1">
+                        <div className="font-medium text-sm">{returnItem.product.productName}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{returnItem.product.sku}</div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">Product not found</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <span className="font-medium text-green-600">${returnItem.refundAmount.toFixed(2)}</span>
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-muted-foreground">
-                      {returnItem.reason.length > 50 
-                        ? `${returnItem.reason.substring(0, 50)}...` 
+                      {returnItem.reason.length > 30 
+                        ? `${returnItem.reason.substring(0, 30)}...` 
                         : returnItem.reason}
                     </span>
                   </TableCell>

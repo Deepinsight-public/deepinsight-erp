@@ -244,3 +244,65 @@ export const getAfterSalesReturnById = async (returnId: string): Promise<AfterSa
     } : undefined,
   };
 };
+
+export const getAllAfterSalesReturns = async (): Promise<AfterSalesReturn[]> => {
+  // Get current user's store ID
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('store_id')
+    .eq('user_id', user.id)
+    .single();
+
+  if (!profile?.store_id) throw new Error('Store not found for user');
+
+  const { data, error } = await supabase
+    .from('after_sales_returns')
+    .select('*')
+    .eq('store_id', profile.store_id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching returns:', error);
+    throw error;
+  }
+
+  // Fetch product information for all returns
+  const productIds = (data || []).map(item => item.product_id);
+  const uniqueProductIds = [...new Set(productIds)];
+  
+  const { data: productsData } = await supabase
+    .from('products')
+    .select('id, sku, product_name, price')
+    .in('id', uniqueProductIds);
+
+  const productsMap = new Map();
+  (productsData || []).forEach(product => {
+    productsMap.set(product.id, {
+      sku: product.sku,
+      productName: product.product_name,
+      price: product.price || 0,
+    });
+  });
+
+  return (data || []).map(item => {
+    return {
+      id: item.id,
+      storeId: item.store_id,
+      returnDate: item.return_date,
+      returnType: item.return_type as 'store' | 'warehouse',
+      warehouseId: item.warehouse_id,
+      customerEmail: item.customer_email,
+      customerFirst: item.customer_first,
+      customerLast: item.customer_last,
+      productId: item.product_id,
+      reason: item.reason,
+      refundAmount: Number(item.refund_amount),
+      createdAt: item.created_at,
+      updatedAt: item.updated_at,
+      product: productsMap.get(item.product_id),
+    };
+  });
+};

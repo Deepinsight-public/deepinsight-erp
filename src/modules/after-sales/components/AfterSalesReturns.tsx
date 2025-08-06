@@ -9,24 +9,24 @@ import { Plus, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ReturnsTable } from './ReturnsTable';
 import { CreateReturnDialog } from './CreateReturnDialog';
-import { Return, ReturnFilters } from '../types';
-import { getReturns } from '../api/returns';
+import type { AfterSalesReturn } from '../types/newReturn';
+import { getAllAfterSalesReturns } from '../api/newReturns';
 import { useToastService } from '@/components/shared/ToastService';
 
 export function AfterSalesReturns() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [returns, setReturns] = useState<Return[]>([]);
+  const [returns, setReturns] = useState<AfterSalesReturn[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('processing');
   const { showError } = useToastService();
 
-  const loadReturns = async (filters?: ReturnFilters) => {
+  const loadReturns = async () => {
     try {
       setLoading(true);
-      const data = await getReturns(filters);
+      const data = await getAllAfterSalesReturns();
       setReturns(data);
     } catch (error) {
       console.error('Error loading returns:', error);
@@ -41,14 +41,11 @@ export function AfterSalesReturns() {
   }, []);
 
   const handleSearch = () => {
-    const filters: ReturnFilters = {};
-    if (searchQuery.trim()) {
-      filters.search = searchQuery.trim();
-    }
-    loadReturns(filters);
+    // For now, just reload all returns. Can add filtering later if needed
+    loadReturns();
   };
 
-  const handleReturnClick = (returnItem: Return) => {
+  const handleReturnClick = (returnItem: AfterSalesReturn) => {
     // Navigate to return detail page
     navigate(`/store/after-sales/returns/${returnItem.id}`);
   };
