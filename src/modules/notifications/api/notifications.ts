@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Notification, NotificationCreateData, NotificationUpdateData } from '../types';
+import { Notification } from '../types';
 
 export const notificationApi = {
   // Get notifications for current user
@@ -33,15 +33,4 @@ export const notificationApi = {
     if (error) throw error;
   },
 
-  // Create new notification
-  async createNotification(data: NotificationCreateData): Promise<Notification> {
-    const { data: notification, error } = await supabase
-      .from('notifications')
-      .insert(data)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return notification as Notification;
-  }
 };
