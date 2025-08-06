@@ -72,19 +72,23 @@ export function useNotifications() {
     }
   }, [user]);
 
-  const unreadCount = useMemo(() => 
-    notifications.filter(n => !n.isRead).length, 
-    [notifications]
-  );
+  const unreadCount = useMemo(() => {
+    const count = notifications.filter(n => !n.isRead).length;
+    console.log('Unread count:', count, 'Total notifications:', notifications.length);
+    return count;
+  }, [notifications]);
 
   const markAsRead = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
+    console.log('Marking notification as read:', notificationId);
+    setNotifications(prev => {
+      const updated = prev.map(notification => 
         notification.id === notificationId 
           ? { ...notification, isRead: true }
           : notification
-      )
-    );
+      );
+      console.log('Updated notifications:', updated);
+      return updated;
+    });
   };
 
   const markAllAsRead = () => {
