@@ -125,7 +125,9 @@ export default function Auth() {
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            full_name: fullName
+            full_name: fullName,
+            role: selectedRole,
+            store_id: (selectedRole === 'store_staff' || selectedRole === 'store_manager' || selectedRole === 'store_employee') ? selectedStore : null
           }
         }
       });
@@ -136,27 +138,6 @@ export default function Auth() {
       }
 
       if (data.user) {
-        // Create user profile entry first
-        const profileData = {
-          user_id: data.user.id,
-          email: data.user.email,
-          full_name: fullName,
-          role: selectedRole,
-          store_id: (selectedRole === 'store_staff' || selectedRole === 'store_manager' || selectedRole === 'store_employee') ? selectedStore : null,
-          is_active: true
-        };
-
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([profileData]);
-
-        if (profileError) {
-          console.error('Error creating user profile:', profileError);
-          console.error('Profile data that failed:', profileData);
-          setError(`Account created but profile setup failed: ${profileError.message}. Please contact support.`);
-          return;
-        }
-
         // Create user role entry
         const roleData = {
           user_id: data.user.id,
