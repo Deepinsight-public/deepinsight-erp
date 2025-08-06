@@ -164,7 +164,7 @@ export function InvoiceView({ order }: InvoiceViewProps) {
         </Button>
         <Button asChild>
           <a 
-            href={`/api/store/sales-orders/${order.id}/invoice.pdf`} 
+            href={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-invoice-pdf/${order.id}`} 
             target="_blank" 
             rel="noopener"
           >
