@@ -139,17 +139,21 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
   // Add new line item
   const handleAddItem = async (productId: string, quantity: number) => {
     try {
+      // Find product details
       const product = productOptions.find(p => p.id === productId);
-      if (!product) return;
+      if (!product) {
+        throw new Error('Product not found');
+      }
 
-      const stockLevel = await fetchStockLevel(product.sku);
-      if (quantity > stockLevel.availableStock) {
-        toast({
-          title: 'Error',
-          description: `Not enough stock. Available: ${stockLevel.availableStock}`,
-          variant: 'destructive'
-        });
-        return;
+      // Check if item already exists
+      const existingLineIndex = lines.findIndex(line => line.productId === productId);
+      if (existingLineIndex !== -1) {
+        throw new Error('Product already added to order');
+      }
+
+      // Check stock availability (client-side validation)
+      if (product.availableStock < quantity) {
+        throw new Error(`Insufficient stock. Available: ${product.availableStock}`);
       }
 
       const newLine: SalesOrderLineDTO = {
@@ -172,7 +176,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to add item',
+        description: error instanceof Error ? error.message : 'Failed to add item',
         variant: 'destructive'
       });
     }
@@ -506,19 +510,22 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
 
   // Product search
   const handleProductSearch = async (search: string) => {
-    console.log('Product search called with:', search);
-    if (search.length < 2) {
-      console.log('Search too short, clearing options');
+    if (!search.trim()) {
       setProductOptions([]);
       return;
     }
     
     try {
-      const products = await fetchProductLookup(search);
-      console.log('Fetched products:', products);
+      const { searchAvailableProducts } = await import('../api/products');
+      const products = await searchAvailableProducts(search);
       setProductOptions(products);
     } catch (error) {
-      console.error('Product search failed:', error);
+      console.error('Failed to search products:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to search products',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -1025,13 +1032,13 @@ function AddItemDialog({ open, onClose, onAdd, onProductSearch, productOptions }
   const [selectedProduct, setSelectedProduct] = useState('');
   const [quantity, setQuantity] = useState(1);
 
-  // Load sample products when dialog opens
+  // Clear selection when dialog closes
   useEffect(() => {
-    if (open && productOptions.length === 0) {
-      console.log('Dialog opened, loading initial products');
-      onProductSearch('冰箱'); // Search for 冰箱 to show sample products
+    if (!open) {
+      setSelectedProduct('');
+      setQuantity(1);
     }
-  }, [open, productOptions.length, onProductSearch]);
+  }, [open]);
 
   const handleAdd = () => {
     if (selectedProduct && quantity > 0) {
@@ -1056,7 +1063,8 @@ function AddItemDialog({ open, onClose, onAdd, onProductSearch, productOptions }
           <SelectWithSearch
             options={productOptions.map(p => ({
               value: p.id,
-              label: `${p.sku} - ${p.productName} ($${p.price.toFixed(2)}) - Stock: ${p.availableStock}`
+              label: `${p.sku} - ${p.productName} ($${p.price.toFixed(2)}) - Stock: ${p.availableStock}`,
+              disabled: p.availableStock === 0
             }))}
             value={selectedProduct}
             onValueChange={setSelectedProduct}
@@ -1068,13 +1076,18 @@ function AddItemDialog({ open, onClose, onAdd, onProductSearch, productOptions }
             renderOption={(option) => {
               const product = productOptions.find(p => p.id === option.value);
               if (!product) return option.label;
+              
+              const isOutOfStock = product.availableStock === 0;
+              
               return (
-                <div className="flex items-center justify-between w-full">
+                <div className={`flex items-center justify-between w-full ${isOutOfStock ? 'opacity-50' : ''}`}>
                   <span className="font-medium truncate flex-1">{product.sku} – {product.productName}</span>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground ml-2">
                     <span className="font-medium">${product.price.toFixed(2)}</span>
                     <span>•</span>
-                    <span>Stock: {product.availableStock}</span>
+                    <span className={isOutOfStock ? 'text-destructive font-medium' : ''}>
+                      In stock: {product.availableStock}
+                    </span>
                   </div>
                 </div>
               );
@@ -1089,7 +1102,13 @@ function AddItemDialog({ open, onClose, onAdd, onProductSearch, productOptions }
             value={quantity}
             onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
             min="1"
+            max={selectedProduct ? productOptions.find(p => p.id === selectedProduct)?.availableStock || 1 : undefined}
           />
+          {selectedProduct && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Max available: {productOptions.find(p => p.id === selectedProduct)?.availableStock || 0}
+            </p>
+          )}
         </div>
       </div>
     </FormDialog>
