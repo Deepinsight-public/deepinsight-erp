@@ -4,62 +4,109 @@ import type { SalesOrderDTO, SalesOrderLineDTO, ProductLookupItem, StockLevel, L
 export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDTO> => {
   const profile = await getUserProfile();
   
-  // If status is 'submitted', implement stock deduction in transaction
+  // If status is 'submitted', implement stock deduction manually
   if (dto.status === 'submitted' && dto.lines && dto.lines.length > 0) {
     try {
-      const { data, error } = await supabase.rpc('create_sales_order_with_stock_deduction', {
-        order_data: {
-          order_number: dto.orderNumber || `ORD-${Date.now()}`,
-          customer_name: dto.customerName,
-          customer_email: dto.customerEmail,
-          customer_phone: dto.customerPhone,
-          customer_first: dto.customerFirst,
-          customer_last: dto.customerLast,
-          addr_country: dto.addrCountry,
-          addr_state: dto.addrState,
-          addr_city: dto.addrCity,
-          addr_street: dto.addrStreet,
-          addr_zipcode: dto.addrZipcode,
-          order_date: dto.orderDate,
-          status: dto.status,
-          total_amount: dto.totalAmount,
-          discount_amount: dto.discountAmount,
-          tax_amount: dto.taxAmount,
-          warranty_years: dto.warrantyYears,
-          warranty_amount: dto.warrantyAmount,
-          walk_in_delivery: dto.walkInDelivery,
-          accessory: dto.accessory,
-          other_services: dto.otherServices,
-          other_fee: dto.otherFee,
-          payment_method: dto.paymentMethod,
-          payment_note: dto.paymentNote,
-          customer_source: dto.customerSource,
-          cashier_id: dto.cashierId,
-          store_id: profile.store_id,
-          created_by: profile.user_id
-        },
-        line_items: dto.lines.map(line => ({
-          product_id: line.productId,
-          sku: line.sku,
-          quantity: line.quantity,
-          unit_price: line.unitPrice,
-          discount_amount: line.unitPrice * line.quantity * line.discountPercent / 100,
-          total_amount: line.subTotal
-        }))
-      });
-      
-      if (error) {
-        if (error.message.includes('INSUFFICIENT_STOCK')) {
-          throw new Error(error.message);
+      // Check stock availability first
+      for (const line of dto.lines) {
+        const { data: inventory } = await supabase
+          .from('inventory')
+          .select('quantity, reserved_quantity')
+          .eq('product_id', line.productId)
+          .eq('store_id', profile.store_id)
+          .single();
+        
+        if (!inventory) {
+          throw new Error(`INSUFFICIENT_STOCK: Product ${line.sku} not found in inventory`);
         }
-        throw error;
+        
+        const availableStock = inventory.quantity - inventory.reserved_quantity;
+        if (availableStock < line.quantity) {
+          throw new Error(`INSUFFICIENT_STOCK: Insufficient stock for ${line.sku}. Available: ${availableStock}, Requested: ${line.quantity}`);
+        }
       }
       
-      if (!data || data.length === 0) {
-        throw new Error('Failed to create sales order');
+      // Create the order first
+      const orderData = {
+        order_number: dto.orderNumber || `ORD-${Date.now()}`,
+        customer_name: dto.customerName,
+        customer_email: dto.customerEmail,
+        customer_phone: dto.customerPhone,
+        customer_first: dto.customerFirst,
+        customer_last: dto.customerLast,
+        addr_country: dto.addrCountry,
+        addr_state: dto.addrState,
+        addr_city: dto.addrCity,
+        addr_street: dto.addrStreet,
+        addr_zipcode: dto.addrZipcode,
+        order_date: dto.orderDate,
+        status: dto.status,
+        total_amount: dto.totalAmount,
+        discount_amount: dto.discountAmount,
+        tax_amount: dto.taxAmount,
+        warranty_years: dto.warrantyYears,
+        warranty_amount: dto.warrantyAmount,
+        walk_in_delivery: dto.walkInDelivery,
+        accessory: dto.accessory,
+        other_services: dto.otherServices,
+        other_fee: dto.otherFee,
+        payment_method: dto.paymentMethod,
+        payment_note: dto.paymentNote,
+        customer_source: dto.customerSource,
+        cashier_id: dto.cashierId,
+        store_id: profile.store_id,
+        created_by: profile.user_id
+      };
+
+      const { data: order, error: orderError } = await supabase
+        .from('sales_orders')
+        .insert(orderData)
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Insert line items
+      const lineItems = dto.lines.map(line => ({
+        sales_order_id: order.id,
+        product_id: line.productId,
+        quantity: line.quantity,
+        unit_price: line.unitPrice,
+        discount_amount: line.unitPrice * line.quantity * line.discountPercent / 100,
+        total_amount: line.subTotal
+      }));
+
+      const { error: lineItemsError } = await supabase
+        .from('sales_order_items')
+        .insert(lineItems);
+
+      if (lineItemsError) throw lineItemsError;
+
+      // Deduct stock for each line item
+      for (const line of dto.lines) {
+        // First get current inventory
+        const { data: currentInventory } = await supabase
+          .from('inventory')
+          .select('quantity')
+          .eq('product_id', line.productId)
+          .eq('store_id', profile.store_id)
+          .single();
+        
+        if (!currentInventory) continue;
+        
+        const { error: stockError } = await supabase
+          .from('inventory')
+          .update({ 
+            quantity: currentInventory.quantity - line.quantity,
+            updated_at: new Date().toISOString()
+          })
+          .eq('product_id', line.productId)
+          .eq('store_id', profile.store_id);
+        
+        if (stockError) throw stockError;
       }
-      
-      return mapDatabaseToDTO(data[0], dto.lines || []);
+
+      return mapDatabaseToDTO(order, dto.lines || []);
     } catch (error) {
       console.error('Error creating sales order with stock deduction:', error);
       throw error;
