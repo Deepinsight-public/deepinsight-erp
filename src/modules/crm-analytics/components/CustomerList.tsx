@@ -82,6 +82,14 @@ export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm, refr
       width: '100px',
     },
     {
+      key: 'order_count',
+      title: 'Orders',
+      render: (value: number | undefined) => (
+        <span className="text-sm font-medium">{value || 0}</span>
+      ),
+      width: '80px',
+    },
+    {
       key: 'actions',
       title: 'Actions',
       render: (value: any, record: Customer) => (

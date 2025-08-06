@@ -14,6 +14,7 @@ export interface Customer {
   updated_at: string;
   created_by: string | null;
   import_batch_id: string | null;
+  order_count?: number;
 }
 
 export interface CustomerFilters {
