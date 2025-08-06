@@ -332,9 +332,14 @@ export const fetchSalesOrders = async (params: ListParams = {}): Promise<SalesOr
   }
 
   // Apply pagination
-  if (params.page && params.limit) {
-    const offset = (params.page - 1) * params.limit;
-    query = query.range(offset, offset + params.limit - 1);
+  if (params.limit) {
+    if (params.page) {
+      const offset = (params.page - 1) * params.limit;
+      query = query.range(offset, offset + params.limit - 1);
+    } else {
+      // If only limit is provided (no page), apply limit from the beginning
+      query = query.limit(params.limit);
+    }
   }
 
   const { data, error } = await query;
