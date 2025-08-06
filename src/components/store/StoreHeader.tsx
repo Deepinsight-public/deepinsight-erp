@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { NotificationDropdown } from '@/components/shared/NotificationDropdown';
+import { EditProfileDialog } from '@/modules/profile/components/EditProfileDialog';
 import { supabase } from '@/integrations/supabase/client';
 
 export function StoreHeader() {
@@ -22,6 +23,7 @@ export function StoreHeader() {
   const { user, profile, signOut } = useAuth();
   const { unreadCount } = useNotifications();
   const [storeName, setStoreName] = useState('测试门店');
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
   // Fetch store name based on user's store_id
   useEffect(() => {
@@ -128,7 +130,7 @@ export function StoreHeader() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setProfileDialogOpen(true)}>
               <User className="h-4 w-4 mr-2" />
               <span>个人资料</span>
             </DropdownMenuItem>
@@ -140,6 +142,11 @@ export function StoreHeader() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      
+      <EditProfileDialog 
+        open={profileDialogOpen} 
+        onOpenChange={setProfileDialogOpen} 
+      />
     </header>
   );
 }
