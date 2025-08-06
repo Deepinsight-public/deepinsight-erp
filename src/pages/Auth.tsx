@@ -153,12 +153,12 @@ export default function Auth() {
         return;
       }
 
-      if (data.user) {
-        // Always require email confirmation for new signups
+      if (data.user && !data.user.email_confirmed_at) {
+        // User created but needs email confirmation
         toast({
           title: t('auth.registrationSuccess'),
           description: t('auth.checkEmailToComplete'),
-          duration: 10000, // Show longer to ensure user sees it
+          duration: 10000,
         });
         
         // Clear form and show confirmation state
@@ -168,8 +168,15 @@ export default function Auth() {
         setFullName('');
         setError(null);
         
-        // Show confirmation message in error state for visibility
+        // Show confirmation message
         setError(t('auth.emailConfirmationRequired'));
+      } else if (data.user && data.user.email_confirmed_at) {
+        // User is already confirmed (shouldn't happen with email confirmation enabled)
+        toast({
+          title: t('auth.success'),
+          description: t('auth.signUpSuccess')
+        });
+        window.location.href = '/store/dashboard';
       }
     } catch (error: any) {
       console.error('Signup error:', error);
