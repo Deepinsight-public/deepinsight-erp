@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { lazy } from "react";
 import { ErrorBoundary } from "@/components";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Auth from "@/pages/Auth";
@@ -39,9 +40,11 @@ import {
   OrderSearch,
   CustomerReturns,
   HQReturns,
-  Scrap,
   Settings,
 } from "./pages/store/OtherStorePages";
+
+const ScrapManagement = lazy(() => import('./pages/store/Scrap'));
+const NewScrap = lazy(() => import('./pages/store/NewScrap'));
 
 const queryClient = new QueryClient();
 
@@ -124,8 +127,9 @@ const App = () => (
                 <Route path="customer-returns" element={<CustomerReturns />} />
                 <Route path="hq-returns" element={<HQReturns />} />
                 
-                {/* Scrap */}
-                <Route path="scrap" element={<Scrap />} />
+                {/* Scrap Management */}
+                <Route path="scrap" element={<ScrapManagement />} />
+                <Route path="scrap/new" element={<NewScrap />} />
                 
                 {/* Settings */}
                 <Route path="settings" element={<Settings />} />

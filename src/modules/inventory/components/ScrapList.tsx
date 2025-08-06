@@ -1,0 +1,222 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Search, Filter } from 'lucide-react';
+import { format } from 'date-fns';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
+
+import { getScrapHeaders } from '../api/scrap';
+import type { ScrapHeader, ScrapFilters, ScrapStatus } from '../types/scrap';
+
+const STATUS_COLORS: Record<ScrapStatus, string> = {
+  draft: 'bg-gray-100 text-gray-800',
+  submitted: 'bg-blue-100 text-blue-800',
+  l1_approved: 'bg-yellow-100 text-yellow-800',
+  final_approved: 'bg-green-100 text-green-800',
+  posted: 'bg-purple-100 text-purple-800',
+  rejected: 'bg-red-100 text-red-800',
+  cancelled: 'bg-gray-100 text-gray-600',
+};
+
+const STATUS_LABELS: Record<ScrapStatus, string> = {
+  draft: 'Draft',
+  submitted: 'Submitted',
+  l1_approved: 'L1 Approved',
+  final_approved: 'Final Approved',
+  posted: 'Posted',
+  rejected: 'Rejected',
+  cancelled: 'Cancelled',
+};
+
+export function ScrapList() {
+  const navigate = useNavigate();
+  const [scraps, setScraps] = useState<ScrapHeader[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<ScrapFilters>({});
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const loadScraps = async () => {
+    try {
+      setLoading(true);
+      const data = await getScrapHeaders(filters);
+      setScraps(data);
+    } catch (error) {
+      console.error('Error loading scraps:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadScraps();
+  }, [filters]);
+
+  const handleSearch = () => {
+    setFilters(prev => ({ ...prev, search: searchQuery.trim() || undefined }));
+  };
+
+  const handleFilterChange = (key: keyof ScrapFilters, value: string | undefined) => {
+    setFilters(prev => ({ ...prev, [key]: value || undefined }));
+  };
+
+  const handleRowClick = (scrap: ScrapHeader) => {
+    navigate(`/store/scrap/${scrap.id}`);
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Skeleton key={index} className="h-12 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Scrap Management</h1>
+          <p className="text-muted-foreground">
+            Manage inventory scrap requests and approvals
+          </p>
+        </div>
+        <Button onClick={() => navigate('/store/scrap/new')}>
+          <Plus className="h-4 w-4 mr-2" />
+          New Scrap Request
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">Search</label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Search by scrap number..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                />
+                <Button onClick={handleSearch} variant="outline">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="w-48">
+              <label className="text-sm font-medium mb-2 block">Status</label>
+              <Select
+                value={filters.status || ''}
+                onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : value as ScrapStatus)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="submitted">Submitted</SelectItem>
+                  <SelectItem value="l1_approved">L1 Approved</SelectItem>
+                  <SelectItem value="final_approved">Final Approved</SelectItem>
+                  <SelectItem value="posted">Posted</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setFilters({});
+                setSearchQuery('');
+              }}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Clear
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Scrap List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Scrap Requests ({scraps.length})</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Scrap No.</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Total Qty</TableHead>
+                <TableHead>Total Value</TableHead>
+                <TableHead>Created Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {scraps.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    No scrap requests found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                scraps.map((scrap) => (
+                  <TableRow
+                    key={scrap.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleRowClick(scrap)}
+                  >
+                    <TableCell className="font-medium font-mono">
+                      {scrap.scrapNo}
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant="secondary"
+                        className={STATUS_COLORS[scrap.status as ScrapStatus]}
+                      >
+                        {STATUS_LABELS[scrap.status as ScrapStatus]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">{scrap.totalQty}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">${scrap.totalValue?.toFixed(2) || '0.00'}</span>
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(scrap.createdAt), 'MMM dd, yyyy')}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
