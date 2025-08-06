@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { SalesOrderDTO } from '../types';
 import { format } from 'date-fns';
 import { STATIC_NOTES_TEXT } from '../constants/invoiceNotes';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InvoiceViewProps {
   order: SalesOrderDTO;
@@ -162,14 +163,29 @@ export function InvoiceView({ order }: InvoiceViewProps) {
         <Button variant="outline" onClick={() => window.print()}>
           Print
         </Button>
-        <Button asChild>
-          <a 
-            href={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-invoice-pdf/${order.id}`} 
-            target="_blank" 
-            rel="noopener"
-          >
-            Download PDF
-          </a>
+        <Button onClick={async () => {
+          try {
+            const { data, error } = await supabase.functions.invoke('generate-invoice-pdf', {
+              body: { orderId: order.id }
+            });
+            
+            if (error) throw error;
+            
+            // Create blob and download
+            const blob = new Blob([data], { type: 'text/html' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `invoice-${order.orderNumber}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          } catch (error) {
+            console.error('Error downloading PDF:', error);
+          }
+        }}>
+          Download PDF
         </Button>
       </div>
     </div>

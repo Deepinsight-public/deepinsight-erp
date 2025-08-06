@@ -13,8 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const orderId = url.pathname.split('/').pop();
+    // Get orderId from request body
+    const { orderId } = await req.json();
 
     if (!orderId) {
       return new Response(
