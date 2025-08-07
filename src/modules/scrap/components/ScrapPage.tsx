@@ -13,6 +13,7 @@ import { DataTable } from '@/components/shared/DataTable';
 
 import { getScrapItems } from '../api/scrap';
 import type { ScrapItem, ScrapFilters } from '../types';
+import type { ScrapFilters as ScrapApiFilters } from '../types/scrap';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-800',
@@ -29,7 +30,7 @@ export function ScrapPage() {
   const navigate = useNavigate();
   const [scrapItems, setScrapItems] = useState<ScrapItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<ScrapFilters>({});
+  const [filters, setFilters] = useState<ScrapApiFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
 
   const loadScrapItems = async () => {
@@ -52,7 +53,7 @@ export function ScrapPage() {
     setFilters(prev => ({ ...prev, search: searchTerm.trim() || undefined }));
   };
 
-  const handleFilterChange = (key: keyof ScrapFilters, value: string | undefined) => {
+  const handleFilterChange = (key: keyof ScrapApiFilters, value: string | undefined) => {
     setFilters(prev => ({ ...prev, [key]: value || undefined }));
   };
 
@@ -63,31 +64,31 @@ export function ScrapPage() {
   const columns = [
     {
       key: 'scrapNo',
-      title: t('scrap.list.scrapNo'),
+      title: t('scrapManagement.list.scrapNo'),
       render: (scrap: ScrapItem) => (
         <span className="font-medium font-mono">{scrap.scrapNo}</span>
       )
     },
     {
       key: 'createdAt',
-      title: t('scrap.list.createdDate'),
+      title: t('scrapManagement.list.createdDate'),
       render: (scrap: ScrapItem) => format(new Date(scrap.createdAt), 'MMM dd, yyyy')
     },
     {
       key: 'status',
-      title: t('scrap.list.status'),
+      title: t('scrapManagement.list.status'),
       render: (scrap: ScrapItem) => (
         <Badge 
           variant="secondary"
           className={STATUS_COLORS[scrap.status] || 'bg-gray-100 text-gray-800'}
         >
-          {t(`scrap.status.${scrap.status}`)}
+          {t(`scrapManagement.status.${scrap.status}`)}
         </Badge>
       )
     },
     {
       key: 'product',
-      title: t('scrap.form.product'),
+      title: t('scrapManagement.form.product'),
       render: (scrap: ScrapItem) => (
         <div>
           {scrap.product ? (
@@ -103,7 +104,7 @@ export function ScrapPage() {
     },
     {
       key: 'reason',
-      title: t('scrap.form.reason'),
+      title: t('scrapManagement.form.reason'),
       render: (scrap: ScrapItem) => (
         <span className="capitalize">{scrap.reason || '-'}</span>
       )
@@ -115,14 +116,14 @@ export function ScrapPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{t('scrap.title')}</h1>
+          <h1 className="text-3xl font-bold">{t('scrapManagement.title')}</h1>
           <p className="text-muted-foreground">
-            {t('scrap.description')}
+            {t('scrapManagement.description')}
           </p>
         </div>
         <Button onClick={() => navigate('/store/scrap/new')}>
           <Plus className="h-4 w-4 mr-2" />
-          {t('scrap.newRequest')}
+          {t('scrapManagement.newRequest')}
         </Button>
       </div>
 
@@ -131,10 +132,10 @@ export function ScrapPage() {
         <CardContent className="p-6">
           <div className="flex gap-4 items-end">
             <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">{t('scrap.list.search')}</label>
+              <label className="text-sm font-medium mb-2 block">{t('scrapManagement.list.search')}</label>
               <div className="flex gap-2">
                 <Input
-                  placeholder={t('scrap.list.searchPlaceholder')}
+                  placeholder={t('scrapManagement.list.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -146,23 +147,23 @@ export function ScrapPage() {
             </div>
             
             <div className="w-48">
-              <label className="text-sm font-medium mb-2 block">{t('scrap.list.status')}</label>
+              <label className="text-sm font-medium mb-2 block">{t('scrapManagement.list.status')}</label>
               <Select
                 value={filters.status || ''}
                 onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t('scrap.list.allStatus')} />
+                  <SelectValue placeholder={t('scrapManagement.list.allStatus')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('scrap.list.allStatus')}</SelectItem>
-                  <SelectItem value="draft">{t('scrap.status.draft')}</SelectItem>
-                  <SelectItem value="submitted">{t('scrap.status.submitted')}</SelectItem>
-                  <SelectItem value="l1_approved">{t('scrap.status.l1Approved')}</SelectItem>
-                  <SelectItem value="final_approved">{t('scrap.status.finalApproved')}</SelectItem>
-                  <SelectItem value="posted">{t('scrap.status.posted')}</SelectItem>
-                  <SelectItem value="rejected">{t('scrap.status.rejected')}</SelectItem>
-                  <SelectItem value="cancelled">{t('scrap.status.cancelled')}</SelectItem>
+                  <SelectItem value="all">{t('scrapManagement.list.allStatus')}</SelectItem>
+                  <SelectItem value="draft">{t('scrapManagement.status.draft')}</SelectItem>
+                  <SelectItem value="submitted">{t('scrapManagement.status.submitted')}</SelectItem>
+                  <SelectItem value="l1_approved">{t('scrapManagement.status.l1Approved')}</SelectItem>
+                  <SelectItem value="final_approved">{t('scrapManagement.status.finalApproved')}</SelectItem>
+                  <SelectItem value="posted">{t('scrapManagement.status.posted')}</SelectItem>
+                  <SelectItem value="rejected">{t('scrapManagement.status.rejected')}</SelectItem>
+                  <SelectItem value="cancelled">{t('scrapManagement.status.cancelled')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -174,7 +175,7 @@ export function ScrapPage() {
                 setSearchTerm('');
               }}
             >
-              {t('scrap.list.clear')}
+              {t('scrapManagement.list.clear')}
             </Button>
           </div>
         </CardContent>

@@ -23,9 +23,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 
-import { scrapHeaderSchema, SCRAP_REASONS } from '../types/scrap';
-import type { ScrapHeaderData, ScrapLineData } from '../types/scrap';
-import { createScrapHeader, submitScrap, checkInventoryAvailability } from '../api/scrap';
+import { scrapHeaderSchema, SCRAP_REASONS } from '../../scrap/types/scrap';
+import type { ScrapHeaderData, ScrapLineData } from '../../scrap/types/scrap';
+import { createScrapHeader, submitScrap, checkInventoryAvailability } from '../../scrap/api/scrap';
 import { getWarehouses } from '../../after-sales/api/newReturns';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -109,7 +109,7 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
         if (storeId) {
           const available = await checkInventoryAvailability(productId, storeId);
           if (available <= 0) {
-            toast.warning(t('scrap.messages.inventoryWarning', { product: product.label }));
+            toast.warning(t('scrapManagement.messages.inventoryWarning', { product: product.label }));
           }
         }
       } catch (error) {
@@ -152,7 +152,7 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
         status: 'draft',
       });
 
-      toast.success(t('scrap.messages.saveSuccess'));
+      toast.success(t('scrapManagement.messages.saveSuccess'));
       
       if (onSave) {
         onSave(data);
@@ -161,7 +161,7 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
       }
     } catch (error) {
       console.error('Error saving scrap:', error);
-      toast.error(t('scrap.messages.saveError'));
+      toast.error(t('scrapManagement.messages.saveError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -179,11 +179,11 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
 
       await submitScrap(result.id);
 
-      toast.success(t('scrap.messages.submitSuccess'));
+      toast.success(t('scrapManagement.messages.submitSuccess'));
       navigate(`/store/scrap/${result.id}`);
     } catch (error) {
       console.error('Error submitting scrap:', error);
-      toast.error(t('scrap.messages.submitError'));
+      toast.error(t('scrapManagement.messages.submitError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -194,7 +194,7 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
       <Card>
         <CardHeader>
           <CardTitle>
-            {mode === 'create' ? t('scrap.form.newTitle') : t('scrap.form.editTitle')}
+            {mode === 'create' ? t('scrapManagement.form.newTitle') : t('scrapManagement.form.editTitle')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -206,15 +206,15 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
                 name="warehouseId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('scrap.form.warehouse')} *</FormLabel>
+                    <FormLabel>{t('scrapManagement.form.warehouse')} *</FormLabel>
                     <FormControl>
                       <SelectWithSearch
                         options={warehouseOptions}
                         value={field.value}
                         onValueChange={field.onChange}
-                        placeholder={t('scrap.form.warehousePlaceholder')}
-                        searchPlaceholder={t('scrap.form.searchWarehouse')}
-                        emptyText={t('scrap.form.noWarehouses')}
+                        placeholder={t('scrapManagement.form.warehousePlaceholder')}
+                        searchPlaceholder={t('scrapManagement.form.searchWarehouse')}
+                        emptyText={t('scrapManagement.form.noWarehouses')}
                       />
                     </FormControl>
                     <FormMessage />
@@ -225,10 +225,10 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
               {/* Line Items */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium">{t('scrap.form.lineItems')}</h3>
+                  <h3 className="text-lg font-medium">{t('scrapManagement.form.lineItems')}</h3>
                   <Button type="button" onClick={addLine} variant="outline" size="sm">
                     <Plus className="h-4 w-4 mr-2" />
-                    {t('scrap.form.addItem')}
+                    {t('scrapManagement.form.addItem')}
                   </Button>
                 </div>
 
@@ -237,13 +237,13 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>{t('scrap.form.product')} *</TableHead>
-                          <TableHead>{t('scrap.form.batchSerial')}</TableHead>
-                          <TableHead>{t('scrap.form.quantity')} *</TableHead>
-                          <TableHead>{t('scrap.form.uom')}</TableHead>
-                          <TableHead>{t('scrap.form.unitCost')} *</TableHead>
-                          <TableHead>{t('scrap.form.reason')} *</TableHead>
-                          <TableHead>{t('scrap.form.actions')}</TableHead>
+                          <TableHead>{t('scrapManagement.form.product')} *</TableHead>
+                          <TableHead>{t('scrapManagement.form.batchSerial')}</TableHead>
+                          <TableHead>{t('scrapManagement.form.quantity')} *</TableHead>
+                          <TableHead>{t('scrapManagement.form.uom')}</TableHead>
+                          <TableHead>{t('scrapManagement.form.unitCost')} *</TableHead>
+                          <TableHead>{t('scrapManagement.form.reason')} *</TableHead>
+                          <TableHead>{t('scrapManagement.form.actions')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -259,9 +259,9 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
                                     value={field.value}
                                     onValueChange={(value) => handleProductSelect(index, value)}
                                     onSearchChange={handleProductSearch}
-                                    placeholder={t('scrap.form.searchProducts')}
-                                    searchPlaceholder={t('scrap.form.searchProductsPlaceholder')}
-                                    emptyText={t('scrap.form.noProducts')}
+                                    placeholder={t('scrapManagement.form.searchProducts')}
+                                    searchPlaceholder={t('scrapManagement.form.searchProductsPlaceholder')}
+                                    emptyText={t('scrapManagement.form.noProducts')}
                                   />
                                 )}
                               />
@@ -271,7 +271,7 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
                                 control={form.control}
                                 name={`lines.${index}.batchNo`}
                                 render={({ field }) => (
-                                  <Input {...field} placeholder={t('scrap.form.optional')} />
+                                  <Input {...field} placeholder={t('scrapManagement.form.optional')} />
                                 )}
                               />
                             </TableCell>
@@ -320,7 +320,7 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
                                 render={({ field }) => (
                                   <Select value={field.value} onValueChange={field.onChange}>
                                     <SelectTrigger>
-                                      <SelectValue placeholder={t('scrap.form.selectReason')} />
+                                      <SelectValue placeholder={t('scrapManagement.form.selectReason')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                       {SCRAP_REASONS.map((reason) => (
@@ -355,11 +355,11 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
                 <div className="flex justify-end">
                   <div className="space-y-2 text-right">
                     <div className="text-sm">
-                      <span className="font-medium">{t('scrap.form.totalQuantity')} </span>
+                      <span className="font-medium">{t('scrapManagement.form.totalQuantity')} </span>
                       <span className="font-mono">{totalQty}</span>
                     </div>
                     <div className="text-lg font-medium">
-                      <span>{t('scrap.form.totalValue')} </span>
+                      <span>{t('scrapManagement.form.totalValue')} </span>
                       <span className="font-mono">${totalValue.toFixed(2)}</span>
                     </div>
                   </div>
@@ -383,27 +383,27 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
                   disabled={isSubmitting}
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {t('scrap.form.saveDraft')}
+                  {t('scrapManagement.form.saveDraft')}
                 </Button>
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button disabled={isSubmitting}>
                       <Send className="h-4 w-4 mr-2" />
-                      {t('scrap.form.submitApproval')}
+                      {t('scrapManagement.form.submitApproval')}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>{t('scrap.form.submitTitle')}</AlertDialogTitle>
+                      <AlertDialogTitle>{t('scrapManagement.form.submitTitle')}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        {t('scrap.form.submitDescription')}
+                        {t('scrapManagement.form.submitDescription')}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                       <AlertDialogAction onClick={form.handleSubmit(handleSubmit)}>
-                        {t('scrap.form.submit')}
+                        {t('scrapManagement.form.submit')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
