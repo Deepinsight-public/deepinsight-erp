@@ -60,12 +60,6 @@ export function StandardSearchBar({
 }: StandardSearchBarProps) {
   return (
     <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Search className="h-5 w-5" />
-          {title}
-        </CardTitle>
-      </CardHeader>
       <CardContent className="space-y-4">
         {/* Search Type Badges */}
         {badges.length > 0 && (
