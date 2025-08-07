@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Plus, Minus, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { fetchWarehouseInventory, submitPurchaseRequest } from '../api/purchase-
 import { WarehouseInventoryItem, PurchaseSubmitItem } from '../types/purchase-requests';
 
 export function NewPurchaseRequest() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [inventory, setInventory] = useState<WarehouseInventoryItem[]>([]);
@@ -33,8 +35,8 @@ export function NewPurchaseRequest() {
       setInventory(data);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to load available inventory',
+        title: t('error'),
+        description: t('newPurchaseRequest.errors.loadFailed'),
         variant: 'destructive'
       });
     } finally {
@@ -63,8 +65,8 @@ export function NewPurchaseRequest() {
   const handleSubmit = async () => {
     if (selectedItems.length === 0) {
       toast({
-        title: 'Error',
-        description: 'Please select at least one item to purchase',
+        title: t('error'),
+        description: t('newPurchaseRequest.errors.selectItems'),
         variant: 'destructive'
       });
       return;
@@ -78,15 +80,15 @@ export function NewPurchaseRequest() {
       });
 
       toast({
-        title: 'Success',
-        description: 'Purchase request created successfully',
+        title: t('success'),
+        description: t('newPurchaseRequest.success'),
       });
 
       navigate('/store/purchase-requests');
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create purchase request',
+        title: t('error'),
+        description: error instanceof Error ? error.message : t('newPurchaseRequest.errors.submitFailed'),
         variant: 'destructive'
       });
     } finally {
@@ -97,14 +99,14 @@ export function NewPurchaseRequest() {
   const columns = [
     {
       key: 'sku',
-      title: 'SKU',
+      title: t('newPurchaseRequest.columns.sku'),
       render: (value: string) => (
         <span className="font-medium text-primary">{value}</span>
       ),
     },
     {
       key: 'name',
-      title: 'Product',
+      title: t('newPurchaseRequest.columns.product'),
       render: (name: string, record: WarehouseInventoryItem) => (
         <div>
           <div className="font-medium">{name}</div>
@@ -116,14 +118,14 @@ export function NewPurchaseRequest() {
     },
     {
       key: 'qtyAvailable',
-      title: 'Available',
+      title: t('newPurchaseRequest.columns.available'),
       render: (value: number) => (
-        <Badge variant="secondary">{value} units</Badge>
+        <Badge variant="secondary">{value} {t('newPurchaseRequest.units')}</Badge>
       ),
     },
     {
       key: 'price',
-      title: 'Price',
+      title: t('newPurchaseRequest.columns.price'),
       render: (price: number) => (
         <span className="font-medium">
           ${price.toFixed(2)}
@@ -132,7 +134,7 @@ export function NewPurchaseRequest() {
     },
     {
       key: 'id',
-      title: 'Select Quantity',
+      title: t('newPurchaseRequest.columns.selectQuantity'),
       render: (inventoryId: string, record: WarehouseInventoryItem) => {
         const selectedQty = getSelectedQty(inventoryId);
         const maxQty = record.qtyAvailable;
@@ -187,13 +189,13 @@ export function NewPurchaseRequest() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Create Purchase Request (抢单)</h1>
+          <h1 className="text-3xl font-bold">{t('newPurchaseRequest.title')}</h1>
           <p className="text-muted-foreground mt-2">
-            Select products from available warehouse inventory
+            {t('newPurchaseRequest.subtitle')}
           </p>
         </div>
         <Button variant="outline" onClick={() => navigate('/store/purchase-requests')}>
-          Cancel
+          {t('newPurchaseRequest.cancel')}
         </Button>
       </div>
 
@@ -203,9 +205,9 @@ export function NewPurchaseRequest() {
           <div className="flex items-center gap-3">
             <ShoppingCart className="h-5 w-5 text-green-600" />
             <div>
-              <p className="font-medium text-green-800">It's your turn to order!</p>
+              <p className="font-medium text-green-800">{t('newPurchaseRequest.yourTurn')}</p>
               <p className="text-sm text-green-600">
-                Round #1 • 测试门店 • Please select your inventory now
+                {t('newPurchaseRequest.turnInfo', { round: 1, store: '测试门店' })}
               </p>
             </div>
           </div>
@@ -215,9 +217,9 @@ export function NewPurchaseRequest() {
       {/* Available Products */}
       <Card>
         <CardHeader>
-          <CardTitle>Available Inventory</CardTitle>
+          <CardTitle>{t('newPurchaseRequest.availableInventory')}</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Select quantities from warehouse inventory
+            {t('newPurchaseRequest.availableDescription')}
           </p>
         </CardHeader>
         <CardContent className="p-0">
@@ -225,7 +227,7 @@ export function NewPurchaseRequest() {
             data={inventory}
             columns={columns}
             loading={loading}
-            title="Available Products"
+            title={t('newPurchaseRequest.available')}
           />
         </CardContent>
       </Card>
@@ -234,7 +236,7 @@ export function NewPurchaseRequest() {
       {selectedItems.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Selected Items ({totalItems} total items • ${totalCost.toFixed(2)})</CardTitle>
+            <CardTitle>{t('newPurchaseRequest.selectedItems', { count: totalItems, total: totalCost.toFixed(2) })}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -249,7 +251,7 @@ export function NewPurchaseRequest() {
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="font-medium">{item.qty} units</span>
+                      <span className="font-medium">{item.qty} {t('newPurchaseRequest.units')}</span>
                       {inventoryItem?.price && (
                         <div className="text-sm text-muted-foreground">
                           ${(inventoryItem.price * item.qty).toFixed(2)}
@@ -271,7 +273,7 @@ export function NewPurchaseRequest() {
           disabled={selectedItems.length === 0 || submitting}
           size="lg"
         >
-          {submitting ? 'Creating...' : `Submit Purchase Request (${totalItems} items)`}
+          {submitting ? t('newPurchaseRequest.submitting') : t('newPurchaseRequest.submit', { count: totalItems })}
         </Button>
       </div>
     </div>

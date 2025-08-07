@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowRightLeft, ArrowRight, ArrowLeft, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +14,7 @@ interface TransferManagementProps {
 }
 
 export function TransferManagement({ storeId }: TransferManagementProps) {
+  const { t } = useTranslation();
   const [transfersOut, setTransfersOut] = useState<TransferOrder[]>([]);
   const [transfersIn, setTransfersIn] = useState<TransferOrder[]>([]);
   const [loading, setLoading] = useState(false);
@@ -52,33 +54,33 @@ export function TransferManagement({ storeId }: TransferManagementProps) {
   const transferOutColumns = [
     {
       key: 'transferNumber',
-      title: 'Transfer Number',
+      title: t('transferManagement.columns.transferNumber'),
       render: (value: string) => (
         <span className="font-medium">{value}</span>
       ),
     },
     {
       key: 'toStoreId',
-      title: 'To Store',
+      title: t('transferManagement.columns.toStore'),
       render: (value: string) => (
         <span className="text-muted-foreground">{value}</span>
       ),
     },
     {
       key: 'items',
-      title: 'Items',
+      title: t('transferManagement.columns.items'),
       render: (value: any[]) => (
-        <span>{value?.length || 0} items</span>
+        <span>{t('transferManagement.itemsCount', { count: value?.length || 0 })}</span>
       ),
     },
     {
       key: 'status',
-      title: 'Status',
+      title: t('transferManagement.columns.status'),
       render: (value: string) => getStatusBadge(value),
     },
     {
       key: 'createdAt',
-      title: 'Created',
+      title: t('transferManagement.columns.created'),
       render: (value: string) => (
         <span className="text-sm text-muted-foreground">
           {new Date(value).toLocaleDateString()}
@@ -90,33 +92,33 @@ export function TransferManagement({ storeId }: TransferManagementProps) {
   const transferInColumns = [
     {
       key: 'transferNumber',
-      title: 'Transfer Number',
+      title: t('transferManagement.columns.transferNumber'),
       render: (value: string) => (
         <span className="font-medium">{value}</span>
       ),
     },
     {
       key: 'fromStoreId',
-      title: 'From Store',
+      title: t('transferManagement.columns.fromStore'),
       render: (value: string) => (
         <span className="text-muted-foreground">{value}</span>
       ),
     },
     {
       key: 'items',
-      title: 'Items',
+      title: t('transferManagement.columns.items'),
       render: (value: any[]) => (
-        <span>{value?.length || 0} items</span>
+        <span>{t('transferManagement.itemsCount', { count: value?.length || 0 })}</span>
       ),
     },
     {
       key: 'status',
-      title: 'Status',
+      title: t('transferManagement.columns.status'),
       render: (value: string) => getStatusBadge(value),
     },
     {
       key: 'shippedAt',
-      title: 'Shipped',
+      title: t('transferManagement.columns.shipped'),
       render: (value: string) => (
         <span className="text-sm text-muted-foreground">
           {value ? new Date(value).toLocaleDateString() : '-'}
@@ -140,7 +142,7 @@ export function TransferManagement({ storeId }: TransferManagementProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ArrowRightLeft className="h-5 w-5" />
-          Transfer Management
+          {t('transferManagement.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -148,22 +150,22 @@ export function TransferManagement({ storeId }: TransferManagementProps) {
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="out" className="flex items-center gap-2">
               <ArrowRight className="h-4 w-4" />
-              Transfer Out
+              {t('transferManagement.transferOut')}
             </TabsTrigger>
             <TabsTrigger value="in" className="flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" />
-              Transfer In
+              {t('transferManagement.transferIn')}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="out" className="space-y-4">
             <div className="flex justify-between items-center">
               <p className="text-sm text-muted-foreground">
-                Manage outbound transfers to other stores and warehouses
+                {t('transferManagement.outDescription')}
               </p>
               <Button onClick={handleCreateTransferOut}>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Transfer Out
+                {t('transferManagement.createTransferOut')}
               </Button>
             </div>
 
@@ -178,7 +180,7 @@ export function TransferManagement({ storeId }: TransferManagementProps) {
           <TabsContent value="in" className="space-y-4">
             <div className="flex justify-between items-center">
               <p className="text-sm text-muted-foreground">
-                Receive and confirm inbound transfers from other locations
+                {t('transferManagement.inDescription')}
               </p>
             </div>
 

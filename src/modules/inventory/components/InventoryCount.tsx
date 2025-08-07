@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScanLine, ClipboardList, CheckCircle, AlertTriangle, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +15,7 @@ interface InventoryCountProps {
 }
 
 export function InventoryCount({ storeId }: InventoryCountProps) {
+  const { t } = useTranslation();
   const [counts, setCounts] = useState<InventoryCount[]>([]);
   const [scanQueue, setScanQueue] = useState<ScanQueueItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -70,14 +72,14 @@ export function InventoryCount({ storeId }: InventoryCountProps) {
   const countColumns = [
     {
       key: 'countNumber',
-      title: 'Count Number',
+      title: t('inventoryCount.columns.countNumber'),
       render: (value: string) => (
         <span className="font-medium">{value}</span>
       ),
     },
     {
       key: 'type',
-      title: 'Type',
+      title: t('inventoryCount.columns.type'),
       render: (value: string) => (
         <div className="flex items-center gap-2">
           {getTypeIcon(value)}
@@ -87,12 +89,12 @@ export function InventoryCount({ storeId }: InventoryCountProps) {
     },
     {
       key: 'status',
-      title: 'Status',
+      title: t('inventoryCount.columns.status'),
       render: (value: string) => getStatusBadge(value),
     },
     {
       key: 'scheduledDate',
-      title: 'Scheduled',
+      title: t('inventoryCount.columns.scheduled'),
       render: (value: string) => (
         <span className="text-sm text-muted-foreground">
           {new Date(value).toLocaleDateString()}
@@ -101,14 +103,14 @@ export function InventoryCount({ storeId }: InventoryCountProps) {
     },
     {
       key: 'items',
-      title: 'Items',
+      title: t('inventoryCount.columns.items'),
       render: (value: any[]) => (
         <span>{value?.length || 0} items</span>
       ),
     },
     {
       key: 'adjustments',
-      title: 'Adjustments',
+      title: t('inventoryCount.columns.adjustments'),
       render: (value: any[]) => {
         const pendingCount = value?.filter(adj => adj.status === 'pending').length || 0;
         return pendingCount > 0 ? (
@@ -126,28 +128,28 @@ export function InventoryCount({ storeId }: InventoryCountProps) {
   const queueColumns = [
     {
       key: 'sku',
-      title: 'SKU',
+      title: t('inventoryCount.columns.sku'),
       render: (value: string) => (
         <span className="font-medium">{value}</span>
       ),
     },
     {
       key: 'quantity',
-      title: 'Quantity',
+      title: t('inventoryCount.columns.quantity'),
       render: (value: number) => (
         <span>{value}</span>
       ),
     },
     {
       key: 'scanMethod',
-      title: 'Method',
+      title: t('inventoryCount.columns.method'),
       render: (value: string) => (
         <Badge variant="outline" className="capitalize">{value}</Badge>
       ),
     },
     {
       key: 'scannedAt',
-      title: 'Scanned At',
+      title: t('inventoryCount.columns.scannedAt'),
       render: (value: string) => (
         <span className="text-sm text-muted-foreground">
           {new Date(value).toLocaleString()}
@@ -156,10 +158,10 @@ export function InventoryCount({ storeId }: InventoryCountProps) {
     },
     {
       key: 'uploaded',
-      title: 'Status',
+      title: t('inventoryCount.columns.statusCol'),
       render: (value: boolean) => (
         <Badge variant={value ? 'default' : 'secondary'}>
-          {value ? 'Uploaded' : 'Pending'}
+          {value ? t('inventoryCount.uploaded') : t('inventoryCount.pending')}
         </Badge>
       ),
     },
@@ -194,15 +196,15 @@ export function InventoryCount({ storeId }: InventoryCountProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ClipboardList className="h-5 w-5" />
-          Inventory Count Management
+          {t('inventoryCount.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="counts" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="counts">Count History</TabsTrigger>
+            <TabsTrigger value="counts">{t('inventoryCount.countHistory')}</TabsTrigger>
             <TabsTrigger value="scanning" className="relative">
-              Scanning
+              {t('inventoryCount.scanning')}
               {pendingItems > 0 && (
                 <Badge className="ml-2 h-5 w-5 p-0 text-xs">{pendingItems}</Badge>
               )}
@@ -212,11 +214,11 @@ export function InventoryCount({ storeId }: InventoryCountProps) {
           <TabsContent value="counts" className="space-y-4">
             <div className="flex justify-between items-center">
               <p className="text-sm text-muted-foreground">
-                Manage inventory counts and cycle counting operations
+                {t('inventoryCount.description')}
               </p>
               <Button onClick={handleCreateCount}>
                 <Plus className="h-4 w-4 mr-2" />
-                New Count
+                {t('inventoryCount.newCount')}
               </Button>
             </div>
 
@@ -232,15 +234,15 @@ export function InventoryCount({ storeId }: InventoryCountProps) {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="font-medium">RFID/Barcode Scanning</h3>
+                  <h3 className="font-medium">{t('inventoryCount.scanningTitle')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Scan items for inventory counting (offline capable)
+                    {t('inventoryCount.scanningDescription')}
                   </p>
                 </div>
                 <div className="flex gap-2">
                   {pendingItems > 0 && (
                     <Button variant="outline" onClick={handleUploadQueue}>
-                      Upload Queue ({pendingItems})
+                      {t('inventoryCount.uploadQueue', { count: pendingItems })}
                     </Button>
                   )}
                   <Button 
@@ -248,7 +250,7 @@ export function InventoryCount({ storeId }: InventoryCountProps) {
                     disabled={isScanning}
                   >
                     <ScanLine className="h-4 w-4 mr-2" />
-                    {isScanning ? 'Scanning...' : 'Start Scanning'}
+                    {isScanning ? t('inventoryCount.scanningActive') : t('inventoryCount.startScanning')}
                   </Button>
                 </div>
               </div>
@@ -256,7 +258,7 @@ export function InventoryCount({ storeId }: InventoryCountProps) {
               {scanQueue.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>Upload Progress</span>
+                    <span>{t('inventoryCount.uploadProgress')}</span>
                     <span>{Math.round(uploadProgress)}%</span>
                   </div>
                   <Progress value={uploadProgress} className="w-full" />
@@ -266,7 +268,7 @@ export function InventoryCount({ storeId }: InventoryCountProps) {
               <DataTable
                 data={scanQueue}
                 columns={queueColumns}
-                title="Scan Queue"
+                title={t('inventoryCount.scanQueue')}
               />
             </div>
           </TabsContent>
