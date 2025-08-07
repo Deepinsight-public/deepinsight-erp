@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BarChart2, Download, FileSpreadsheet, FileText, ChevronRight } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,7 @@ export function PivotTool({
   groupableFields,
   summariseFields
 }: PivotToolProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const tableRef = useRef<HTMLDivElement>(null);
   
@@ -67,16 +69,16 @@ export function PivotTool({
       // Check if we need server-side pivot for large datasets
       if (data.length > 5000) {
         toast({
-          title: 'Large Dataset Detected',
-          description: 'Switching to server-side processing for better performance.',
+          title: t('pivot.largeDataset.title'),
+          description: t('pivot.largeDataset.description'),
           variant: 'default'
         });
         // TODO: Implement server-side pivot API call
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to load data for pivot analysis',
+        title: t('common.error'),
+        description: t('pivot.errors.loadData'),
         variant: 'destructive'
       });
     } finally {
@@ -142,14 +144,14 @@ export function PivotTool({
       const fullData = flattenPivot(pivotTree, allIds);
       await exportCSV(fullData, 'sales-orders-pivot');
       toast({
-        title: 'Export Successful',
-        description: 'CSV file has been downloaded',
+        title: t('pivot.export.success'),
+        description: t('pivot.export.csvDownloaded'),
         variant: 'default'
       });
     } catch (error) {
       toast({
-        title: 'Export Failed',
-        description: 'Failed to export CSV file',
+        title: t('pivot.export.failed'),
+        description: t('pivot.export.csvError'),
         variant: 'destructive'
       });
     }
@@ -161,14 +163,14 @@ export function PivotTool({
       const fullData = flattenPivot(pivotTree, allIds);
       await exportXLSX(fullData, 'sales-orders-pivot');
       toast({
-        title: 'Export Successful',
-        description: 'Excel file has been downloaded',
+        title: t('pivot.export.success'),
+        description: t('pivot.export.excelDownloaded'),
         variant: 'default'
       });
     } catch (error) {
       toast({
-        title: 'Export Failed',
-        description: 'Failed to export Excel file',
+        title: t('pivot.export.failed'),
+        description: t('pivot.export.excelError'),
         variant: 'destructive'
       });
     }
@@ -180,14 +182,14 @@ export function PivotTool({
     try {
       await exportPDF(tableRef.current, 'sales-orders-pivot');
       toast({
-        title: 'Export Successful',
-        description: 'PDF file has been downloaded',
+        title: t('pivot.export.success'),
+        description: t('pivot.export.pdfDownloaded'),
         variant: 'default'
       });
     } catch (error) {
       toast({
-        title: 'Export Failed',
-        description: 'Failed to export PDF file',
+        title: t('pivot.export.failed'),
+        description: t('pivot.export.pdfError'),
         variant: 'destructive'
       });
     }
@@ -270,7 +272,7 @@ export function PivotTool({
     if (groupBy.length === 1) {
       columns.push({
         key: 'orderNumber',
-        title: 'Order No',
+        title: t('pivot.columns.orderNumber'),
         render: (value: any, record: FlatPivotRow) => {
           return record._isLeaf ? (
             <span className="pl-8">{value}</span>
@@ -282,7 +284,7 @@ export function PivotTool({
 
       columns.push({
         key: 'customerName',
-        title: 'Customer',
+        title: t('pivot.columns.customer'),
         render: (value: any, record: FlatPivotRow) => {
           return record._isLeaf ? (
             <span className="pl-8">{value}</span>
@@ -294,7 +296,7 @@ export function PivotTool({
 
       columns.push({
         key: 'status',
-        title: 'Status',
+        title: t('pivot.columns.status'),
         render: (value: any, record: FlatPivotRow) => {
           return record._isLeaf ? (
             <div className="pl-8">
@@ -336,10 +338,10 @@ export function PivotTool({
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <BarChart2 className="h-8 w-8" />
-              Custom Pivot Analysis
+              {t('pivot.title')}
             </h1>
             <p className="text-muted-foreground mt-2">
-              Group and analyze sales orders data with custom exports
+              {t('pivot.description')}
             </p>
           </div>
           
@@ -356,7 +358,7 @@ export function PivotTool({
                   <Download className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Export CSV</TooltipContent>
+              <TooltipContent>{t('pivot.tooltips.exportCSV')}</TooltipContent>
             </Tooltip>
             
             <Tooltip>
@@ -370,7 +372,7 @@ export function PivotTool({
                   <FileSpreadsheet className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Export Excel</TooltipContent>
+              <TooltipContent>{t('pivot.tooltips.exportExcel')}</TooltipContent>
             </Tooltip>
             
             <Tooltip>
@@ -384,7 +386,7 @@ export function PivotTool({
                   <FileText className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Export PDF</TooltipContent>
+              <TooltipContent>{t('pivot.tooltips.exportPDF')}</TooltipContent>
             </Tooltip>
           </div>
         </div>
@@ -392,16 +394,16 @@ export function PivotTool({
         {/* Filters */}
         <Card>
           <CardHeader>
-            <CardTitle>Filters & Configuration</CardTitle>
+            <CardTitle>{t('pivot.filters.title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Search */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="search">Search Orders</Label>
+                <Label htmlFor="search">{t('pivot.filters.searchOrders')}</Label>
                 <Input
                   id="search"
-                  placeholder="Search by order number or customer..."
+                  placeholder={t('pivot.filters.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -409,18 +411,18 @@ export function PivotTool({
               
               {/* Date Range */}
               <div>
-                <Label>Date Range</Label>
+                <Label>{t('pivot.filters.dateRange')}</Label>
                 <DateRangePicker
                   value={dateRange}
                   onChange={setDateRange}
-                  placeholder="Select date range..."
+                  placeholder={t('pivot.filters.dateRangePlaceholder')}
                 />
               </div>
             </div>
 
             {/* Group By Selection */}
             <div>
-              <Label>Group By Fields</Label>
+              <Label>{t('pivot.filters.groupByFields')}</Label>
               <div className="flex flex-wrap gap-2 mt-2 mb-2">
                 {groupBy.map(fieldKey => {
                   const field = groupableFields.find(f => f.key === fieldKey);
@@ -443,8 +445,8 @@ export function PivotTool({
                   .map(field => ({ value: field.key, label: field.label }))}
                 value=""
                 onValueChange={handleGroupByChange}
-                placeholder="Add grouping field..."
-                searchPlaceholder="Search fields..."
+                placeholder={t('pivot.filters.addGroupingField')}
+                searchPlaceholder={t('pivot.filters.searchFields')}
               />
             </div>
           </CardContent>
@@ -454,10 +456,10 @@ export function PivotTool({
         <Card>
           <CardHeader>
             <CardTitle>
-              Pivot Results 
+              {t('pivot.results.title')}
               {tableData.length > 0 && (
                 <span className="text-sm font-normal text-muted-foreground ml-2">
-                  ({tableData.length} visible rows from {sourceData.length} source records)
+                  {t('pivot.results.summary', { visible: tableData.length, total: sourceData.length })}
                 </span>
               )}
             </CardTitle>

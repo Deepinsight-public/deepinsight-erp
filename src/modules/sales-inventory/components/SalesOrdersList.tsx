@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Search, Filter, Download, Plus, DollarSign, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { SalesOrderDTO, ListParams, KPIData } from '../types/index';
 import { DateRange } from 'react-day-picker';
 
 export function SalesOrdersList() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [orders, setOrders] = useState<SalesOrderDTO[]>([]);
@@ -42,8 +44,8 @@ export function SalesOrdersList() {
       setKpiData(kpiDataResult);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to load sales orders',
+        title: t('common.error'),
+        description: t('salesOrders.errors.loadFailed'),
         variant: 'destructive'
       });
     } finally {
@@ -58,45 +60,45 @@ export function SalesOrdersList() {
   const columns = [
     {
       key: 'orderNumber',
-      title: 'Order No.',
+      title: t('salesOrders.columns.orderNumber'),
       render: (value: string) => (
         <span className="font-medium text-primary">{value}</span>
       ),
     },
     {
       key: 'customerName',
-      title: 'Customer',
-      render: (value: string) => value || 'Walk-in Customer'
+      title: t('salesOrders.columns.customer'),
+      render: (value: string) => value || t('salesOrders.walkInCustomer')
     },
     {
       key: 'orderDate',
-      title: 'Date',
+      title: t('salesOrders.columns.date'),
       render: (value: string) => new Date(value).toLocaleDateString()
     },
     {
       key: 'status',
-      title: 'Status',
+      title: t('salesOrders.columns.status'),
       render: (value: string) => (
         <StatusBadge status={value as any} />
       ),
     },
     {
       key: 'totalAmount',
-      title: 'Total Amount',
+      title: t('salesOrders.columns.totalAmount'),
       render: (value: number) => (
         <span className="font-medium">${value.toFixed(2)}</span>
       ),
     },
     {
       key: 'actions',
-      title: 'Actions',
+      title: t('salesOrders.columns.actions'),
       render: (_: any, record: SalesOrderDTO) => (
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate(`/store/sales-orders/${record.id}`)}
         >
-          View
+          {t('salesOrders.actions.view')}
         </Button>
       ),
     },
@@ -107,13 +109,13 @@ export function SalesOrdersList() {
   };
 
   const statusOptions = [
-    { value: 'draft', label: 'Draft' },
-    { value: 'submitted', label: 'Submitted' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'confirmed', label: 'Confirmed' },
-    { value: 'shipped', label: 'Shipped' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'cancelled', label: 'Cancelled' }
+    { value: 'draft', label: t('salesOrders.status.draft') },
+    { value: 'submitted', label: t('salesOrders.status.submitted') },
+    { value: 'pending', label: t('salesOrders.status.pending') },
+    { value: 'confirmed', label: t('salesOrders.status.confirmed') },
+    { value: 'shipped', label: t('salesOrders.status.shipped') },
+    { value: 'completed', label: t('salesOrders.status.completed') },
+    { value: 'cancelled', label: t('salesOrders.status.cancelled') }
   ];
 
   return (
@@ -122,13 +124,13 @@ export function SalesOrdersList() {
       {kpiData && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <KPIWidget
-            title="Today's Sales"
+            title={t('salesOrders.kpi.todaySales')}
             value={kpiData.todaySales ?? 0}
             icon={DollarSign}
             format="currency"
           />
           <KPIWidget
-            title="Today's Orders"
+            title={t('salesOrders.kpi.todayOrders')}
             value={(kpiData.todayOrderCount || 0).toString()}
             icon={Package}
           />
@@ -138,28 +140,28 @@ export function SalesOrdersList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Sales Orders</h1>
+          <h1 className="text-3xl font-bold">{t('salesOrders.title')}</h1>
           <p className="text-muted-foreground mt-2">
-            Manage and track all sales orders from your store.
+            {t('salesOrders.description')}
           </p>
         </div>
         <Button onClick={() => navigate('/store/sales-orders/new')}>
           <Plus className="h-4 w-4 mr-2" />
-          New Order
+          {t('salesOrders.actions.newOrder')}
         </Button>
       </div>
 
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>Filters</CardTitle>
+          <CardTitle>{t('salesOrders.filters.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search orders..."
+                placeholder={t('salesOrders.filters.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -171,10 +173,10 @@ export function SalesOrdersList() {
               onValueChange={(value) => setStatusFilter(value === 'all' ? [] : [value])}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t('salesOrders.filters.statusPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">{t('salesOrders.filters.allStatuses')}</SelectItem>
                 {statusOptions.map(option => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
@@ -186,12 +188,12 @@ export function SalesOrdersList() {
             <DateRangePicker
               value={dateRange}
               onChange={setDateRange}
-              placeholder="Select date range"
+              placeholder={t('salesOrders.filters.dateRangePlaceholder')}
             />
 
             <Button variant="outline">
               <Download className="h-4 w-4 mr-2" />
-              Export
+              {t('salesOrders.actions.export')}
             </Button>
           </div>
         </CardContent>

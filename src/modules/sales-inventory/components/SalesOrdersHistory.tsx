@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Search, Filter, Download, ArrowLeft, FileText, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import { SalesOrderDTO, ListParams } from '../types/index';
 import { DateRange } from 'react-day-picker';
 
 export function SalesOrdersHistory() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [orders, setOrders] = useState<SalesOrderDTO[]>([]);
@@ -45,8 +47,8 @@ export function SalesOrdersHistory() {
       setCurrentPage(page);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to load sales orders',
+        title: t('common.error'),
+        description: t('salesOrders.errors.loadFailed'),
         variant: 'destructive'
       });
     } finally {
@@ -61,50 +63,50 @@ export function SalesOrdersHistory() {
   const columns = [
     {
       key: 'orderNumber',
-      title: 'Order No.',
+      title: t('salesOrders.columns.orderNumber'),
       render: (value: string) => (
         <span className="font-medium text-primary">{value}</span>
       ),
     },
     {
       key: 'customerName',
-      title: 'Customer',
-      render: (value: string) => value || 'Walk-in Customer'
+      title: t('salesOrders.columns.customer'),
+      render: (value: string) => value || t('salesOrders.walkInCustomer')
     },
     {
       key: 'customerEmail',
-      title: 'Email',
+      title: t('salesOrders.columns.email'),
       render: (value: string) => value || '-'
     },
     {
       key: 'orderDate',
-      title: 'Date',
+      title: t('salesOrders.columns.date'),
       render: (value: string) => new Date(value).toLocaleDateString()
     },
     {
       key: 'status',
-      title: 'Status',
+      title: t('salesOrders.columns.status'),
       render: (value: string) => (
         <StatusBadge status={value as any} />
       ),
     },
     {
       key: 'totalAmount',
-      title: 'Total Amount',
+      title: t('salesOrders.columns.totalAmount'),
       render: (value: number) => (
         <span className="font-medium">${value.toFixed(2)}</span>
       ),
     },
     {
       key: 'actions',
-      title: 'Actions',
+      title: t('salesOrders.columns.actions'),
       render: (_: any, record: SalesOrderDTO) => (
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate(`/store/sales-orders/${record.id}`)}
         >
-          View
+          {t('salesOrders.actions.view')}
         </Button>
       ),
     },
@@ -115,13 +117,13 @@ export function SalesOrdersHistory() {
   };
 
   const statusOptions = [
-    { value: 'draft', label: 'Draft' },
-    { value: 'submitted', label: 'Submitted' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'confirmed', label: 'Confirmed' },
-    { value: 'shipped', label: 'Shipped' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'cancelled', label: 'Cancelled' }
+    { value: 'draft', label: t('salesOrders.status.draft') },
+    { value: 'submitted', label: t('salesOrders.status.submitted') },
+    { value: 'pending', label: t('salesOrders.status.pending') },
+    { value: 'confirmed', label: t('salesOrders.status.confirmed') },
+    { value: 'shipped', label: t('salesOrders.status.shipped') },
+    { value: 'completed', label: t('salesOrders.status.completed') },
+    { value: 'cancelled', label: t('salesOrders.status.cancelled') }
   ];
 
   const handlePreviousPage = () => {
@@ -138,10 +140,10 @@ export function SalesOrdersHistory() {
 
   // Export functionality
   const exportToCSV = () => {
-    const headers = ['Order Number', 'Customer', 'Email', 'Phone', 'Date', 'Status', 'Subtotal', 'Discount', 'Tax', 'Total'];
+    const headers = [t('salesOrders.export.orderNumber'), t('salesOrders.export.customer'), t('salesOrders.export.email'), t('salesOrders.export.phone'), t('salesOrders.export.date'), t('salesOrders.export.status'), t('salesOrders.export.subtotal'), t('salesOrders.export.discount'), t('salesOrders.export.tax'), t('salesOrders.export.total')];
     const csvData = orders.map(order => [
       order.orderNumber,
-      order.customerName || 'Walk-in Customer',
+      order.customerName || t('salesOrders.walkInCustomer'),
       order.customerEmail || '',
       order.customerPhone || '',
       new Date(order.orderDate).toLocaleDateString(),
@@ -163,7 +165,7 @@ export function SalesOrdersHistory() {
     const jsonData = orders.map(order => ({
       orderNumber: order.orderNumber,
       customer: {
-        name: order.customerName || 'Walk-in Customer',
+        name: order.customerName || t('salesOrders.walkInCustomer'),
         email: order.customerEmail || '',
         phone: order.customerPhone || ''
       },
@@ -182,10 +184,10 @@ export function SalesOrdersHistory() {
   };
 
   const exportToTSV = () => {
-    const headers = ['Order Number', 'Customer', 'Email', 'Phone', 'Date', 'Status', 'Subtotal', 'Discount', 'Tax', 'Total'];
+    const headers = [t('salesOrders.export.orderNumber'), t('salesOrders.export.customer'), t('salesOrders.export.email'), t('salesOrders.export.phone'), t('salesOrders.export.date'), t('salesOrders.export.status'), t('salesOrders.export.subtotal'), t('salesOrders.export.discount'), t('salesOrders.export.tax'), t('salesOrders.export.total')];
     const tsvData = orders.map(order => [
       order.orderNumber,
-      order.customerName || 'Walk-in Customer',
+      order.customerName || t('salesOrders.walkInCustomer'),
       order.customerEmail || '',
       order.customerPhone || '',
       new Date(order.orderDate).toLocaleDateString(),
@@ -215,8 +217,8 @@ export function SalesOrdersHistory() {
     URL.revokeObjectURL(url);
 
     toast({
-      title: 'Export Successful',
-      description: `Sales orders exported as ${filename}`,
+      title: t('salesOrders.export.success'),
+      description: t('salesOrders.export.successMessage', { filename }),
     });
   };
 
@@ -231,31 +233,31 @@ export function SalesOrdersHistory() {
             onClick={() => navigate('/store/sales-orders')}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Recent Orders
+            {t('salesOrders.history.backToRecent')}
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Sales Orders History</h1>
+            <h1 className="text-3xl font-bold">{t('salesOrders.history.title')}</h1>
             <p className="text-muted-foreground mt-2">
-              Complete history of all sales orders with advanced filtering.
+              {t('salesOrders.history.description')}
             </p>
           </div>
         </div>
         <Button onClick={() => navigate('/store/sales-orders/new')}>
-          New Order
+          {t('salesOrders.actions.newOrder')}
         </Button>
       </div>
 
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>Filters</CardTitle>
+          <CardTitle>{t('salesOrders.filters.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search orders..."
+                placeholder={t('salesOrders.filters.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -267,10 +269,10 @@ export function SalesOrdersHistory() {
               onValueChange={(value) => setStatusFilter(value === 'all' ? [] : [value])}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t('salesOrders.filters.statusPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">{t('salesOrders.filters.allStatuses')}</SelectItem>
                 {statusOptions.map(option => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
@@ -282,28 +284,28 @@ export function SalesOrdersHistory() {
             <DateRangePicker
               value={dateRange}
               onChange={setDateRange}
-              placeholder="Select date range"
+              placeholder={t('salesOrders.filters.dateRangePlaceholder')}
             />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" disabled={orders.length === 0}>
                   <Download className="h-4 w-4 mr-2" />
-                  Export
+                  {t('salesOrders.actions.export')}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={exportToCSV}>
                   <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Export as CSV
+                  {t('salesOrders.export.csv')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={exportToTSV}>
                   <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Export as TSV
+                  {t('salesOrders.export.tsv')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={exportToJSON}>
                   <FileText className="h-4 w-4 mr-2" />
-                  Export as JSON
+                  {t('salesOrders.export.json')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -324,7 +326,7 @@ export function SalesOrdersHistory() {
           {/* Pagination Controls */}
           <div className="flex items-center justify-between px-6 py-4 border-t">
             <div className="text-sm text-muted-foreground">
-              Page {currentPage} • Showing {orders.length} orders
+              {t('salesOrders.pagination.info', { page: currentPage, count: orders.length })}
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -333,7 +335,7 @@ export function SalesOrdersHistory() {
                 onClick={handlePreviousPage}
                 disabled={currentPage === 1}
               >
-                Previous
+                {t('salesOrders.pagination.previous')}
               </Button>
               <Button
                 variant="outline"
@@ -341,7 +343,7 @@ export function SalesOrdersHistory() {
                 onClick={handleNextPage}
                 disabled={orders.length < pageSize}
               >
-                Next
+                {t('salesOrders.pagination.next')}
               </Button>
             </div>
           </div>

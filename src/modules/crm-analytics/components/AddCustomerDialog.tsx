@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +20,7 @@ interface AddCustomerDialogProps {
 }
 
 export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCustomerDialogProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -52,46 +54,46 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Customer</DialogTitle>
+          <DialogTitle>{t('customers.form.addTitle')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
+            <Label htmlFor="name">{t('customers.form.name')} *</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="Enter customer name"
+              placeholder={t('customers.form.namePlaceholder')}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email">{t('customers.form.email')} *</Label>
             <Input
               id="email"
               type="email"
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
-              placeholder="Enter email address"
+              placeholder={t('customers.form.emailPlaceholder')}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
+            <Label htmlFor="phone">{t('customers.form.phone')}</Label>
             <Input
               id="phone"
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
-              placeholder="Enter phone number"
+              placeholder={t('customers.form.phonePlaceholder')}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="address">Delivery Address</Label>
+            <Label htmlFor="address">{t('customers.form.address')}</Label>
             <Textarea
               id="address"
               value={formData.address}
               onChange={(e) => handleInputChange('address', e.target.value)}
-              placeholder="Enter delivery address"
+              placeholder={t('customers.form.addressPlaceholder')}
               rows={3}
             />
           </div>
@@ -102,10 +104,10 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Adding...' : 'Add Customer'}
+              {loading ? t('customers.form.adding') : t('customers.form.addCustomer')}
             </Button>
           </div>
         </form>
