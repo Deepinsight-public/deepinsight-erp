@@ -63,17 +63,11 @@ export function AfterSalesReturns() {
     <div className="space-y-6">
       <Breadcrumbs items={breadcrumbs} />
       
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">After-Sales Returns</h1>
-          <p className="text-muted-foreground">
-            Manage product returns and warranty claims
-          </p>
-        </div>
-        <Button onClick={() => navigate('/store/after-sales/returns/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Return
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold">After-Sales Returns</h1>
+        <p className="text-muted-foreground">
+          Manage product returns and warranty claims
+        </p>
       </div>
 
       {/* Search Bar */}
@@ -101,6 +95,12 @@ export function AfterSalesReturns() {
         </TabsList>
         
         <TabsContent value="processing" className="space-y-4">
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => navigate('/store/after-sales/returns/new')}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Return
+            </Button>
+          </div>
           <ReturnsTable
             returns={returns}
             loading={loading}
