@@ -85,9 +85,6 @@ export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTablePr
   if (loading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>{t('returns.table.title')}</CardTitle>
-        </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, index) => (
@@ -101,9 +98,6 @@ export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTablePr
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{t('returns.table.title')}</CardTitle>
-      </CardHeader>
       <CardContent className="p-0">
         <Table>
           <TableHeader>
