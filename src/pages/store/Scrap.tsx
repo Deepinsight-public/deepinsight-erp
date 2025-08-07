@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
-import { ScrapList } from '@/modules/inventory/components/ScrapList';
+import { ScrapPage } from '@/modules/scrap/components/ScrapPage';
 
 export default function Scrap() {
   const { t } = useTranslation();
@@ -13,7 +13,7 @@ export default function Scrap() {
   return (
     <div className="space-y-6">
       <Breadcrumbs items={breadcrumbs} />
-      <ScrapList />
+      <ScrapPage />
     </div>
   );
 }
