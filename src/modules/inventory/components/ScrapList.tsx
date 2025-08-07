@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Plus, Search, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -24,17 +25,8 @@ const STATUS_COLORS: Record<ScrapStatus, string> = {
   cancelled: 'bg-gray-100 text-gray-600',
 };
 
-const STATUS_LABELS: Record<ScrapStatus, string> = {
-  draft: 'Draft',
-  submitted: 'Submitted',
-  l1_approved: 'L1 Approved',
-  final_approved: 'Final Approved',
-  posted: 'Posted',
-  rejected: 'Rejected',
-  cancelled: 'Cancelled',
-};
-
 export function ScrapList() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [scraps, setScraps] = useState<ScrapHeader[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,14 +86,14 @@ export function ScrapList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Scrap Management</h1>
+          <h1 className="text-3xl font-bold">{t('scrap.title')}</h1>
           <p className="text-muted-foreground">
-            Manage inventory scrap requests and approvals
+            {t('scrap.description')}
           </p>
         </div>
         <Button onClick={() => navigate('/store/scrap/new')}>
           <Plus className="h-4 w-4 mr-2" />
-          New Scrap Request
+          {t('scrap.newRequest')}
         </Button>
       </div>
 
@@ -110,10 +102,10 @@ export function ScrapList() {
         <CardContent className="p-6">
           <div className="flex gap-4 items-end">
             <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">Search</label>
+              <label className="text-sm font-medium mb-2 block">{t('scrap.list.search')}</label>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Search by scrap number..."
+                  placeholder={t('scrap.list.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -125,23 +117,23 @@ export function ScrapList() {
             </div>
             
             <div className="w-48">
-              <label className="text-sm font-medium mb-2 block">Status</label>
+              <label className="text-sm font-medium mb-2 block">{t('scrap.list.status')}</label>
               <Select
                 value={filters.status || ''}
                 onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : value as ScrapStatus)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="All Status" />
+                  <SelectValue placeholder={t('scrap.list.allStatus')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="submitted">Submitted</SelectItem>
-                  <SelectItem value="l1_approved">L1 Approved</SelectItem>
-                  <SelectItem value="final_approved">Final Approved</SelectItem>
-                  <SelectItem value="posted">Posted</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="all">{t('scrap.list.allStatus')}</SelectItem>
+                  <SelectItem value="draft">{t('scrap.status.draft')}</SelectItem>
+                  <SelectItem value="submitted">{t('scrap.status.submitted')}</SelectItem>
+                  <SelectItem value="l1_approved">{t('scrap.status.l1Approved')}</SelectItem>
+                  <SelectItem value="final_approved">{t('scrap.status.finalApproved')}</SelectItem>
+                  <SelectItem value="posted">{t('scrap.status.posted')}</SelectItem>
+                  <SelectItem value="rejected">{t('scrap.status.rejected')}</SelectItem>
+                  <SelectItem value="cancelled">{t('scrap.status.cancelled')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -154,7 +146,7 @@ export function ScrapList() {
               }}
             >
               <Filter className="h-4 w-4 mr-2" />
-              Clear
+              {t('scrap.list.clear')}
             </Button>
           </div>
         </CardContent>
@@ -163,24 +155,24 @@ export function ScrapList() {
       {/* Scrap List */}
       <Card>
         <CardHeader>
-          <CardTitle>Scrap Requests ({scraps.length})</CardTitle>
+          <CardTitle>{t('scrap.list.count', { count: scraps.length })}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Scrap No.</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Total Qty</TableHead>
-                <TableHead>Total Value</TableHead>
-                <TableHead>Created Date</TableHead>
-              </TableRow>
+                <TableRow>
+                  <TableHead>{t('scrap.list.scrapNo')}</TableHead>
+                  <TableHead>{t('scrap.list.status')}</TableHead>
+                  <TableHead>{t('scrap.list.totalQty')}</TableHead>
+                  <TableHead>{t('scrap.list.totalValue')}</TableHead>
+                  <TableHead>{t('scrap.list.createdDate')}</TableHead>
+                </TableRow>
             </TableHeader>
             <TableBody>
               {scraps.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                    No scrap requests found
+                    {t('scrap.list.noRequests')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -198,7 +190,7 @@ export function ScrapList() {
                         variant="secondary"
                         className={STATUS_COLORS[scrap.status as ScrapStatus]}
                       >
-                        {STATUS_LABELS[scrap.status as ScrapStatus]}
+                        {t(`scrap.status.${scrap.status}`)}
                       </Badge>
                     </TableCell>
                     <TableCell>
