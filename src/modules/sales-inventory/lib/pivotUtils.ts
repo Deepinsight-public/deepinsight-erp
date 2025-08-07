@@ -6,17 +6,25 @@ export interface AggField {
 }
 
 export interface PivotRow {
-  [key: string]: any;
+  id: string;
+  level: number;
+  groupVals: Record<string, any>;
+  totals: Record<string, number>;
+  children?: PivotRow[];
   isGroupRow?: boolean;
-  level?: number;
   count?: number;
-  groupKey?: string; // Which field this row is grouping by
+  groupKey?: string;
+}
+
+export interface FlatPivotRow {
+  [key: string]: any;
+  _pivot: PivotRow;
 }
 
 /**
- * Build a pivot table from source data
+ * Build a pivot tree from source data
  */
-export function buildPivot(
+export function buildPivotTree(
   sourceData: SalesOrderDTO[],
   groupKeys: string[],
   aggFields: AggField[]
@@ -25,14 +33,106 @@ export function buildPivot(
     return [];
   }
 
-  // Build nested grouping structure
-  const grouped = groupByKeys(sourceData, groupKeys);
+  function makeNode(level: number): PivotRow {
+    return {
+      id: crypto.randomUUID(),
+      level,
+      groupVals: {},
+      totals: {},
+      children: []
+    };
+  }
+
+  const root: PivotRow = makeNode(-1);
+
+  for (const record of sourceData) {
+    let node = root;
+    
+    groupKeys.forEach((key, idx) => {
+      const val = formatGroupValue(record[key as keyof SalesOrderDTO], key);
+      let child = node.children!.find(c => c.groupVals[key] === val);
+      
+      if (!child) {
+        child = makeNode(idx);
+        child.groupVals[key] = val;
+        child.groupKey = key;
+        child.isGroupRow = true;
+        node.children!.push(child);
+      }
+      
+      // Accumulate totals
+      aggFields.forEach(aggField => {
+        const value = record[aggField.key as keyof SalesOrderDTO] as number;
+        if (typeof value === 'number' && !isNaN(value)) {
+          child!.totals[aggField.key] = (child!.totals[aggField.key] || 0) + value;
+        }
+      });
+      
+      child.count = (child.count || 0) + 1;
+      node = child;
+    });
+  }
+
+  return root.children!;
+}
+
+/**
+ * Flatten pivot tree for table display based on expanded state
+ */
+export function flattenPivot(tree: PivotRow[], expanded: Set<string>): FlatPivotRow[] {
+  const result: FlatPivotRow[] = [];
+
+  function walk(nodes: PivotRow[]) {
+    for (const node of nodes) {
+      // Create flat row combining group values and totals
+      const flatRow: FlatPivotRow = {
+        ...node.groupVals,
+        ...node.totals,
+        _pivot: node
+      };
+      result.push(flatRow);
+
+      // Add children if expanded
+      if (expanded.has(node.id) && node.children?.length) {
+        walk(node.children);
+      }
+    }
+  }
+
+  walk(tree);
+  return result;
+}
+
+/**
+ * Get all leaf node IDs for full expansion during export
+ */
+export function getAllNodeIds(tree: PivotRow[]): string[] {
+  const ids: string[] = [];
   
-  // Flatten the nested structure into pivot rows
-  const pivotRows: PivotRow[] = [];
-  flattenGroupedData(grouped, groupKeys, aggFields, pivotRows, 0);
-  
-  return pivotRows;
+  function walk(nodes: PivotRow[]) {
+    for (const node of nodes) {
+      ids.push(node.id);
+      if (node.children?.length) {
+        walk(node.children);
+      }
+    }
+  }
+
+  walk(tree);
+  return ids;
+}
+
+/**
+ * Legacy build pivot function for backward compatibility
+ */
+export function buildPivot(
+  sourceData: SalesOrderDTO[],
+  groupKeys: string[],
+  aggFields: AggField[]
+): FlatPivotRow[] {
+  const tree = buildPivotTree(sourceData, groupKeys, aggFields);
+  const allIds = new Set(getAllNodeIds(tree));
+  return flattenPivot(tree, allIds);
 }
 
 /**
@@ -107,10 +207,13 @@ function flattenGroupedData(
 
   // Group level - create group rows and recurse
   Object.entries(groupedData).forEach(([groupValue, subData]) => {
-    // Create group header row
-    const groupRow: PivotRow = {
-      isGroupRow: true,
+    // Create group header row  
+    const groupRow: any = {
+      id: crypto.randomUUID(),
       level,
+      groupVals: {},
+      totals: {},
+      isGroupRow: true,
       count: Array.isArray(subData) ? subData.length : countLeafItems(subData),
       groupKey: groupKeys[level] // Track which field this row is grouping by
     };

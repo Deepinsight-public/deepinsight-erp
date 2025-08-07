@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { BarChart2, Download, FileSpreadsheet, FileText } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { BarChart2, Download, FileSpreadsheet, FileText, ChevronRight } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { SalesOrderDTO, ListParams } from '../types/index';
-import { buildPivot, PivotRow, AggField } from '../lib/pivotUtils';
+import { buildPivotTree, flattenPivot, getAllNodeIds, PivotRow, FlatPivotRow, AggField } from '../lib/pivotUtils';
 import { exportCSV, exportXLSX, exportPDF } from '../lib/exportUtils';
 
 export interface GroupableField {
@@ -43,11 +43,12 @@ export function PivotTool({
   const tableRef = useRef<HTMLDivElement>(null);
   
   const [sourceData, setSourceData] = useState<SalesOrderDTO[]>([]);
-  const [pivotData, setPivotData] = useState<PivotRow[]>([]);
+  const [pivotTree, setPivotTree] = useState<PivotRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [groupBy, setGroupBy] = useState<string[]>(defaultGroupBy);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   // Load source data based on filters
   const loadSourceData = async () => {
@@ -83,15 +84,24 @@ export function PivotTool({
     }
   };
 
-  // Build pivot table when data or grouping changes
+  // Build pivot tree when data or grouping changes
   useEffect(() => {
     if (sourceData.length > 0 && groupBy.length > 0) {
-      const pivotResult = buildPivot(sourceData, groupBy, summariseFields);
-      setPivotData(pivotResult);
+      const tree = buildPivotTree(sourceData, groupBy, summariseFields);
+      setPivotTree(tree);
+      // Auto-expand first level by default
+      const firstLevelIds = tree.map(node => node.id);
+      setExpanded(new Set(firstLevelIds));
     } else {
-      setPivotData([]);
+      setPivotTree([]);
+      setExpanded(new Set());
     }
   }, [sourceData, groupBy, summariseFields]);
+
+  // Create flattened table data based on expansion state
+  const tableData = useMemo(() => {
+    return flattenPivot(pivotTree, expanded);
+  }, [pivotTree, expanded]);
 
   // Load data on component mount and filter changes
   useEffect(() => {
@@ -112,10 +122,25 @@ export function PivotTool({
     setGroupBy(prev => prev.filter(key => key !== fieldKey));
   };
 
-  // Export handlers
+  // Toggle row expansion
+  const toggleRow = (id: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  // Export handlers - use fully expanded data
   const handleExportCSV = async () => {
     try {
-      await exportCSV(pivotData, 'sales-orders-pivot');
+      const allIds = new Set(getAllNodeIds(pivotTree));
+      const fullData = flattenPivot(pivotTree, allIds);
+      await exportCSV(fullData, 'sales-orders-pivot');
       toast({
         title: 'Export Successful',
         description: 'CSV file has been downloaded',
@@ -132,7 +157,9 @@ export function PivotTool({
 
   const handleExportExcel = async () => {
     try {
-      await exportXLSX(pivotData, 'sales-orders-pivot');
+      const allIds = new Set(getAllNodeIds(pivotTree));
+      const fullData = flattenPivot(pivotTree, allIds);
+      await exportXLSX(fullData, 'sales-orders-pivot');
       toast({
         title: 'Export Successful',
         description: 'Excel file has been downloaded',
@@ -168,7 +195,7 @@ export function PivotTool({
 
   // Generate columns for pivot table
   const generatePivotColumns = () => {
-    if (pivotData.length === 0) return [];
+    if (tableData.length === 0) return [];
 
     const columns = [];
 
@@ -178,18 +205,30 @@ export function PivotTool({
       columns.push({
         key: fieldKey,
         title: field?.label || fieldKey,
-        render: (value: any, record: PivotRow) => {
-          // Only show value if this column matches the grouping level or it's a detail row
-          const shouldShowValue = !record.isGroupRow || record.groupKey === fieldKey;
+        render: (value: any, record: FlatPivotRow) => {
+          const pivot = record._pivot;
+          const shouldShowValue = pivot.groupKey === fieldKey;
+          const hasChildren = pivot.children && pivot.children.length > 0;
           
           return (
-            <div style={{ paddingLeft: `${record.level || 0 * 20}px` }}>
+            <div 
+              className={`flex items-center ${hasChildren ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
+              style={{ paddingLeft: `${pivot.level * 16}px` }}
+              onClick={hasChildren ? () => toggleRow(pivot.id) : undefined}
+            >
+              {hasChildren && (
+                <ChevronRight
+                  className={`h-4 w-4 mr-2 transition-transform ${
+                    expanded.has(pivot.id) ? 'rotate-90' : ''
+                  }`}
+                />
+              )}
               {shouldShowValue ? (
-                <span className={record.isGroupRow ? "font-medium" : ""}>
+                <span className="font-medium">
                   {value}
-                  {record.isGroupRow && record.groupKey === fieldKey && (
-                    <span className="text-muted-foreground ml-2">
-                      ({record.count})
+                  {hasChildren && (
+                    <span className="text-muted-foreground ml-2 text-xs">
+                      ({pivot.children.length} items)
                     </span>
                   )}
                 </span>
@@ -241,7 +280,7 @@ export function PivotTool({
                   variant="outline" 
                   size="sm" 
                   onClick={handleExportCSV}
-                  disabled={pivotData.length === 0}
+                  disabled={tableData.length === 0}
                 >
                   <Download className="h-4 w-4" />
                 </Button>
@@ -255,7 +294,7 @@ export function PivotTool({
                   variant="outline" 
                   size="sm" 
                   onClick={handleExportExcel}
-                  disabled={pivotData.length === 0}
+                  disabled={tableData.length === 0}
                 >
                   <FileSpreadsheet className="h-4 w-4" />
                 </Button>
@@ -269,7 +308,7 @@ export function PivotTool({
                   variant="outline" 
                   size="sm" 
                   onClick={handleExportPDF}
-                  disabled={pivotData.length === 0}
+                  disabled={tableData.length === 0}
                 >
                   <FileText className="h-4 w-4" />
                 </Button>
@@ -345,9 +384,9 @@ export function PivotTool({
           <CardHeader>
             <CardTitle>
               Pivot Results 
-              {pivotData.length > 0 && (
+              {tableData.length > 0 && (
                 <span className="text-sm font-normal text-muted-foreground ml-2">
-                  ({pivotData.length} rows from {sourceData.length} source records)
+                  ({tableData.length} visible rows from {sourceData.length} source records)
                 </span>
               )}
             </CardTitle>
@@ -355,7 +394,7 @@ export function PivotTool({
           <CardContent>
             <div ref={tableRef}>
               <DataTable
-                data={pivotData}
+                data={tableData}
                 columns={generatePivotColumns()}
                 loading={loading}
                 title=""
