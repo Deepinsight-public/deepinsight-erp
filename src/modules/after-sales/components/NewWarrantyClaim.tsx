@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,7 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Breadcrumbs, useToastService } from '@/components';
+import { Breadcrumbs, SelectWithSearch } from '@/components';
+import { useToastService } from '@/components/shared/ToastService';
+import { searchAvailableProducts } from '@/modules/sales-inventory/api/products';
 import { createWarrantyClaim } from '../api/warranty';
 import { CreateWarrantyData, WarrantyLine } from '../types/warranty';
 
@@ -35,15 +37,28 @@ type WarrantyFormData = z.infer<typeof warrantySchema>;
 
 export function NewWarrantyClaim() {
   const navigate = useNavigate();
-  const { toast } = useToastService();
+  const { showSuccess, showError } = useToastService();
   const [saving, setSaving] = useState(false);
   const [lines, setLines] = useState<Omit<WarrantyLine, 'id' | 'headerId' | 'createdAt' | 'updatedAt'>[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
 
   const breadcrumbs = [
     { title: 'After-Sales', href: '/store/after-sales/returns' },
-    { title: 'Warranty Claims', href: '/store/after-sales/warranty' },
+    { title: 'Warranty Claims', href: '/store/after-sales/returns?tab=warranty' },
     { title: 'New Claim' }
   ];
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const productsData = await searchAvailableProducts('');
+        setProducts(productsData);
+      } catch (error) {
+        console.error('Failed to load products:', error);
+      }
+    };
+    loadProducts();
+  }, []);
 
   const form = useForm<WarrantyFormData>({
     resolver: zodResolver(warrantySchema),
@@ -75,18 +90,14 @@ export function NewWarrantyClaim() {
 
   const onSubmit = async (data: WarrantyFormData) => {
     if (lines.length === 0) {
-      toast({
-        title: 'Error',
-        description: 'Please add at least one product line',
-        variant: 'destructive'
-      });
+      showError('Error', 'Please add at least one product line');
       return;
     }
 
     try {
       setSaving(true);
       
-      // Get user's store ID from profile
+      // Get user's store ID from profile  
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const storeId = user.store_id || '550e8400-e29b-41d4-a716-446655440000';
 
@@ -98,18 +109,10 @@ export function NewWarrantyClaim() {
 
       const newClaim = await createWarrantyClaim(createData);
       
-      toast({
-        title: 'Success',
-        description: 'Warranty claim created successfully'
-      });
-      
-      navigate(`/store/after-sales/warranty/${newClaim.id}`);
+      showSuccess('Success', 'Warranty claim created successfully');
+      navigate('/store/after-sales/returns?tab=warranty');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create warranty claim',
-        variant: 'destructive'
-      });
+      showError('Error', error instanceof Error ? error.message : 'Failed to create warranty claim');
     } finally {
       setSaving(false);
     }
@@ -221,10 +224,14 @@ export function NewWarrantyClaim() {
                     {lines.map((line, index) => (
                       <TableRow key={index}>
                         <TableCell>
-                          <Input
+                          <SelectWithSearch
                             placeholder="Select product..."
+                            options={products.map(p => ({
+                              value: p.id,
+                              label: `${p.sku} - ${p.productName}`
+                            }))}
                             value={line.productId}
-                            onChange={(e) => updateLine(index, 'productId', e.target.value)}
+                            onValueChange={(value) => updateLine(index, 'productId', value)}
                           />
                         </TableCell>
                         <TableCell>
@@ -282,7 +289,7 @@ export function NewWarrantyClaim() {
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => navigate('/store/after-sales/warranty')}
+              onClick={() => navigate('/store/after-sales/returns?tab=warranty')}
             >
               Cancel
             </Button>

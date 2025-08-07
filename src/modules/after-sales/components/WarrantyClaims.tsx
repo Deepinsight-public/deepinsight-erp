@@ -74,7 +74,7 @@ export function WarrantyClaims() {
       </div>
       
       <div className="flex justify-end mb-4">
-        <Button onClick={() => navigate('/store/after-sales/returns/new')}>
+        <Button onClick={() => navigate('/store/after-sales/warranty/new')}>
           <Plus className="h-4 w-4 mr-2" />
           New Warranty Claim
         </Button>
