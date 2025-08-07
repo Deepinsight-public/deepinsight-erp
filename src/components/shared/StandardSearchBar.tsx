@@ -60,7 +60,7 @@ export function StandardSearchBar({
 }: StandardSearchBarProps) {
   return (
     <Card className={className}>
-      <CardContent className="space-y-4">
+      <CardContent className="p-6 space-y-4">
         {/* Search Type Badges */}
         {badges.length > 0 && (
           <div className="flex gap-2 flex-wrap">
