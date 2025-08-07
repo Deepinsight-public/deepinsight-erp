@@ -110,7 +110,7 @@ export function OrderSearchPage() {
           handleFilterChange('search', value);
           if (value === '') {
             // Clear all filters when search is cleared
-            setFilters({});
+            clearFilters();
             handleSearch(1); // Trigger search to show all results
           }
         }}

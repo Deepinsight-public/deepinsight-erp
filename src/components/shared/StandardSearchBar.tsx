@@ -38,9 +38,7 @@ interface StandardSearchBarProps {
   badges?: SearchBadge[];
   filters?: SearchFilter[];
   onExport?: () => void;
-  onClear?: () => void;
   showExport?: boolean;
-  showClear?: boolean;
   className?: string;
 }
 
@@ -53,9 +51,7 @@ export function StandardSearchBar({
   badges = [],
   filters = [],
   onExport,
-  onClear,
   showExport = false,
-  showClear = false,
   className = '',
 }: StandardSearchBarProps) {
   return (
@@ -109,7 +105,7 @@ export function StandardSearchBar({
         </div>
 
         {/* Filters */}
-        {(filters.length > 0 || showExport || showClear) && (
+        {(filters.length > 0 || showExport) && (
           <div className="flex gap-4 flex-wrap items-end">
             {filters.map((filter) => (
               <div key={filter.key} className="min-w-32">

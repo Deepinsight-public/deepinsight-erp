@@ -103,7 +103,13 @@ export function ScrapList() {
             title={t('scrap.search.title') || 'Search Scrap Requests'}
             searchValue={searchQuery}
             searchPlaceholder={t('scrap.list.searchPlaceholder')}
-            onSearchChange={setSearchQuery}
+            onSearchChange={(value) => {
+              setSearchQuery(value);
+              if (value === '') {
+                // Clear filters when search is cleared
+                setFilters({});
+              }
+            }}
             onSearch={handleSearch}
             filters={[
               {
@@ -125,11 +131,6 @@ export function ScrapList() {
                 onChange: (value) => handleFilterChange('status', value === 'all' ? undefined : value as ScrapStatus),
               },
             ]}
-            onClear={() => {
-              setFilters({});
-              setSearchQuery('');
-            }}
-            showClear={true}
           />
         </CardContent>
       </Card>
