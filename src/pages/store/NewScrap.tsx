@@ -1,5 +1,5 @@
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
-import { ScrapForm } from '@/modules/inventory/components/ScrapForm';
+import { ScrapForm } from '@/modules/scrap/components/ScrapForm';
 
 export default function NewScrap() {
   const breadcrumbs = [

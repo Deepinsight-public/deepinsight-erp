@@ -23,9 +23,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 
-import { scrapHeaderSchema, SCRAP_REASONS } from '../../scrap/types/scrap';
-import type { ScrapHeaderData, ScrapLineData } from '../../scrap/types/scrap';
-import { createScrapHeader, submitScrap, checkInventoryAvailability } from '../../scrap/api/scrap';
+import { scrapHeaderSchema, SCRAP_REASONS } from '../types/scrap';
+import type { ScrapHeaderData, ScrapLineData } from '../types/scrap';
+import { createScrapHeader, submitScrap, checkInventoryAvailability } from '../api/scrap';
 import { getWarehouses } from '../../after-sales/api/newReturns';
 import { supabase } from '@/integrations/supabase/client';
 
