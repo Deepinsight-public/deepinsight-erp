@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { StorePageStub } from './StorePageStub';
+import { OrderSearchPage } from '@/modules/search/components/OrderSearchPage';
 
 // All the remaining store pages as separate components
 
@@ -218,21 +219,7 @@ export function RepairDetail() {
 }
 
 export function OrderSearch() {
-  const { t } = useTranslation();
-  return (
-    <StorePageStub
-      title="Order Search"
-      description="Advanced search and filtering for all types of orders."
-      breadcrumbs={[{ title: t('orderSearch') }]}
-      features={[
-        'Multi-criteria search',
-        'Date range filtering',
-        'Status-based filtering',
-        'Customer search',
-        'Export search results'
-      ]}
-    />
-  );
+  return <OrderSearchPage />;
 }
 
 
