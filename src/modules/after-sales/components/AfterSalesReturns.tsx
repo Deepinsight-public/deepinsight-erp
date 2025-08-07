@@ -44,8 +44,23 @@ export function AfterSalesReturns() {
 
   const handleSearch = () => {
     setSearchQuery(searchTerm); // Apply the search term
-    loadReturns();
   };
+
+  // Filter returns based on search query
+  const filteredReturns = returns.filter(returnItem => {
+    if (!searchQuery) return true;
+    const searchLower = searchQuery.toLowerCase();
+    
+    // Search across multiple fields
+    return (
+      returnItem.id.toLowerCase().includes(searchLower) ||
+      returnItem.reason.toLowerCase().includes(searchLower) ||
+      (returnItem.product?.productName && returnItem.product.productName.toLowerCase().includes(searchLower)) ||
+      (returnItem.product?.sku && returnItem.product.sku.toLowerCase().includes(searchLower)) ||
+      (returnItem.customerFirst && `${returnItem.customerFirst} ${returnItem.customerLast}`.toLowerCase().includes(searchLower)) ||
+      (returnItem.customerEmail && returnItem.customerEmail.toLowerCase().includes(searchLower))
+    );
+  });
 
   const handleReturnClick = (returnItem: AfterSalesReturn) => {
     // Navigate to return detail page
@@ -94,7 +109,7 @@ export function AfterSalesReturns() {
             </Button>
           </div>
           <ReturnsTable
-            returns={returns}
+            returns={filteredReturns}
             loading={loading}
             onReturnClick={handleReturnClick}
           />
