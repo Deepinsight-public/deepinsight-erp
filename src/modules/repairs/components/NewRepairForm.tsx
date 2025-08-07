@@ -19,6 +19,8 @@ import { SelectWithSearch } from '@/components/shared/SelectWithSearch';
 
 import { createRepair } from '../api/repairs';
 import { searchSalesOrders, getSalesOrderDetails } from '../api/salesOrders';
+import { searchCustomers, CustomerOption } from '../api/customers';
+import { searchProducts, ProductOption } from '../api/products';
 import { CreateRepairData } from '../types';
 import { cn } from '@/lib/utils';
 
@@ -45,6 +47,8 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
   const [orderSearchResults, setOrderSearchResults] = useState<any[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [customerOptions, setCustomerOptions] = useState<CustomerOption[]>([]);
+  const [productOptions, setProductOptions] = useState<ProductOption[]>([]);
   const { showSuccess, showError } = useToastService();
 
   const form = useForm<RepairFormData>({
@@ -73,6 +77,38 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
     } catch (error) {
       console.error('Error searching orders:', error);
       setOrderSearchResults([]);
+    }
+  };
+
+  // Handle customer search
+  const handleCustomerSearch = async (query: string) => {
+    if (query.length < 2) {
+      setCustomerOptions([]);
+      return;
+    }
+    
+    try {
+      const results = await searchCustomers(query);
+      setCustomerOptions(results);
+    } catch (error) {
+      console.error('Error searching customers:', error);
+      setCustomerOptions([]);
+    }
+  };
+
+  // Handle product search
+  const handleProductSearch = async (query: string) => {
+    if (query.length < 2) {
+      setProductOptions([]);
+      return;
+    }
+    
+    try {
+      const results = await searchProducts(query);
+      setProductOptions(results);
+    } catch (error) {
+      console.error('Error searching products:', error);
+      setProductOptions([]);
     }
   };
 
@@ -153,22 +189,6 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
     { value: 'replacement', label: 'Replacement' }
   ];
 
-  // Mock product options - in real app this would come from an API
-  const productOptions = [
-    { value: 'prod-1', label: 'iPhone 15 Pro Max - Space Black' },
-    { value: 'prod-2', label: 'MacBook Pro 16" M3 Max' },
-    { value: 'prod-3', label: 'iPad Air 11" M2' },
-    { value: 'prod-4', label: 'Apple Watch Series 9 GPS' }
-  ];
-
-  // Mock customer options - in real app this would come from an API
-  const customerOptions = [
-    { value: 'cust-1', label: 'John Smith (john@example.com)' },
-    { value: 'cust-2', label: 'Sarah Johnson (sarah@example.com)' },
-    { value: 'cust-3', label: 'Mike Chen (mike@example.com)' },
-    { value: 'cust-4', label: 'Emily Davis (emily@example.com)' }
-  ];
-
   return (
     <Card>
       <CardHeader>
@@ -219,8 +239,10 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                         options={productOptions}
                         value={field.value}
                         onValueChange={field.onChange}
+                        onSearchChange={handleProductSearch}
                         placeholder="Select"
                         searchPlaceholder="Search"
+                        emptyText="No products found. Type to search..."
                       />
                     </FormControl>
                     <FormMessage />
@@ -286,12 +308,13 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                           // Auto-fill customer name based on selection
                           const selectedCustomer = customerOptions.find(c => c.value === value);
                           if (selectedCustomer) {
-                            const name = selectedCustomer.label.split(' (')[0];
-                            form.setValue('customerName', name);
+                            form.setValue('customerName', selectedCustomer.name);
                           }
                         }}
+                        onSearchChange={handleCustomerSearch}
                         placeholder="Select"
                         searchPlaceholder="Search"
+                        emptyText="No customers found. Type to search..."
                       />
                     </FormControl>
                     <FormMessage />
