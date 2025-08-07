@@ -40,11 +40,6 @@ export function DataTable<T extends Record<string, any>>({
   if (loading) {
     return (
       <Card>
-        {title && (
-          <CardHeader>
-            <CardTitle>{title}</CardTitle>
-          </CardHeader>
-        )}
         <CardContent>
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, index) => (
@@ -58,11 +53,6 @@ export function DataTable<T extends Record<string, any>>({
 
   return (
     <Card>
-      {title && (
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-      )}
       <CardContent className="p-0">
         <Table>
           <TableHeader>
