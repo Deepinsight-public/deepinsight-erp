@@ -1,6 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { ReturnFormData, CustomerLookupResult, WarehouseOption, ProductMapData, AfterSalesReturn } from '../types/newReturn';
 import type { ProductLookupItem } from '@/modules/sales-inventory/types';
+import { validateWarrantyForReturn } from '../services/warrantyValidation';
+import type { WarrantyValidationRequest } from '../types/warrantyValidation';
 
 export const searchCustomersByEmail = async (email: string): Promise<CustomerLookupResult[]> => {
   if (!email.trim()) return [];
@@ -114,6 +116,18 @@ export const createAfterSalesReturn = async (returnData: ReturnFormData): Promis
     .single();
 
   if (!profile?.store_id) throw new Error('Store not found for user');
+
+  // Validate warranty status before creating return
+  const warrantyRequest: WarrantyValidationRequest = {
+    productId: returnData.productId,
+    customerEmail: returnData.customerEmail,
+  };
+
+  const warrantyValidation = await validateWarrantyForReturn(warrantyRequest);
+  
+  if (!warrantyValidation.isValid) {
+    throw new Error(`Warranty validation failed: ${warrantyValidation.errorMessage}`);
+  }
 
   // Create the return record
   const { data, error } = await supabase
