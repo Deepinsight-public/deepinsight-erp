@@ -182,9 +182,6 @@ export function ScrapPage() {
 
       {/* Scrap Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>{t('scrap.list.count', { count: scrapItems.length })}</CardTitle>
-        </CardHeader>
         <CardContent className="p-0">
           <DataTable
             data={scrapItems}
