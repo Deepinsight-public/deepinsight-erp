@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { StoreLayout } from '@/components/store/StoreLayout';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { StandardSearchBar } from '@/components/shared/StandardSearchBar';
 import { useTranslation } from 'react-i18next';
 import { ReturnsTable } from './ReturnsTable';
 import { CreateReturnDialog } from './CreateReturnDialog';
@@ -78,22 +78,13 @@ export function AfterSalesReturns() {
         </TabsList>
         
         <TabsContent value="processing" className="space-y-4">
-          {/* Search Bar for Return Processing */}
-          <div className="flex gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t('afterSales.search.placeholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              />
-            </div>
-            <Button onClick={handleSearch} variant="outline">
-              {t('afterSales.search.button')}
-            </Button>
-          </div>
+          <StandardSearchBar
+            title={t('afterSales.returns.search')}
+            searchValue={searchQuery}
+            searchPlaceholder={t('afterSales.search.placeholder')}
+            onSearchChange={setSearchQuery}
+            onSearch={handleSearch}
+          />
           
           <div className="flex justify-end mb-4">
             <Button onClick={() => navigate('/store/after-sales/returns/new')}>

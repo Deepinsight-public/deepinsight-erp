@@ -12,6 +12,7 @@ export { ChartWidget } from './shared/ChartWidget';
 export { FormDialog } from './shared/FormDialog';
 export { DateRangePicker } from './shared/DateRangePicker';
 export { SelectWithSearch } from './shared/SelectWithSearch';
+export { StandardSearchBar } from './shared/StandardSearchBar';
 export { StatusBadge } from './shared/StatusBadge';
 export { ConfirmDialog } from './shared/ConfirmDialog';
 export { LoadingOverlay, LoadingSpinner } from './shared/LoadingOverlay';

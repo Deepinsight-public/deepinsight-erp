@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, Download, FileText, FileSpreadsheet, X } from 'lucide-react';
+import { Plus, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { StandardSearchBar } from '@/components/shared/StandardSearchBar';
 import { Breadcrumbs } from '@/components';
 import { CustomerList } from '@/modules/crm-analytics/components/CustomerList';
 import { AddCustomerDialog } from '@/modules/crm-analytics/components/AddCustomerDialog';
@@ -83,22 +83,16 @@ export default function Customers() {
       </div>
 
       <div className="flex gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t('crm.searchPlaceholder')}
-            value={searchInput}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-10 pr-10"
+        <div className="flex-1">
+          <StandardSearchBar
+            title={t('crm.searchTitle')}
+            searchValue={searchInput}
+            searchPlaceholder={t('crm.searchPlaceholder')}
+            onSearchChange={handleSearchChange}
+            onSearch={() => {}}
+            onClear={handleClearSearch}
+            showClear={!!searchInput}
           />
-          {searchInput && (
-            <button
-              onClick={handleClearSearch}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

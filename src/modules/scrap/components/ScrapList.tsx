@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { StandardSearchBar } from '@/components/shared/StandardSearchBar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -100,55 +99,38 @@ export function ScrapList() {
       {/* Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">{t('scrap.list.search')}</label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder={t('scrap.list.searchPlaceholder')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                />
-                <Button onClick={handleSearch} variant="outline">
-                  <Search className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            <div className="w-48">
-              <label className="text-sm font-medium mb-2 block">{t('scrap.list.status')}</label>
-              <Select
-                value={filters.status || ''}
-                onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : value as ScrapStatus)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('scrap.list.allStatus')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('scrap.list.allStatus')}</SelectItem>
-                  <SelectItem value="draft">{t('scrap.status.draft')}</SelectItem>
-                  <SelectItem value="submitted">{t('scrap.status.submitted')}</SelectItem>
-                  <SelectItem value="l1_approved">{t('scrap.status.l1Approved')}</SelectItem>
-                  <SelectItem value="final_approved">{t('scrap.status.finalApproved')}</SelectItem>
-                  <SelectItem value="posted">{t('scrap.status.posted')}</SelectItem>
-                  <SelectItem value="rejected">{t('scrap.status.rejected')}</SelectItem>
-                  <SelectItem value="cancelled">{t('scrap.status.cancelled')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setFilters({});
-                setSearchQuery('');
-              }}
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              {t('scrap.list.clear')}
-            </Button>
-          </div>
+          <StandardSearchBar
+            title={t('scrap.list.search')}
+            searchValue={searchQuery}
+            searchPlaceholder={t('scrap.list.searchPlaceholder')}
+            onSearchChange={setSearchQuery}
+            onSearch={handleSearch}
+            filters={[
+              {
+                key: 'status',
+                label: t('scrap.list.status'),
+                placeholder: t('scrap.list.allStatus'),
+                type: 'select',
+                options: [
+                  { value: 'all', label: t('scrap.list.allStatus') },
+                  { value: 'draft', label: t('scrap.status.draft') },
+                  { value: 'submitted', label: t('scrap.status.submitted') },
+                  { value: 'l1_approved', label: t('scrap.status.l1Approved') },
+                  { value: 'final_approved', label: t('scrap.status.finalApproved') },
+                  { value: 'posted', label: t('scrap.status.posted') },
+                  { value: 'rejected', label: t('scrap.status.rejected') },
+                  { value: 'cancelled', label: t('scrap.status.cancelled') },
+                ],
+                value: filters.status || 'all',
+                onChange: (value) => handleFilterChange('status', value === 'all' ? undefined : value as ScrapStatus),
+              },
+            ]}
+            onClear={() => {
+              setFilters({});
+              setSearchQuery('');
+            }}
+            showClear={true}
+          />
         </CardContent>
       </Card>
 

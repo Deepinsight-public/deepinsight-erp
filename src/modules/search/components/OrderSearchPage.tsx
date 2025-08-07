@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Filter } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/shared/DataTable';
+import { StandardSearchBar } from '@/components/shared/StandardSearchBar';
 import { searchProducts } from '../api/products';
 import type { ProductSearchItem, ProductSearchFilters } from '../types';
 
@@ -104,71 +102,41 @@ export function OrderSearchPage() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('search.productSearch')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <div className="flex-1">
-              <Input
-                placeholder={t('search.placeholder')}
-                value={filters.search || ''}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch();
-                  }
-                }}
-              />
-            </div>
-            <Button onClick={() => handleSearch()}>
-              <Search className="h-4 w-4 mr-2" />
-              {t('search.searchButton')}
-            </Button>
-          </div>
-
-          {showFilters && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
-              <div className="space-y-2">
-                <Label htmlFor="kwCode">{t('search.filters.kwCode')}</Label>
-                <Input
-                  id="kwCode"
-                  value={filters.kwCode || ''}
-                  onChange={(e) => handleFilterChange('kwCode', e.target.value)}
-                  placeholder={t('search.filters.kwCodePlaceholder')}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="a4lCode">{t('search.filters.a4lCode')}</Label>
-                <Input
-                  id="a4lCode"
-                  value={filters.a4lCode || ''}
-                  onChange={(e) => handleFilterChange('a4lCode', e.target.value)}
-                  placeholder={t('search.filters.a4lCodePlaceholder')}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="modelNumber">{t('search.filters.modelNumber')}</Label>
-                <Input
-                  id="modelNumber"
-                  value={filters.modelNumber || ''}
-                  onChange={(e) => handleFilterChange('modelNumber', e.target.value)}
-                  placeholder={t('search.filters.modelNumberPlaceholder')}
-                />
-              </div>
-              <div className="md:col-span-3 flex justify-end space-x-2">
-                <Button variant="outline" onClick={clearFilters}>
-                  {t('search.filters.clear')}
-                </Button>
-                <Button onClick={() => handleSearch()}>
-                  {t('search.filters.apply')}
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <StandardSearchBar
+        title={t('search.productSearch')}
+        searchValue={filters.search || ''}
+        searchPlaceholder={t('search.placeholder')}
+        onSearchChange={(value) => handleFilterChange('search', value)}
+        onSearch={() => handleSearch()}
+        filters={showFilters ? [
+          {
+            key: 'kwCode',
+            label: t('search.filters.kwCode'),
+            placeholder: t('search.filters.kwCodePlaceholder'),
+            type: 'input',
+            value: filters.kwCode || '',
+            onChange: (value) => handleFilterChange('kwCode', value),
+          },
+          {
+            key: 'a4lCode',
+            label: t('search.filters.a4lCode'),
+            placeholder: t('search.filters.a4lCodePlaceholder'),
+            type: 'input',
+            value: filters.a4lCode || '',
+            onChange: (value) => handleFilterChange('a4lCode', value),
+          },
+          {
+            key: 'modelNumber',
+            label: t('search.filters.modelNumber'),
+            placeholder: t('search.filters.modelNumberPlaceholder'),
+            type: 'input',
+            value: filters.modelNumber || '',
+            onChange: (value) => handleFilterChange('modelNumber', value),
+          },
+        ] : []}
+        onClear={clearFilters}
+        showClear={true}
+      />
 
       <DataTable
         data={products}

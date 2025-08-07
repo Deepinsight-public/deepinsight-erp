@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StandardSearchBar } from '@/components/shared/StandardSearchBar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToastService } from '@/components';
 import { WarrantyClaimsTable } from './WarrantyClaimsTable';
@@ -58,22 +58,13 @@ export function WarrantyClaims() {
 
   return (
     <div className="space-y-4">
-      {/* Search Bar for Warranty Claims */}
-      <div className="flex gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t('warranty.searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-          />
-        </div>
-        <Button onClick={handleSearch} variant="outline">
-          {t('warranty.search')}
-        </Button>
-      </div>
+      <StandardSearchBar
+        title={t('warranty.search')}
+        searchValue={searchQuery}
+        searchPlaceholder={t('warranty.searchPlaceholder')}
+        onSearchChange={setSearchQuery}
+        onSearch={handleSearch}
+      />
       
       <div className="flex justify-end mb-4">
         <Button onClick={() => navigate('/store/after-sales/warranty/new')}>

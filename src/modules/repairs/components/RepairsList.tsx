@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { StandardSearchBar } from '@/components/shared/StandardSearchBar';
 import { useTranslation } from 'react-i18next';
 import { RepairsTable } from './RepairsTable';
 import type { Repair } from '../types';
@@ -76,22 +76,13 @@ export function RepairsList() {
         </Button>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t('repairs.searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-          />
-        </div>
-        <Button onClick={handleSearch} variant="outline">
-          {t('actions.search')}
-        </Button>
-      </div>
+      <StandardSearchBar
+        title={t('repairs.search')}
+        searchValue={searchQuery}
+        searchPlaceholder={t('repairs.searchPlaceholder')}
+        onSearchChange={setSearchQuery}
+        onSearch={handleSearch}
+      />
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
