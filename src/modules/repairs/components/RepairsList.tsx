@@ -17,7 +17,6 @@ export function RepairsList() {
   const [repairs, setRepairs] = useState<Repair[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchTerm, setSearchTerm] = useState(''); // For display only
   const [activeTab, setActiveTab] = useState('all');
   const { showError } = useToastService();
 
@@ -39,7 +38,7 @@ export function RepairsList() {
   }, []);
 
   const handleSearch = () => {
-    setSearchQuery(searchTerm); // Apply the search term
+    // searchQuery is updated directly by StandardSearchBar
     loadRepairs();
   };
 
@@ -84,14 +83,9 @@ export function RepairsList() {
 
       <StandardSearchBar
         title={t('repairs.search.title') || 'Search Repairs'}
-        searchValue={searchTerm}
+        searchValue={searchQuery}
         searchPlaceholder={t('repairs.searchPlaceholder')}
-        onSearchChange={(value) => {
-          setSearchTerm(value);
-          if (value === '') {
-            setSearchQuery(''); // Clear search immediately when input is cleared
-          }
-        }}
+        onSearchChange={setSearchQuery}
         onSearch={handleSearch}
       />
 
