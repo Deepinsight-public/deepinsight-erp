@@ -10,6 +10,7 @@ import {
   Search,
   RotateCcw,
   ArrowUp,
+  Shield,
   Trash2,
   Settings,
   Home,
@@ -67,6 +68,11 @@ const menuItems = [
     title: 'orderSearch',
     url: '/store/orders/search',
     icon: Search,
+  },
+  {
+    title: 'warranty',
+    url: '/store/after-sales/warranty',
+    icon: Shield,
   },
   {
     title: 'scrap',

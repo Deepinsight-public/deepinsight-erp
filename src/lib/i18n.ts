@@ -13,6 +13,7 @@ const resources = {
       afterSales: 'After-Sales',
       repairs: 'Repairs',
       orderSearch: 'Order Search',
+      warranty: 'Warranty Claims',
       scrap: 'Scrap',
       settings: 'Settings',
       
@@ -153,6 +154,7 @@ const resources = {
       afterSales: '售后服务',
       repairs: '维修管理',
       orderSearch: '订单查询',
+      warranty: '保修索赔',
       scrap: '报废管理',
       settings: '设置',
       
