@@ -178,17 +178,27 @@ export function PivotTool({
       columns.push({
         key: fieldKey,
         title: field?.label || fieldKey,
-        render: (value: any, record: PivotRow) => (
-          <div style={{ paddingLeft: `${index * 20}px` }}>
-            {record.isGroupRow ? (
-              <span className="font-medium">
-                {value} ({record.count} items)
-              </span>
-            ) : (
-              value
-            )}
-          </div>
-        )
+        render: (value: any, record: PivotRow) => {
+          // Only show value if this column matches the grouping level or it's a detail row
+          const shouldShowValue = !record.isGroupRow || record.groupKey === fieldKey;
+          
+          return (
+            <div style={{ paddingLeft: `${record.level || 0 * 20}px` }}>
+              {shouldShowValue ? (
+                <span className={record.isGroupRow ? "font-medium" : ""}>
+                  {value}
+                  {record.isGroupRow && record.groupKey === fieldKey && (
+                    <span className="text-muted-foreground ml-2">
+                      ({record.count})
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
+            </div>
+          );
+        }
       });
     });
 

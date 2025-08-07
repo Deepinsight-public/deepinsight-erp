@@ -10,6 +10,7 @@ export interface PivotRow {
   isGroupRow?: boolean;
   level?: number;
   count?: number;
+  groupKey?: string; // Which field this row is grouping by
 }
 
 /**
@@ -110,10 +111,11 @@ function flattenGroupedData(
     const groupRow: PivotRow = {
       isGroupRow: true,
       level,
-      count: Array.isArray(subData) ? subData.length : countLeafItems(subData)
+      count: Array.isArray(subData) ? subData.length : countLeafItems(subData),
+      groupKey: groupKeys[level] // Track which field this row is grouping by
     };
 
-    // Set the group value for the current level
+    // Set the group value for the current level only
     groupRow[groupKeys[level]] = groupValue;
 
     // Calculate aggregations for this group
