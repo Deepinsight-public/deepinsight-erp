@@ -120,8 +120,9 @@ export function PivotAnalysisPage() {
 
   // Handle aggregation field changes
   const addAggField = (fieldKey: string) => {
-    const field = AVAILABLE_AGGREGATION_FIELDS.find(f => f.key === fieldKey);
-    if (field && !selectedAggFields.find(f => f.key === fieldKey && f.fn === field.fn)) {
+    const [key, fn] = fieldKey.split('-');
+    const field = AVAILABLE_AGGREGATION_FIELDS.find(f => f.key === key && f.fn === fn);
+    if (field && !selectedAggFields.find(f => f.key === field.key && f.fn === field.fn)) {
       setSelectedAggFields(prev => [...prev, field]);
     }
   };
@@ -244,21 +245,25 @@ export function PivotAnalysisPage() {
     }
 
     // Aggregation columns
-    selectedAggFields.forEach(field => {
+    selectedAggFields.forEach((field, index) => {
       columns.push({
-        key: field.key,
+        key: `${field.key}-${field.fn}-${index}`, // Use unique key to avoid duplicates
         title: field.label,
         className: 'text-right',
-        render: (value: number, record: FlatPivotRow) => (
-          <div className="text-right">
-            <span className={record._isParent ? 'font-semibold' : ''}>
-              {field.fn === 'count' ? 
-                value?.toLocaleString() : 
-                `$${(value || 0).toFixed(2)}`
-              }
-            </span>
-          </div>
-        )
+        render: (value: number, record: FlatPivotRow) => {
+          // Get the correct value from the record's aggregations
+          const aggValue = record[`${field.key}-${field.fn}`] || record[field.key] || value;
+          return (
+            <div className="text-right">
+              <span className={record._isParent ? 'font-semibold' : ''}>
+                {field.fn === 'count' ? 
+                  aggValue?.toLocaleString() : 
+                  `$${(aggValue || 0).toFixed(2)}`
+                }
+              </span>
+            </div>
+          );
+        }
       });
     });
 
@@ -416,8 +421,7 @@ export function PivotAnalysisPage() {
                       }))}
                     value=""
                     onValueChange={(value) => {
-                      const [key, fn] = value.split('-');
-                      addAggField(`${key}-${fn}`);
+                      addAggField(value);
                     }}
                     placeholder="Add aggregation field"
                     searchPlaceholder="Search aggregations..."

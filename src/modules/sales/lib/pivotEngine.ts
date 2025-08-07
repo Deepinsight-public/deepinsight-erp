@@ -139,22 +139,23 @@ export class PivotEngine {
 
     this.aggregationFields.forEach(field => {
       const values = data.map(item => this.getAggregationValue(item, field.key)).filter(v => v !== null);
+      const uniqueKey = `${field.key}-${field.fn}`;
       
       switch (field.fn) {
         case 'sum':
-          result[field.key] = values.reduce((sum, val) => sum + val, 0);
+          result[uniqueKey] = values.reduce((sum, val) => sum + val, 0);
           break;
         case 'count':
-          result[field.key] = data.length;
+          result[uniqueKey] = data.length;
           break;
         case 'avg':
-          result[field.key] = values.length > 0 ? values.reduce((sum, val) => sum + val, 0) / values.length : 0;
+          result[uniqueKey] = values.length > 0 ? values.reduce((sum, val) => sum + val, 0) / values.length : 0;
           break;
         case 'min':
-          result[field.key] = values.length > 0 ? Math.min(...values) : 0;
+          result[uniqueKey] = values.length > 0 ? Math.min(...values) : 0;
           break;
         case 'max':
-          result[field.key] = values.length > 0 ? Math.max(...values) : 0;
+          result[uniqueKey] = values.length > 0 ? Math.max(...values) : 0;
           break;
       }
     });
