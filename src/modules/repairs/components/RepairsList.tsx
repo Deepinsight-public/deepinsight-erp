@@ -86,7 +86,12 @@ export function RepairsList() {
         title={t('repairs.search.title') || 'Search Repairs'}
         searchValue={searchTerm}
         searchPlaceholder={t('repairs.searchPlaceholder')}
-        onSearchChange={setSearchTerm}
+        onSearchChange={(value) => {
+          setSearchTerm(value);
+          if (value === '') {
+            setSearchQuery(''); // Clear search immediately when input is cleared
+          }
+        }}
         onSearch={handleSearch}
       />
 

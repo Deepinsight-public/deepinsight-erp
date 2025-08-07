@@ -92,8 +92,8 @@ export function StandardSearchBar({
               <button
                 onClick={() => {
                   onSearchChange('');
-                  // Also trigger search immediately when clearing to show all data
-                  onSearch();
+                  // Automatically trigger search to show all data when clearing
+                  setTimeout(() => onSearch(), 0);
                 }}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
                 type="button"

@@ -67,7 +67,12 @@ export function WarrantyClaims() {
         title={t('warranty.search.title') || 'Search Warranty Claims'}
         searchValue={searchTerm}
         searchPlaceholder={t('warranty.searchPlaceholder')}
-        onSearchChange={setSearchTerm}
+        onSearchChange={(value) => {
+          setSearchTerm(value);
+          if (value === '') {
+            setSearchQuery(''); // Clear search immediately when input is cleared
+          }
+        }}
         onSearch={handleSearch}
       />
       

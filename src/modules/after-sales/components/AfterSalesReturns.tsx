@@ -98,7 +98,12 @@ export function AfterSalesReturns() {
             title={t('afterSales.search.title') || 'Search Returns'}
             searchValue={searchTerm}
             searchPlaceholder={t('afterSales.search.placeholder')}
-            onSearchChange={setSearchTerm}
+            onSearchChange={(value) => {
+              setSearchTerm(value);
+              if (value === '') {
+                setSearchQuery(''); // Clear search immediately when input is cleared
+              }
+            }}
             onSearch={handleSearch}
           />
           
