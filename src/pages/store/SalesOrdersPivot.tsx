@@ -1,6 +1,5 @@
 import { Breadcrumbs } from '@/components';
-import { PivotTool } from '@/modules/sales-inventory/components/PivotTool';
-import { fetchSalesOrders } from '@/modules/sales-inventory/api/sales-orders';
+import { PivotAnalysisPage } from '@/modules/sales/components/PivotAnalysisPage';
 
 export default function SalesOrdersPivot() {
   return (
@@ -10,22 +9,7 @@ export default function SalesOrdersPivot() {
         { title: 'Pivot Analysis' }
       ]} />
       
-      <PivotTool
-        sourceQuery={fetchSalesOrders}
-        defaultGroupBy={['orderDate']}
-        groupableFields={[
-          { key: 'orderDate', label: 'Date' },
-          { key: 'customerName', label: 'Customer' },
-          { key: 'status', label: 'Status' },
-          { key: 'orderType', label: 'Order Type' }
-        ]}
-        summariseFields={[
-          { key: 'totalAmount', label: 'Grand Total', fn: 'sum' },
-          { key: 'subTotal', label: 'Sub Total', fn: 'sum' },
-          { key: 'taxAmount', label: 'Tax', fn: 'sum' },
-          { key: 'discountAmount', label: 'Discount', fn: 'sum' }
-        ]}
-      />
+      <PivotAnalysisPage />
     </div>
   );
 }
