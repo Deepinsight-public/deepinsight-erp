@@ -4,7 +4,7 @@ import { Breadcrumbs, KPIWidget, ChartWidget } from '@/components';
 
 const mockKPIData = [
   {
-    title: 'Total Sales',
+    titleKey: 'dashboard.kpi.totalSales',
     value: 45680,
     icon: DollarSign,
     change: { value: 12.5, period: 'last month' },
@@ -13,7 +13,7 @@ const mockKPIData = [
     color: 'success' as const,
   },
   {
-    title: 'Orders Today',
+    titleKey: 'dashboard.kpi.ordersToday',
     value: 28,
     icon: ShoppingCart,
     change: { value: -5.2, period: 'yesterday' },
@@ -21,7 +21,7 @@ const mockKPIData = [
     color: 'primary' as const,
   },
   {
-    title: 'Low Stock Items',
+    titleKey: 'dashboard.kpi.lowStockItems',
     value: 15,
     icon: Package,
     change: { value: 3.1, period: 'last week' },
@@ -29,7 +29,7 @@ const mockKPIData = [
     color: 'warning' as const,
   },
   {
-    title: 'Active Customers',
+    titleKey: 'dashboard.kpi.activeCustomers',
     value: 1248,
     icon: Users,
     change: { value: 8.7, period: 'last month' },
@@ -62,9 +62,9 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <Breadcrumbs items={[{ title: t('dashboard') }]} />
-        <h1 className="text-3xl font-bold">{t('dashboard')}</h1>
+        <h1 className="text-3xl font-bold">{t('dashboard.title')}</h1>
         <p className="text-muted-foreground mt-2">
-          Welcome to your store management dashboard. Monitor key metrics and activities.
+          {t('dashboard.welcome')}
         </p>
       </div>
 
@@ -73,7 +73,7 @@ export default function Dashboard() {
         {mockKPIData.map((kpi, index) => (
           <KPIWidget
             key={index}
-            title={kpi.title}
+            title={t(kpi.titleKey)}
             value={kpi.value}
             icon={kpi.icon}
             change={kpi.change}
@@ -87,7 +87,7 @@ export default function Dashboard() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartWidget
-          title="Monthly Sales Trend"
+          title={t('dashboard.charts.monthlySales')}
           data={mockSalesData}
           type="line"
           xAxisKey="name"
@@ -96,7 +96,7 @@ export default function Dashboard() {
         />
         
         <ChartWidget
-          title="Sales by Category"
+          title={t('dashboard.charts.salesByCategory')}
           data={mockCategoryData}
           type="pie"
           xAxisKey="name"
@@ -107,16 +107,16 @@ export default function Dashboard() {
       {/* Recent Activity Placeholder */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-card rounded-lg border p-6">
-          <h3 className="text-lg font-semibold mb-4">Recent Orders</h3>
+          <h3 className="text-lg font-semibold mb-4">{t('dashboard.recent.orders')}</h3>
           <p className="text-muted-foreground">
-            Recent order activity will be displayed here once the sales order functionality is implemented.
+            {t('dashboard.recent.ordersDesc')}
           </p>
         </div>
         
         <div className="bg-card rounded-lg border p-6">
-          <h3 className="text-lg font-semibold mb-4">Inventory Alerts</h3>
+          <h3 className="text-lg font-semibold mb-4">{t('dashboard.inventory.alerts')}</h3>
           <p className="text-muted-foreground">
-            Low stock alerts and inventory notifications will be shown here.
+            {t('dashboard.inventory.alertsDesc')}
           </p>
         </div>
       </div>

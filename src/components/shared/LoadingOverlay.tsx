@@ -1,4 +1,5 @@
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 interface LoadingOverlayProps {
@@ -9,9 +10,11 @@ interface LoadingOverlayProps {
 
 export function LoadingOverlay({ 
   className, 
-  text = 'Loading...', 
+  text, 
   size = 'md' 
 }: LoadingOverlayProps) {
+  const { t } = useTranslation();
+  const defaultText = text || t('message.loading');
   const sizeClasses = {
     sm: 'h-4 w-4',
     md: 'h-6 w-6',
@@ -25,8 +28,8 @@ export function LoadingOverlay({
     )}>
       <div className="flex flex-col items-center gap-2">
         <Loader2 className={cn('animate-spin', sizeClasses[size])} />
-        {text && (
-          <p className="text-sm text-muted-foreground">{text}</p>
+        {defaultText && (
+          <p className="text-sm text-muted-foreground">{defaultText}</p>
         )}
       </div>
     </div>

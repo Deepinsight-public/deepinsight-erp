@@ -31,7 +31,7 @@ export function AfterSalesReturns() {
       setReturns(data);
     } catch (error) {
       console.error('Error loading returns:', error);
-      showError('Failed to load returns');
+      showError(t('afterSales.loadError'));
     } finally {
       setLoading(false);
     }
@@ -64,17 +64,17 @@ export function AfterSalesReturns() {
       <Breadcrumbs items={breadcrumbs} />
       
       <div>
-        <h1 className="text-3xl font-bold">After-Sales Returns</h1>
+        <h1 className="text-3xl font-bold">{t('afterSales.title')}</h1>
         <p className="text-muted-foreground">
-          Manage product returns and warranty claims
+          {t('afterSales.description')}
         </p>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
-          <TabsTrigger value="processing">Return Processing</TabsTrigger>
-          <TabsTrigger value="warranty">Warranty Claim</TabsTrigger>
+          <TabsTrigger value="processing">{t('afterSales.tabs.processing')}</TabsTrigger>
+          <TabsTrigger value="warranty">{t('afterSales.tabs.warranty')}</TabsTrigger>
         </TabsList>
         
         <TabsContent value="processing" className="space-y-4">
@@ -83,7 +83,7 @@ export function AfterSalesReturns() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by Return No., Reason, or Status..."
+                placeholder={t('afterSales.search.placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -91,14 +91,14 @@ export function AfterSalesReturns() {
               />
             </div>
             <Button onClick={handleSearch} variant="outline">
-              Search
+              {t('afterSales.search.button')}
             </Button>
           </div>
           
           <div className="flex justify-end mb-4">
             <Button onClick={() => navigate('/store/after-sales/returns/new')}>
               <Plus className="h-4 w-4 mr-2" />
-              Create Return
+              {t('afterSales.createReturn')}
             </Button>
           </div>
           <ReturnsTable

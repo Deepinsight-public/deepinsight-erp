@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Table,
   TableBody,
@@ -35,6 +36,7 @@ export function DataTable<T extends Record<string, any>>({
   onRowClick,
   pagination,
 }: DataTableProps<T>) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <Card>
@@ -82,7 +84,7 @@ export function DataTable<T extends Record<string, any>>({
                   colSpan={columns.length} 
                   className="text-center py-8 text-muted-foreground"
                 >
-                  No data available
+                  {t('message.noData')}
                 </TableCell>
               </TableRow>
             ) : (

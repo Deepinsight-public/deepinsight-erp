@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronRight, Home } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
@@ -12,6 +13,8 @@ interface BreadcrumbsProps {
 }
 
 export function Breadcrumbs({ items }: BreadcrumbsProps) {
+  const { t } = useTranslation();
+  
   return (
     <nav className="flex items-center space-x-1 text-sm text-muted-foreground mb-4">
       <NavLink 
@@ -19,7 +22,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
         className="flex items-center hover:text-foreground transition-colors"
       >
         <Home className="h-4 w-4" />
-        <span className="sr-only">Dashboard</span>
+        <span className="sr-only">{t('nav.dashboard')}</span>
       </NavLink>
       
       {items.map((item, index) => (
