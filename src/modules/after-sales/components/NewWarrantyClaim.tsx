@@ -16,6 +16,7 @@ import { useToastService } from '@/components/shared/ToastService';
 import { searchAvailableProducts } from '@/modules/sales-inventory/api/products';
 import { createWarrantyClaim } from '../api/warranty';
 import { CreateWarrantyData, WarrantyLine } from '../types/warranty';
+import { supabase } from '@/integrations/supabase/client';
 
 const warrantyLineSchema = z.object({
   productId: z.string().min(1, 'Product is required'),
@@ -115,12 +116,20 @@ export function NewWarrantyClaim() {
     try {
       setSaving(true);
       
-      // Get user's store ID from profile  
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const storeId = user.store_id;
-      
-      if (!storeId) {
-        throw new Error('Store ID not found. Please ensure you are logged in properly.');
+      // Get current user and their profile
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated. Please log in.');
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('store_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError || !profile?.store_id) {
+        throw new Error('Store ID not found. Please ensure your profile is set up properly.');
       }
 
       const createData: CreateWarrantyData = {
@@ -128,7 +137,7 @@ export function NewWarrantyClaim() {
         salesOrderId: data.salesOrderId || undefined,
         invoiceDate: data.invoiceDate,
         faultDesc: data.faultDesc,
-        storeId,
+        storeId: profile.store_id,
         lines
       };
 
