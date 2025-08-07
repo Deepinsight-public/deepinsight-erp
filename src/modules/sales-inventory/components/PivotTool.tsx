@@ -210,11 +210,18 @@ export function PivotTool({
           const shouldShowValue = pivot.groupKey === fieldKey;
           const hasChildren = pivot.children && pivot.children.length > 0;
           
+          const handleClick = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            if (hasChildren) {
+              toggleRow(pivot.id);
+            }
+          };
+          
           return (
             <div 
-              className={`flex items-center ${hasChildren ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
+              className={`flex items-center py-1 ${hasChildren ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
               style={{ paddingLeft: `${pivot.level * 16}px` }}
-              onClick={hasChildren ? () => toggleRow(pivot.id) : undefined}
+              onClick={handleClick}
             >
               {hasChildren && (
                 <ChevronRight
