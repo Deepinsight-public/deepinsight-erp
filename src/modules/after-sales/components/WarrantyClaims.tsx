@@ -55,20 +55,7 @@ export function WarrantyClaims() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Warranty Claims</h1>
-          <p className="text-muted-foreground">
-            Manage warranty claims and product returns under warranty
-          </p>
-        </div>
-        <Button onClick={() => navigate('/store/after-sales/returns/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Warranty Claim
-        </Button>
-      </div>
-
+    <div className="space-y-4">
       {/* Search Bar for Warranty Claims */}
       <div className="flex gap-4">
         <div className="flex-1 relative">
@@ -83,6 +70,13 @@ export function WarrantyClaims() {
         </div>
         <Button onClick={handleSearch} variant="outline">
           Search
+        </Button>
+      </div>
+      
+      <div className="flex justify-end mb-4">
+        <Button onClick={() => navigate('/store/after-sales/returns/new')}>
+          <Plus className="h-4 w-4 mr-2" />
+          New Warranty Claim
         </Button>
       </div>
 
