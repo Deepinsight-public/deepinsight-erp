@@ -1,0 +1,199 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Plus, Search } from 'lucide-react';
+import { format } from 'date-fns';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DataTable } from '@/components/shared/DataTable';
+
+import { getScrapItems } from '../api/scrap';
+import type { ScrapItem, ScrapFilters } from '../types';
+
+const STATUS_COLORS: Record<string, string> = {
+  draft: 'bg-gray-100 text-gray-800',
+  submitted: 'bg-blue-100 text-blue-800',
+  l1_approved: 'bg-yellow-100 text-yellow-800',
+  final_approved: 'bg-green-100 text-green-800',
+  posted: 'bg-purple-100 text-purple-800',
+  rejected: 'bg-red-100 text-red-800',
+  cancelled: 'bg-gray-100 text-gray-600',
+};
+
+export function ScrapPage() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [scrapItems, setScrapItems] = useState<ScrapItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<ScrapFilters>({});
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const loadScrapItems = async () => {
+    try {
+      setLoading(true);
+      const data = await getScrapItems(filters);
+      setScrapItems(data);
+    } catch (error) {
+      console.error('Error loading scrap items:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadScrapItems();
+  }, [filters]);
+
+  const handleSearch = () => {
+    setFilters(prev => ({ ...prev, search: searchTerm.trim() || undefined }));
+  };
+
+  const handleFilterChange = (key: keyof ScrapFilters, value: string | undefined) => {
+    setFilters(prev => ({ ...prev, [key]: value || undefined }));
+  };
+
+  const handleRowClick = (scrap: ScrapItem) => {
+    navigate(`/store/scrap/${scrap.id}`);
+  };
+
+  const columns = [
+    {
+      key: 'scrapNo',
+      title: t('scrap.table.scrapNo'),
+      render: (scrap) => (
+        <span className="font-medium font-mono">{scrap.scrapNo}</span>
+      )
+    },
+    {
+      key: 'createdAt',
+      title: t('scrap.table.date'),
+      render: (scrap) => format(new Date(scrap.createdAt), 'MMM dd, yyyy')
+    },
+    {
+      key: 'status',
+      title: t('scrap.table.status'),
+      render: (scrap) => (
+        <Badge 
+          variant="secondary"
+          className={STATUS_COLORS[scrap.status] || 'bg-gray-100 text-gray-800'}
+        >
+          {t(`scrap.status.${scrap.status}`)}
+        </Badge>
+      )
+    },
+    {
+      key: 'product',
+      title: t('scrap.table.product'),
+      render: (scrap) => (
+        <div>
+          {scrap.product ? (
+            <>
+              <div className="font-medium">{scrap.product.productName}</div>
+              <div className="text-sm text-muted-foreground">{scrap.product.sku}</div>
+            </>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'reason',
+      title: t('scrap.table.reason'),
+      render: (scrap) => (
+        <span className="capitalize">{scrap.reason || '-'}</span>
+      )
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">{t('scrap.title')}</h1>
+          <p className="text-muted-foreground">
+            {t('scrap.description')}
+          </p>
+        </div>
+        <Button onClick={() => navigate('/store/scrap/new')}>
+          <Plus className="h-4 w-4 mr-2" />
+          {t('scrap.addNew')}
+        </Button>
+      </div>
+
+      {/* Search and Filters */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">{t('scrap.search.label')}</label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder={t('scrap.search.placeholder')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                />
+                <Button onClick={handleSearch} variant="outline">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="w-48">
+              <label className="text-sm font-medium mb-2 block">{t('scrap.filter.status')}</label>
+              <Select
+                value={filters.status || ''}
+                onValueChange={(value) => handleFilterChange('status', value === 'all' ? undefined : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('scrap.filter.allStatus')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('scrap.filter.allStatus')}</SelectItem>
+                  <SelectItem value="draft">{t('scrap.status.draft')}</SelectItem>
+                  <SelectItem value="submitted">{t('scrap.status.submitted')}</SelectItem>
+                  <SelectItem value="l1_approved">{t('scrap.status.l1_approved')}</SelectItem>
+                  <SelectItem value="final_approved">{t('scrap.status.final_approved')}</SelectItem>
+                  <SelectItem value="posted">{t('scrap.status.posted')}</SelectItem>
+                  <SelectItem value="rejected">{t('scrap.status.rejected')}</SelectItem>
+                  <SelectItem value="cancelled">{t('scrap.status.cancelled')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setFilters({});
+                setSearchTerm('');
+              }}
+            >
+              {t('scrap.filter.clear')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Scrap Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('scrap.table.title', { count: scrapItems.length })}</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <DataTable
+            data={scrapItems}
+            columns={columns}
+            loading={loading}
+            onRowClick={handleRowClick}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
