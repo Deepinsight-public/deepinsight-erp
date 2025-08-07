@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -42,6 +43,7 @@ interface NewRepairFormProps {
 }
 
 export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
@@ -135,7 +137,7 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
       }
     } catch (error) {
       console.error('Error getting order details:', error);
-      showError('Failed to load order details');
+      showError(t('repairs.messages.orderDetailsError'));
     }
   };
 
@@ -169,7 +171,7 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
 
       const repair = await createRepair(repairData);
       
-      showSuccess('Repair created successfully');
+      showSuccess(t('repairs.messages.createSuccess'));
       
       if (onSuccess) {
         onSuccess();
@@ -178,18 +180,18 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
       }
     } catch (error) {
       console.error('Error creating repair:', error);
-      showError('Failed to create repair. Please try again.');
+      showError(t('repairs.messages.createError'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const repairTypes = [
-    { value: 'warranty', label: 'Warranty Repair' },
-    { value: 'paid', label: 'Paid Repair' },
-    { value: 'diagnostic', label: 'Diagnostic' },
-    { value: 'maintenance', label: 'Maintenance' },
-    { value: 'replacement', label: 'Replacement' }
+    { value: 'warranty', label: t('repairs.types.warranty') },
+    { value: 'paid', label: t('repairs.types.paid') },
+    { value: 'diagnostic', label: t('repairs.types.diagnostic') },
+    { value: 'maintenance', label: t('repairs.types.maintenance') },
+    { value: 'replacement', label: t('repairs.types.replacement') }
   ];
 
   return (
@@ -197,7 +199,7 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Plus className="h-5 w-5" />
-          Create New Repair
+          {t('repairs.form.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -210,11 +212,11 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Repair Type</FormLabel>
+                    <FormLabel>{t('repairs.form.type')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select" />
+                          <SelectValue placeholder={t('repairs.form.typeSelect')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -236,16 +238,16 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                 name="productId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Product</FormLabel>
+                    <FormLabel>{t('repairs.form.product')}</FormLabel>
                     <FormControl>
                       <SelectWithSearch
                         options={productOptions}
                         value={field.value}
                         onValueChange={field.onChange}
                         onSearchChange={handleProductSearch}
-                        placeholder="Select"
-                        searchPlaceholder="Search"
-                        emptyText="No products found. Type to search..."
+                        placeholder={t('repairs.form.typeSelect')}
+                        searchPlaceholder={t('repairs.form.productSearch')}
+                        emptyText={t('repairs.form.productEmpty')}
                       />
                     </FormControl>
                     <FormMessage />
@@ -259,7 +261,7 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                 name="salesOrderId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Original Order (Optional)</FormLabel>
+                    <FormLabel>{t('repairs.form.originalOrder')}</FormLabel>
                     <FormControl>
                       <SelectWithSearch
                         options={orderSearchResults.map(order => ({
@@ -276,18 +278,18 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                           }
                         }}
                         onSearchChange={handleOrderSearch}
-                        placeholder="Select"
-                        searchPlaceholder="Search"
+                        placeholder={t('repairs.form.typeSelect')}
+                        searchPlaceholder={t('repairs.form.productSearch')}
                       />
                     </FormControl>
                     <FormMessage />
                     {selectedOrder && (
                       <div className="mt-2 p-3 bg-muted rounded-md text-sm">
                         <div className="grid grid-cols-2 gap-2">
-                          <div><strong>Order:</strong> {selectedOrder.order_number}</div>
-                          <div><strong>Date:</strong> {new Date(selectedOrder.order_date).toLocaleDateString()}</div>
-                          <div><strong>Customer:</strong> {selectedOrder.customer_name}</div>
-                          <div><strong>Warranty:</strong> {selectedOrder.warranty_years || 0} years</div>
+                          <div><strong>{t('repairs.form.order')}:</strong> {selectedOrder.order_number}</div>
+                          <div><strong>{t('repairs.form.date')}:</strong> {new Date(selectedOrder.order_date).toLocaleDateString()}</div>
+                          <div><strong>{t('repairs.form.customer')}:</strong> {selectedOrder.customer_name}</div>
+                          <div><strong>{t('repairs.form.warranty')}:</strong> {selectedOrder.warranty_years || 0} {t('repairs.form.years')}</div>
                         </div>
                       </div>
                     )}
@@ -301,7 +303,7 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                 name="customerId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Customer (Optional)</FormLabel>
+                    <FormLabel>{t('repairs.form.customer')}</FormLabel>
                     <FormControl>
                       <SelectWithSearch
                         options={customerOptions}
@@ -315,9 +317,9 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                           }
                         }}
                         onSearchChange={handleCustomerSearch}
-                        placeholder="Select"
-                        searchPlaceholder="Search"
-                        emptyText="No customers found. Type to search..."
+                        placeholder={t('repairs.form.typeSelect')}
+                        searchPlaceholder={t('repairs.form.productSearch')}
+                        emptyText={t('repairs.form.customerEmpty')}
                       />
                     </FormControl>
                     <FormMessage />
@@ -331,10 +333,10 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                 name="customerName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Customer Name</FormLabel>
+                    <FormLabel>{t('repairs.form.customerName')}</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="Enter customer name..." 
+                        placeholder={t('repairs.form.customerNamePlaceholder')} 
                         {...field} 
                       />
                     </FormControl>
@@ -349,12 +351,12 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                 name="cost"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Estimated Cost ($)</FormLabel>
+                    <FormLabel>{t('repairs.form.estimatedCost')}</FormLabel>
                     <FormControl>
                       <Input 
                         type="number"
                         step="0.01"
-                        placeholder="0.00" 
+                        placeholder={t('repairs.form.costPlaceholder')} 
                         {...field} 
                       />
                     </FormControl>
@@ -369,7 +371,7 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                 name="estimatedCompletion"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Estimated Completion</FormLabel>
+                    <FormLabel>{t('repairs.form.estimatedCompletion')}</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -383,7 +385,7 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                             {field.value ? (
                               format(field.value, "PPP")
                             ) : (
-                              <span>Pick a date</span>
+                              <span>{t('repairs.form.pickDate')}</span>
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
@@ -414,10 +416,10 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Repair Description</FormLabel>
+                  <FormLabel>{t('repairs.form.description')}</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Describe the issue, symptoms, and required repairs..."
+                      placeholder={t('repairs.form.descriptionPlaceholder')}
                       className="min-h-[100px]"
                       {...field} 
                     />
@@ -434,7 +436,7 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                 disabled={isSubmitting}
                 className="flex-1"
               >
-                {isSubmitting ? 'Creating...' : 'Create Repair'}
+                {isSubmitting ? t('repairs.form.creating') : t('repairs.form.createButton')}
               </Button>
               <Button
                 type="button"
@@ -442,7 +444,7 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                 onClick={() => navigate('/store/repairs')}
                 disabled={isSubmitting}
               >
-                Cancel
+                {t('repairs.form.cancel')}
               </Button>
             </div>
           </form>

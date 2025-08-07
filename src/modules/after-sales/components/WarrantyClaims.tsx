@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { getWarrantyClaims } from '../api/warranty';
 import { WarrantyHeader } from '../types/warranty';
 
 export function WarrantyClaims() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToastService();
   const [claims, setClaims] = useState<WarrantyHeader[]>([]);
@@ -28,8 +30,8 @@ export function WarrantyClaims() {
       setClaims(data);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to load warranty claims',
+        title: t('common.error'),
+        description: t('warranty.loadError'),
         variant: 'destructive'
       });
     } finally {
@@ -61,7 +63,7 @@ export function WarrantyClaims() {
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search warranty claims..."
+            placeholder={t('warranty.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -69,26 +71,26 @@ export function WarrantyClaims() {
           />
         </div>
         <Button onClick={handleSearch} variant="outline">
-          Search
+          {t('warranty.search')}
         </Button>
       </div>
       
       <div className="flex justify-end mb-4">
         <Button onClick={() => navigate('/store/after-sales/warranty/new')}>
           <Plus className="h-4 w-4 mr-2" />
-          New Warranty Claim
+          {t('warranty.newClaim')}
         </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="all">All Claims</TabsTrigger>
-          <TabsTrigger value="draft">Draft</TabsTrigger>
-          <TabsTrigger value="submitted">Submitted</TabsTrigger>
-          <TabsTrigger value="tech_reviewed">Tech Reviewed</TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
-          <TabsTrigger value="resolved">Resolved</TabsTrigger>
-          <TabsTrigger value="closed">Closed</TabsTrigger>
+          <TabsTrigger value="all">{t('warranty.tabs.all')}</TabsTrigger>
+          <TabsTrigger value="draft">{t('warranty.tabs.draft')}</TabsTrigger>
+          <TabsTrigger value="submitted">{t('warranty.tabs.submitted')}</TabsTrigger>
+          <TabsTrigger value="tech_reviewed">{t('warranty.tabs.techReviewed')}</TabsTrigger>
+          <TabsTrigger value="approved">{t('warranty.tabs.approved')}</TabsTrigger>
+          <TabsTrigger value="resolved">{t('warranty.tabs.resolved')}</TabsTrigger>
+          <TabsTrigger value="closed">{t('warranty.tabs.closed')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-4">

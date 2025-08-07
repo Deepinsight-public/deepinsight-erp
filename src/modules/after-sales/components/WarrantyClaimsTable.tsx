@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ interface WarrantyClaimsTableProps {
 }
 
 export function WarrantyClaimsTable({ claims, loading, onClaimClick }: WarrantyClaimsTableProps) {
+  const { t } = useTranslation();
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'draft':
@@ -35,39 +37,20 @@ export function WarrantyClaimsTable({ claims, loading, onClaimClick }: WarrantyC
   };
 
   const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'draft':
-        return 'Draft';
-      case 'submitted':
-        return 'Submitted';
-      case 'tech_reviewed':
-        return 'Tech Reviewed';
-      case 'approved':
-        return 'Approved';
-      case 'resolved':
-        return 'Resolved';
-      case 'closed':
-        return 'Closed';
-      case 'rejected':
-        return 'Rejected';
-      case 'cancelled':
-        return 'Cancelled';
-      default:
-        return status;
-    }
+    return t(`warranty.status.${status}`, status);
   };
 
   const columns = [
     {
       key: 'claimNo',
-      title: 'Claim Number',
+      title: t('warranty.table.claimNumber'),
       render: (value: string) => (
         <span className="font-mono text-sm">{value}</span>
       )
     },
     {
       key: 'status',
-      title: 'Status',
+      title: t('warranty.table.status'),
       render: (value: string) => (
         <Badge variant={getStatusVariant(value)}>
           {getStatusLabel(value)}
@@ -76,7 +59,7 @@ export function WarrantyClaimsTable({ claims, loading, onClaimClick }: WarrantyC
     },
     {
       key: 'faultDesc',
-      title: 'Fault Description',
+      title: t('warranty.table.faultDescription'),
       render: (value: string) => (
         <div className="max-w-xs truncate" title={value}>
           {value}
@@ -85,22 +68,22 @@ export function WarrantyClaimsTable({ claims, loading, onClaimClick }: WarrantyC
     },
     {
       key: 'invoiceDate',
-      title: 'Invoice Date',
+      title: t('warranty.table.invoiceDate'),
       render: (value: string | null) => value ? format(new Date(value), 'MMM dd, yyyy') : '—'
     },
     {
       key: 'warrantyExpiry',
-      title: 'Warranty Expiry',
+      title: t('warranty.table.warrantyExpiry'),
       render: (value: string | null) => value ? format(new Date(value), 'MMM dd, yyyy') : '—'
     },
     {
       key: 'createdAt',
-      title: 'Created',
+      title: t('warranty.table.created'),
       render: (value: string) => format(new Date(value), 'MMM dd, yyyy')
     },
     {
       key: 'actions',
-      title: 'Actions',
+      title: t('warranty.table.actions'),
       render: (_: any, claim: WarrantyHeader) => (
         <Button
           variant="ghost"

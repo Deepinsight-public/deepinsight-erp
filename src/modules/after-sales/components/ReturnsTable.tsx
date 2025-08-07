@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AfterSalesReturn } from '../types/newReturn';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { 
@@ -24,6 +25,7 @@ type SortField = 'returnDate' | 'refundAmount' | 'reason';
 type SortDirection = 'asc' | 'desc';
 
 export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTableProps) {
+  const { t } = useTranslation();
   const [sortField, setSortField] = useState<SortField>('returnDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -84,7 +86,7 @@ export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTablePr
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Returns</CardTitle>
+          <CardTitle>{t('returns.table.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -100,26 +102,26 @@ export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTablePr
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Returns</CardTitle>
+        <CardTitle>{t('returns.table.title')}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Return ID</TableHead>
-              <TableHead>{renderSortableHeader('Return Date', 'returnDate')}</TableHead>
-              <TableHead>Return Type</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Product</TableHead>
-              <TableHead>{renderSortableHeader('Refund Amount', 'refundAmount')}</TableHead>
-              <TableHead>{renderSortableHeader('Reason', 'reason')}</TableHead>
+              <TableHead>{t('returns.table.returnId')}</TableHead>
+              <TableHead>{renderSortableHeader(t('returns.table.returnDate'), 'returnDate')}</TableHead>
+              <TableHead>{t('returns.table.returnType')}</TableHead>
+              <TableHead>{t('returns.table.customer')}</TableHead>
+              <TableHead>{t('returns.table.product')}</TableHead>
+              <TableHead>{renderSortableHeader(t('returns.table.refundAmount'), 'refundAmount')}</TableHead>
+              <TableHead>{renderSortableHeader(t('returns.table.reason'), 'reason')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedReturns.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                  No returns found
+                  {t('returns.table.noReturns')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -137,7 +139,7 @@ export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTablePr
                   </TableCell>
                   <TableCell>
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                      {returnItem.returnType === 'store' ? 'Store Return' : 'Warehouse Return'}
+                      {returnItem.returnType === 'store' ? t('returns.types.store') : t('returns.types.warehouse')}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -147,7 +149,7 @@ export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTablePr
                         <div className="text-xs text-muted-foreground">{returnItem.customerEmail}</div>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground text-sm">N/A</span>
+                      <span className="text-muted-foreground text-sm">{t('returns.table.na')}</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -157,7 +159,7 @@ export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTablePr
                         <div className="text-xs text-muted-foreground font-mono">{returnItem.product.sku}</div>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground text-sm">Product not found</span>
+                      <span className="text-muted-foreground text-sm">{t('returns.table.productNotFound')}</span>
                     )}
                   </TableCell>
                   <TableCell>
