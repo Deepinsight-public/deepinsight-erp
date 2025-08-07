@@ -48,7 +48,7 @@ export function AfterSalesReturns() {
 
   // Filter returns based on search query
   const filteredReturns = returns.filter(returnItem => {
-    if (!searchQuery) return true;
+    if (!searchQuery || searchQuery.trim() === '') return true; // Show all data when empty
     const searchLower = searchQuery.toLowerCase();
     
     // Search across multiple fields

@@ -104,7 +104,7 @@ export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm, refr
   ];
 
   const filteredCustomers = customers.filter((customer) => {
-    if (!searchTerm) return true;
+    if (!searchTerm || searchTerm.trim() === '') return true; // Show all data when empty
     const searchLower = searchTerm.toLowerCase();
     return (
       customer.name.toLowerCase().includes(searchLower) ||

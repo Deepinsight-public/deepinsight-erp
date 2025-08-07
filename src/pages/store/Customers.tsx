@@ -123,7 +123,7 @@ export default function Customers() {
       <CustomerList 
         onCustomerClick={handleCustomerClick} 
         onCustomerEdit={handleCustomerEdit}
-        searchTerm={appliedSearch}
+        searchTerm={appliedSearch || ''} // Ensure empty string when no search
         refreshTrigger={refreshTrigger}
       />
       

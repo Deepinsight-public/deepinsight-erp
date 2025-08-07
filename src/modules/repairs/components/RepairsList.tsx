@@ -45,7 +45,7 @@ export function RepairsList() {
 
   const filteredRepairs = repairs.filter(repair => {
     // Apply search filter only after search button is clicked
-    if (searchQuery && !repair.id.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (searchQuery && searchQuery.trim() !== '' && !repair.id.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
     

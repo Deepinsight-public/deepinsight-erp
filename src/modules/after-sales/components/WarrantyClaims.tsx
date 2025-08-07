@@ -53,10 +53,13 @@ export function WarrantyClaims() {
     navigate(`/store/after-sales/warranty/${claimId}`);
   };
 
-  const filteredClaims = claims.filter(claim =>
-    claim.claimNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    claim.faultDesc.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredClaims = claims.filter(claim => {
+    if (!searchQuery || searchQuery.trim() === '') return true; // Show all data when empty
+    return (
+      claim.claimNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      claim.faultDesc.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
 
   return (
     <div className="space-y-4">
