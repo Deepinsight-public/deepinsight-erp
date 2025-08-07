@@ -28,9 +28,10 @@ export interface RepairFilters {
 
 export interface CreateRepairData {
   productId: string;
-  customerId: string;
-  type: 'warranty' | 'paid' | 'goodwill';
+  customerId?: string;
+  customerName?: string;
+  type: string;
   description: string;
   cost?: number;
-  estimatedCompletion?: string;
+  estimatedCompletion?: Date;
 }

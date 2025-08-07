@@ -1,4 +1,5 @@
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
+import { NewRepairForm } from '@/modules/repairs/components/NewRepairForm';
 
 export default function NewRepair() {
   const breadcrumbs = [
@@ -17,12 +18,7 @@ export default function NewRepair() {
         </p>
       </div>
 
-      <div className="bg-card p-6 rounded-lg border">
-        <p className="text-muted-foreground">
-          New repair form coming soon. This will include product selection, 
-          customer information, repair type, and description fields.
-        </p>
-      </div>
+      <NewRepairForm />
     </div>
   );
 }

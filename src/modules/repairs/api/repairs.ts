@@ -89,10 +89,11 @@ export const createRepair = async (repairData: CreateRepairData): Promise<Repair
       store_id: profile.store_id,
       product_id: repairData.productId,
       customer_id: repairData.customerId,
+      customer_name: repairData.customerName,
       type: repairData.type,
       description: repairData.description,
       cost: repairData.cost,
-      estimated_completion: repairData.estimatedCompletion,
+      estimated_completion: repairData.estimatedCompletion ? repairData.estimatedCompletion.toISOString() : null,
       status: 'pending',
     })
     .select('*')
