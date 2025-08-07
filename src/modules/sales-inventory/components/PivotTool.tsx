@@ -207,23 +207,36 @@ export function PivotTool({
         title: field?.label || fieldKey,
         render: (value: any, record: FlatPivotRow) => {
           const pivot = record._pivot;
-          const shouldShowValue = pivot.groupKey === fieldKey;
+          const isLeaf = record._isLeaf;
+          const isParent = record._isParent;
+          const shouldShowValue = isParent && pivot.groupKey === fieldKey;
           const hasChildren = pivot.children && pivot.children.length > 0;
+          const hasLeaves = pivot.leaves && pivot.leaves.length > 0;
+          const canExpand = hasChildren || hasLeaves;
           
           const handleClick = (e: React.MouseEvent) => {
             e.stopPropagation();
-            if (hasChildren) {
+            if (canExpand) {
               toggleRow(pivot.id);
             }
           };
           
+          // For leaf rows, show empty for group columns except the leaf data
+          if (isLeaf) {
+            return (
+              <div className="pl-8">
+                <span className="text-muted-foreground">—</span>
+              </div>
+            );
+          }
+          
           return (
             <div 
-              className={`flex items-center py-1 ${hasChildren ? 'hover:bg-muted/50 cursor-pointer' : ''}`}
+              className={`flex items-center py-1 ${canExpand ? 'hover:bg-muted/50 cursor-pointer' : ''} ${isParent ? 'bg-gray-50 font-medium' : ''}`}
               style={{ paddingLeft: `${pivot.level * 16}px` }}
               onClick={handleClick}
             >
-              {hasChildren && (
+              {canExpand && (
                 <ChevronRight
                   className={`h-4 w-4 mr-2 transition-transform ${
                     expanded.has(pivot.id) ? 'rotate-90' : ''
@@ -233,6 +246,11 @@ export function PivotTool({
               {shouldShowValue ? (
                 <span className="font-medium">
                   {value}
+                  {hasLeaves && (
+                    <span className="text-muted-foreground ml-2 text-xs">
+                      ({pivot.leaves.length} items)
+                    </span>
+                  )}
                   {hasChildren && (
                     <span className="text-muted-foreground ml-2 text-xs">
                       ({pivot.children.length} items)
@@ -248,15 +266,61 @@ export function PivotTool({
       });
     });
 
+    // Add detail columns for leaf rows
+    if (groupBy.length === 1) {
+      columns.push({
+        key: 'orderNumber',
+        title: 'Order No',
+        render: (value: any, record: FlatPivotRow) => {
+          return record._isLeaf ? (
+            <span className="pl-8">{value}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          );
+        }
+      });
+
+      columns.push({
+        key: 'customerName',
+        title: 'Customer',
+        render: (value: any, record: FlatPivotRow) => {
+          return record._isLeaf ? (
+            <span className="pl-8">{value}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          );
+        }
+      });
+
+      columns.push({
+        key: 'status',
+        title: 'Status',
+        render: (value: any, record: FlatPivotRow) => {
+          return record._isLeaf ? (
+            <div className="pl-8">
+              <Badge variant={value === 'completed' ? 'default' : 'secondary'}>
+                {value}
+              </Badge>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          );
+        }
+      });
+    }
+
     // Summary columns
     summariseFields.forEach(field => {
       columns.push({
         key: field.key,
         title: field.label,
-        render: (value: number) => (
-          <span className="font-medium">
-            {field.fn === 'count' ? value : `$${value?.toFixed(2) || '0.00'}`}
-          </span>
+        className: 'text-right',
+        render: (value: number, record: FlatPivotRow) => (
+          <div className={`text-right ${record._isLeaf ? 'pl-8' : ''}`}>
+            <span className={record._isParent ? 'font-medium' : ''}>
+              {field.fn === 'count' ? value : `$${value?.toFixed(2) || '0.00'}`}
+            </span>
+          </div>
         )
       });
     });

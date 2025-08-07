@@ -5,12 +5,26 @@ export interface AggField {
   fn: 'sum' | 'count' | 'avg' | 'min' | 'max';
 }
 
+export interface PivotLeaf {
+  orderNumber: string;
+  customerName: string;
+  status: string;
+  orderType: string;
+  totalAmount: number;
+  subTotal: number;
+  taxAmount: number;
+  discountAmount: number;
+  orderDate: string;
+  [key: string]: any;
+}
+
 export interface PivotRow {
   id: string;
   level: number;
   groupVals: Record<string, any>;
   totals: Record<string, number>;
   children?: PivotRow[];
+  leaves?: PivotLeaf[];
   isGroupRow?: boolean;
   count?: number;
   groupKey?: string;
@@ -39,12 +53,65 @@ export function buildPivotTree(
       level,
       groupVals: {},
       totals: {},
-      children: []
+      children: [],
+      leaves: []
     };
   }
 
   const root: PivotRow = makeNode(-1);
 
+  // Special handling for single-level grouping (show individual records as leaves)
+  if (groupKeys.length === 1) {
+    const groupKey = groupKeys[0];
+    const grouped = new Map<string, SalesOrderDTO[]>();
+
+    // Group records by the single key
+    for (const record of sourceData) {
+      const val = formatGroupValue(record[groupKey as keyof SalesOrderDTO], groupKey);
+      if (!grouped.has(val)) {
+        grouped.set(val, []);
+      }
+      grouped.get(val)!.push(record);
+    }
+
+    // Create parent nodes with leaves
+    for (const [groupValue, records] of grouped) {
+      const parentNode = makeNode(0);
+      parentNode.groupVals[groupKey] = groupValue;
+      parentNode.groupKey = groupKey;
+      parentNode.isGroupRow = true;
+      parentNode.count = records.length;
+
+      // Calculate totals
+      aggFields.forEach(aggField => {
+        const total = records.reduce((sum, record) => {
+          const value = record[aggField.key as keyof SalesOrderDTO] as number;
+          return sum + (typeof value === 'number' && !isNaN(value) ? value : 0);
+        }, 0);
+        parentNode.totals[aggField.key] = total;
+      });
+
+      // Convert records to leaves
+      parentNode.leaves = records.map(record => ({
+        orderNumber: record.orderNumber || '',
+        customerName: record.customerName || '',
+        status: record.status,
+        orderType: record.orderType,
+        totalAmount: record.totalAmount,
+        subTotal: record.subTotal,
+        taxAmount: record.taxAmount,
+        discountAmount: record.discountAmount,
+        orderDate: record.orderDate,
+        ...record
+      }));
+
+      root.children!.push(parentNode);
+    }
+
+    return root.children!;
+  }
+
+  // Multi-level grouping (existing logic)
   for (const record of sourceData) {
     let node = root;
     
@@ -88,9 +155,22 @@ export function flattenPivot(tree: PivotRow[], expanded: Set<string>): FlatPivot
       const flatRow: FlatPivotRow = {
         ...node.groupVals,
         ...node.totals,
-        _pivot: node
+        _pivot: node,
+        _isParent: true
       };
       result.push(flatRow);
+
+      // Add leaves (individual records) if expanded and available
+      if (expanded.has(node.id) && node.leaves?.length) {
+        node.leaves.forEach(leaf => {
+          const leafRow: FlatPivotRow = {
+            ...leaf,
+            _pivot: node,
+            _isLeaf: true
+          };
+          result.push(leafRow);
+        });
+      }
 
       // Add children if expanded
       if (expanded.has(node.id) && node.children?.length) {
