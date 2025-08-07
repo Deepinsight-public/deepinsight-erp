@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, Package, ArrowRight } from 'lucide-react';
+import { DollarSign, Package, ArrowRight, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable, KPIWidget, StatusBadge } from '@/components';
@@ -120,9 +120,18 @@ export function RecentOrdersList() {
             Latest 5 sales orders from your store.
           </p>
         </div>
-        <Button onClick={() => navigate('/store/sales-orders/new')}>
-          New Order
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/store/sales-orders/pivot')}
+          >
+            <BarChart2 className="mr-2 h-4 w-4" />
+            Custom Pivot
+          </Button>
+          <Button onClick={() => navigate('/store/sales-orders/new')}>
+            New Order
+          </Button>
+        </div>
       </div>
 
       {/* Recent Orders Table */}

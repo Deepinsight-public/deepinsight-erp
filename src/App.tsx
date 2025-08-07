@@ -52,6 +52,7 @@ import {
 
 const ScrapManagement = lazy(() => import('./pages/store/Scrap'));
 const NewScrap = lazy(() => import('./pages/store/NewScrap'));
+const SalesOrdersPivot = lazy(() => import('./pages/store/SalesOrdersPivot'));
 
 const queryClient = new QueryClient();
 
@@ -99,6 +100,7 @@ export default function App() {
                   {/* Sales Orders */}
                   <Route path="sales-orders" element={<SalesOrders />} />
                   <Route path="sales-orders/history" element={<SalesOrdersHistory />} />
+                  <Route path="sales-orders/pivot" element={<SalesOrdersPivot />} />
                   <Route path="sales-orders/new" element={<NewSalesOrder />} />
                   <Route path="sales-orders/success" element={<SalesOrderSuccess />} />
                   <Route path="sales-orders/:id" element={<SalesOrderDetail />} />
