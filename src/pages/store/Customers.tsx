@@ -15,6 +15,7 @@ import { exportToCSV, exportToXLSX } from '@/modules/crm-analytics/utils/exportU
 export default function Customers() {
   const { t } = useTranslation();
   const [searchInput, setSearchInput] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState(''); // Applied search term
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -45,8 +46,13 @@ export default function Customers() {
     setSearchInput(value);
   };
 
+  const handleSearch = () => {
+    setAppliedSearch(searchInput);
+  };
+
   const handleClearSearch = () => {
     setSearchInput('');
+    setAppliedSearch('');
   };
 
   const handleExport = async (format: 'csv' | 'xlsx') => {
@@ -85,11 +91,11 @@ export default function Customers() {
       <div className="flex gap-4">
         <div className="flex-1">
           <StandardSearchBar
-            title={t('crm.searchTitle')}
+            title={t('crm.search.title') || 'Search Customers'}
             searchValue={searchInput}
             searchPlaceholder={t('crm.searchPlaceholder')}
             onSearchChange={handleSearchChange}
-            onSearch={() => {}}
+            onSearch={handleSearch}
             onClear={handleClearSearch}
             showClear={!!searchInput}
           />
@@ -117,7 +123,7 @@ export default function Customers() {
       <CustomerList 
         onCustomerClick={handleCustomerClick} 
         onCustomerEdit={handleCustomerEdit}
-        searchTerm={searchInput}
+        searchTerm={appliedSearch}
         refreshTrigger={refreshTrigger}
       />
       

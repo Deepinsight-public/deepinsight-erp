@@ -17,6 +17,7 @@ export function RepairsList() {
   const [repairs, setRepairs] = useState<Repair[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState(''); // For display only
   const [activeTab, setActiveTab] = useState('all');
   const { showError } = useToastService();
 
@@ -38,9 +39,22 @@ export function RepairsList() {
   }, []);
 
   const handleSearch = () => {
-    // For now, just reload all repairs. Can add filtering later if needed
+    setSearchQuery(searchTerm); // Apply the search term
     loadRepairs();
   };
+
+  const filteredRepairs = repairs.filter(repair => {
+    // Apply search filter only after search button is clicked
+    if (searchQuery && !repair.id.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    
+    if (activeTab === 'all') return true;
+    if (activeTab === 'pending') return repair.status === 'pending';
+    if (activeTab === 'in_progress') return repair.status === 'in_progress';
+    if (activeTab === 'completed') return repair.status === 'completed';
+    return true;
+  });
 
   const handleRepairClick = (repair: Repair) => {
     // Navigate to repair detail page
@@ -50,14 +64,6 @@ export function RepairsList() {
   const breadcrumbs = [
     { title: t('repairs') }
   ];
-
-  const filteredRepairs = repairs.filter(repair => {
-    if (activeTab === 'all') return true;
-    if (activeTab === 'pending') return repair.status === 'pending';
-    if (activeTab === 'in_progress') return repair.status === 'in_progress';
-    if (activeTab === 'completed') return repair.status === 'completed';
-    return true;
-  });
 
   return (
     <div className="space-y-6">
@@ -77,10 +83,10 @@ export function RepairsList() {
       </div>
 
       <StandardSearchBar
-        title={t('repairs.search')}
-        searchValue={searchQuery}
+        title={t('repairs.search.title') || 'Search Repairs'}
+        searchValue={searchTerm}
         searchPlaceholder={t('repairs.searchPlaceholder')}
-        onSearchChange={setSearchQuery}
+        onSearchChange={setSearchTerm}
         onSearch={handleSearch}
       />
 

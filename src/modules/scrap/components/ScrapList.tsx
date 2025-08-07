@@ -100,7 +100,7 @@ export function ScrapList() {
       <Card>
         <CardContent className="p-6">
           <StandardSearchBar
-            title={t('scrap.list.search')}
+            title={t('scrap.search.title') || 'Search Scrap Requests'}
             searchValue={searchQuery}
             searchPlaceholder={t('scrap.list.searchPlaceholder')}
             onSearchChange={setSearchQuery}

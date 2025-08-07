@@ -18,6 +18,7 @@ export function WarrantyClaims() {
   const [claims, setClaims] = useState<WarrantyHeader[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState(''); // For display only
   const [activeTab, setActiveTab] = useState('all');
 
 
@@ -44,6 +45,7 @@ export function WarrantyClaims() {
   }, [activeTab]);
 
   const handleSearch = () => {
+    setSearchQuery(searchTerm); // Apply the search term
     loadClaims();
   };
 
@@ -59,10 +61,10 @@ export function WarrantyClaims() {
   return (
     <div className="space-y-4">
       <StandardSearchBar
-        title={t('warranty.search')}
-        searchValue={searchQuery}
+        title={t('warranty.search.title') || 'Search Warranty Claims'}
+        searchValue={searchTerm}
         searchPlaceholder={t('warranty.searchPlaceholder')}
-        onSearchChange={setSearchQuery}
+        onSearchChange={setSearchTerm}
         onSearch={handleSearch}
       />
       

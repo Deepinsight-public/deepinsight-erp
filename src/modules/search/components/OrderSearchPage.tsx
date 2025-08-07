@@ -103,7 +103,7 @@ export function OrderSearchPage() {
       </div>
 
       <StandardSearchBar
-        title={t('search.productSearch')}
+        title={t('search.title') || 'Product Search'}
         searchValue={filters.search || ''}
         searchPlaceholder={t('search.placeholder')}
         onSearchChange={(value) => handleFilterChange('search', value)}

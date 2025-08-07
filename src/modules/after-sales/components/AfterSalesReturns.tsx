@@ -21,6 +21,7 @@ export function AfterSalesReturns() {
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState(''); // For display only
   const [activeTab, setActiveTab] = useState('processing');
   const { showError } = useToastService();
 
@@ -42,7 +43,7 @@ export function AfterSalesReturns() {
   }, []);
 
   const handleSearch = () => {
-    // For now, just reload all returns. Can add filtering later if needed
+    setSearchQuery(searchTerm); // Apply the search term
     loadReturns();
   };
 
@@ -79,10 +80,10 @@ export function AfterSalesReturns() {
         
         <TabsContent value="processing" className="space-y-4">
           <StandardSearchBar
-            title={t('afterSales.returns.search')}
-            searchValue={searchQuery}
+            title={t('afterSales.search.title') || 'Search Returns'}
+            searchValue={searchTerm}
             searchPlaceholder={t('afterSales.search.placeholder')}
-            onSearchChange={setSearchQuery}
+            onSearchChange={setSearchTerm}
             onSearch={handleSearch}
           />
           

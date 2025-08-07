@@ -72,7 +72,7 @@ export function InventorySearch({ onSearch, onExport }: InventorySearchProps) {
   return (
     <div className="space-y-4">
       <StandardSearchBar
-        title={t('inventorySearch.title')}
+        title={t('inventory.search.title') || 'Product Search'}
         searchValue={searchTerm}
         searchPlaceholder={t('inventorySearch.placeholder', { type: searchType })}
         onSearchChange={setSearchTerm}
