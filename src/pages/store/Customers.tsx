@@ -94,10 +94,13 @@ export default function Customers() {
             title={t('crm.search.title') || 'Search Customers'}
             searchValue={searchInput}
             searchPlaceholder={t('crm.searchPlaceholder')}
-            onSearchChange={handleSearchChange}
+            onSearchChange={(value) => {
+              handleSearchChange(value);
+              if (value === '') {
+                setAppliedSearch(''); // Clear applied search immediately when input is cleared
+              }
+            }}
             onSearch={handleSearch}
-            onClear={handleClearSearch}
-            showClear={!!searchInput}
           />
         </div>
         <DropdownMenu>

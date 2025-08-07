@@ -106,7 +106,14 @@ export function OrderSearchPage() {
         title={t('search.title') || 'Product Search'}
         searchValue={filters.search || ''}
         searchPlaceholder={t('search.placeholder')}
-        onSearchChange={(value) => handleFilterChange('search', value)}
+        onSearchChange={(value) => {
+          handleFilterChange('search', value);
+          if (value === '') {
+            // Clear all filters when search is cleared
+            setFilters({});
+            handleSearch(1); // Trigger search to show all results
+          }
+        }}
         onSearch={() => handleSearch()}
         filters={showFilters ? [
           {
@@ -134,8 +141,6 @@ export function OrderSearchPage() {
             onChange: (value) => handleFilterChange('modelNumber', value),
           },
         ] : []}
-        onClear={clearFilters}
-        showClear={true}
       />
 
       <DataTable
