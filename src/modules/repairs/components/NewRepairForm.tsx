@@ -191,7 +191,7 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select repair type" />
+                          <SelectValue placeholder="Select" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -219,8 +219,8 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                         options={productOptions}
                         value={field.value}
                         onValueChange={field.onChange}
-                        placeholder="Search and select product..."
-                        searchPlaceholder="Search products..."
+                        placeholder="Select"
+                        searchPlaceholder="Search"
                       />
                     </FormControl>
                     <FormMessage />
@@ -251,8 +251,8 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                           }
                         }}
                         onSearchChange={handleOrderSearch}
-                        placeholder="Search by order number or customer..."
-                        searchPlaceholder="Type to search orders..."
+                        placeholder="Select"
+                        searchPlaceholder="Search"
                       />
                     </FormControl>
                     <FormMessage />
@@ -290,8 +290,8 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                             form.setValue('customerName', name);
                           }
                         }}
-                        placeholder="Search and select customer..."
-                        searchPlaceholder="Search customers..."
+                        placeholder="Select"
+                        searchPlaceholder="Search"
                       />
                     </FormControl>
                     <FormMessage />
