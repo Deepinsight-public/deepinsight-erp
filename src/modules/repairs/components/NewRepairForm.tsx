@@ -64,6 +64,19 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
     }
   });
 
+  // Load initial data when component mounts
+  React.useEffect(() => {
+    // Load initial products
+    searchProducts('').then(products => {
+      setProductOptions(products);
+    }).catch(console.error);
+    
+    // Load initial customers
+    searchCustomers('').then(customers => {
+      setCustomerOptions(customers);
+    }).catch(console.error);
+  }, []);
+
   // Handle order search
   const handleOrderSearch = async (query: string) => {
     if (query.length < 2) {
@@ -82,15 +95,8 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
 
   // Handle customer search
   const handleCustomerSearch = async (query: string) => {
-    console.log('Customer search triggered with:', query);
-    if (query.length < 1) {
-      setCustomerOptions([]);
-      return;
-    }
-    
     try {
       const results = await searchCustomers(query);
-      console.log('Customer search results:', results);
       setCustomerOptions(results);
     } catch (error) {
       console.error('Error searching customers:', error);
@@ -100,15 +106,8 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
 
   // Handle product search
   const handleProductSearch = async (query: string) => {
-    console.log('Product search triggered with:', query);
-    if (query.length < 1) {
-      setProductOptions([]);
-      return;
-    }
-    
     try {
       const results = await searchProducts(query);
-      console.log('Product search results:', results);
       setProductOptions(results);
     } catch (error) {
       console.error('Error searching products:', error);
