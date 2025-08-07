@@ -118,6 +118,7 @@ export function WarrantyClaimsTable({ claims, loading, onClaimClick }: WarrantyC
       data={claims}
       columns={columns}
       loading={loading}
+      onRowClick={(claim) => onClaimClick(claim.id)}
     />
   );
 }
