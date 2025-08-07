@@ -1160,6 +1160,192 @@ export type Database = {
         }
         Relationships: []
       }
+      warranty_audit: {
+        Row: {
+          action: string
+          actor_id: string
+          comment: string | null
+          created_at: string
+          header_id: string
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          comment?: string | null
+          created_at?: string
+          header_id: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          comment?: string | null
+          created_at?: string
+          header_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      warranty_headers: {
+        Row: {
+          claim_no: string
+          created_at: string
+          created_by: string
+          customer_id: string | null
+          fault_desc: string
+          id: string
+          invoice_date: string | null
+          sales_order_id: string | null
+          status: string
+          store_id: string
+          updated_at: string
+          warranty_expiry: string | null
+        }
+        Insert: {
+          claim_no: string
+          created_at?: string
+          created_by: string
+          customer_id?: string | null
+          fault_desc: string
+          id?: string
+          invoice_date?: string | null
+          sales_order_id?: string | null
+          status?: string
+          store_id: string
+          updated_at?: string
+          warranty_expiry?: string | null
+        }
+        Update: {
+          claim_no?: string
+          created_at?: string
+          created_by?: string
+          customer_id?: string | null
+          fault_desc?: string
+          id?: string
+          invoice_date?: string | null
+          sales_order_id?: string | null
+          status?: string
+          store_id?: string
+          updated_at?: string
+          warranty_expiry?: string | null
+        }
+        Relationships: []
+      }
+      warranty_lines: {
+        Row: {
+          attachment: string | null
+          created_at: string
+          header_id: string
+          id: string
+          product_id: string
+          qty: number
+          serial_no: string | null
+          uom: string
+          updated_at: string
+          warranty_type: string
+        }
+        Insert: {
+          attachment?: string | null
+          created_at?: string
+          header_id: string
+          id?: string
+          product_id: string
+          qty: number
+          serial_no?: string | null
+          uom?: string
+          updated_at?: string
+          warranty_type: string
+        }
+        Update: {
+          attachment?: string | null
+          created_at?: string
+          header_id?: string
+          id?: string
+          product_id?: string
+          qty?: number
+          serial_no?: string | null
+          uom?: string
+          updated_at?: string
+          warranty_type?: string
+        }
+        Relationships: []
+      }
+      warranty_resolution: {
+        Row: {
+          action: string
+          approved_at: string
+          approved_by: string
+          created_at: string
+          credit_amount: number | null
+          header_id: string
+          id: string
+          replacement_id: string | null
+          updated_at: string
+          vendor_rma: string | null
+        }
+        Insert: {
+          action: string
+          approved_at?: string
+          approved_by: string
+          created_at?: string
+          credit_amount?: number | null
+          header_id: string
+          id?: string
+          replacement_id?: string | null
+          updated_at?: string
+          vendor_rma?: string | null
+        }
+        Update: {
+          action?: string
+          approved_at?: string
+          approved_by?: string
+          created_at?: string
+          credit_amount?: number | null
+          header_id?: string
+          id?: string
+          replacement_id?: string | null
+          updated_at?: string
+          vendor_rma?: string | null
+        }
+        Relationships: []
+      }
+      warranty_tech: {
+        Row: {
+          created_at: string
+          diagnosis: string
+          est_cost: number | null
+          header_id: string
+          id: string
+          inspected_at: string
+          inspected_by: string
+          solution: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          diagnosis: string
+          est_cost?: number | null
+          header_id: string
+          id?: string
+          inspected_at?: string
+          inspected_by: string
+          solution: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          diagnosis?: string
+          est_cost?: number | null
+          header_id?: string
+          id?: string
+          inspected_at?: string
+          inspected_by?: string
+          solution?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1206,6 +1392,10 @@ export type Database = {
         Returns: string
       }
       generate_scrap_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_warranty_claim_no: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
