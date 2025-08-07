@@ -46,7 +46,7 @@ export function WarrantyClaims() {
   };
 
   const handleClaimClick = (claimId: string) => {
-    navigate(`/store/after-sales/returns/${claimId}`);
+    navigate(`/store/after-sales/warranty/${claimId}`);
   };
 
   const filteredClaims = claims.filter(claim =>
