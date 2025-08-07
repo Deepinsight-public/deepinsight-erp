@@ -394,6 +394,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
+          kw_code: string | null
           map_price: number | null
           model: string | null
           price: number | null
@@ -410,6 +411,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          kw_code?: string | null
           map_price?: number | null
           model?: string | null
           price?: number | null
@@ -426,6 +428,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          kw_code?: string | null
           map_price?: number | null
           model?: string | null
           price?: number | null

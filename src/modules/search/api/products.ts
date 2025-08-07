@@ -16,6 +16,7 @@ export const searchProducts = async (params: ProductSearchParams): Promise<Produ
     .select(`
       id,
       sku,
+      kw_code,
       product_name,
       brand,
       model,
@@ -31,11 +32,11 @@ export const searchProducts = async (params: ProductSearchParams): Promise<Produ
 
   // Apply filters
   if (search && search.trim()) {
-    query = query.or(`sku.ilike.%${search}%,product_name.ilike.%${search}%,model.ilike.%${search}%`);
+    query = query.or(`sku.ilike.%${search}%,kw_code.ilike.%${search}%,product_name.ilike.%${search}%,model.ilike.%${search}%`);
   }
 
   if (kwCode && kwCode.trim()) {
-    query = query.ilike('sku', `%${kwCode}%`);
+    query = query.ilike('kw_code', `%${kwCode}%`);
   }
 
   if (a4lCode && a4lCode.trim()) {
@@ -66,7 +67,7 @@ export const searchProducts = async (params: ProductSearchParams): Promise<Produ
       id: product.id,
       a4lCode: product.sku || '', // Using SKU as A4L Code for now
       type: product.category || 'Unknown',
-      kwCode: product.brand || '', // Using brand as KW Code for now
+      kwCode: product.kw_code || product.sku || '', // Use kw_code field, fallback to SKU
       grade: 'Standard', // Default grade since not in schema
       model: product.model || '',
       inStock: availableStock > 0,
