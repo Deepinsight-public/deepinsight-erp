@@ -33,9 +33,7 @@ function pivotToFlat(pivotData: PivotRow[]): any[] {
 /**
  * Export pivot data as CSV
  */
-export async function exportCSV(pivotData: PivotRow[], filename: string): Promise<void> {
-  const flatData = pivotToFlat(pivotData);
-  
+export async function exportCSV(flatData: any[], filename: string): Promise<void> {
   if (flatData.length === 0) {
     throw new Error('No data to export');
   }
@@ -53,9 +51,7 @@ export async function exportCSV(pivotData: PivotRow[], filename: string): Promis
 /**
  * Export pivot data as Excel
  */
-export async function exportXLSX(pivotData: PivotRow[], filename: string): Promise<void> {
-  const flatData = pivotToFlat(pivotData);
-  
+export async function exportXLSX(flatData: any[], filename: string): Promise<void> {
   if (flatData.length === 0) {
     throw new Error('No data to export');
   }
