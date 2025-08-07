@@ -14,8 +14,7 @@ import { exportToCSV, exportToXLSX } from '@/modules/crm-analytics/utils/exportU
 
 export default function Customers() {
   const { t } = useTranslation();
-  const [searchInput, setSearchInput] = useState('');
-  const [appliedSearch, setAppliedSearch] = useState(''); // Applied search term
+  const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -42,17 +41,12 @@ export default function Customers() {
     setRefreshTrigger(prev => prev + 1);
   };
 
-  const handleSearchChange = (value: string) => {
-    setSearchInput(value);
-  };
-
   const handleSearch = () => {
-    setAppliedSearch(searchInput);
+    // searchQuery is updated directly by StandardSearchBar - no additional action needed
   };
 
   const handleClearSearch = () => {
-    setSearchInput('');
-    setAppliedSearch('');
+    setSearchQuery('');
   };
 
   const handleExport = async (format: 'csv' | 'xlsx') => {
@@ -92,14 +86,9 @@ export default function Customers() {
         <div className="flex-1">
           <StandardSearchBar
             title={t('crm.search.title') || 'Search Customers'}
-            searchValue={searchInput}
+            searchValue={searchQuery}
             searchPlaceholder={t('crm.searchPlaceholder')}
-            onSearchChange={(value) => {
-              handleSearchChange(value);
-              if (value === '') {
-                setAppliedSearch(''); // Clear applied search immediately when input is cleared
-              }
-            }}
+            onSearchChange={setSearchQuery}
             onSearch={handleSearch}
           />
         </div>
@@ -126,7 +115,7 @@ export default function Customers() {
       <CustomerList 
         onCustomerClick={handleCustomerClick} 
         onCustomerEdit={handleCustomerEdit}
-        searchTerm={appliedSearch || ''} // Ensure empty string when no search
+        searchTerm={searchQuery}
         refreshTrigger={refreshTrigger}
       />
       

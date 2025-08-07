@@ -12,7 +12,7 @@ export function OrderSearchPage() {
   const { t } = useTranslation();
   const [products, setProducts] = useState<ProductSearchItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState<ProductSearchFilters>({});
+  const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -20,7 +20,7 @@ export function OrderSearchPage() {
   const handleSearch = async (page = 1) => {
     setLoading(true);
     try {
-      const result = await searchProducts({ ...filters, page, limit: 20 });
+      const result = await searchProducts({ search: searchQuery, page, limit: 20 });
       setProducts(result.data);
       setTotal(result.total);
       setCurrentPage(page);
@@ -31,15 +31,8 @@ export function OrderSearchPage() {
     }
   };
 
-  const handleFilterChange = (key: keyof ProductSearchFilters, value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value || undefined
-    }));
-  };
-
   const clearFilters = () => {
-    setFilters({});
+    setSearchQuery('');
   };
 
   useEffect(() => {
@@ -104,43 +97,10 @@ export function OrderSearchPage() {
 
       <StandardSearchBar
         title={t('search.title') || 'Product Search'}
-        searchValue={filters.search || ''}
+        searchValue={searchQuery}
         searchPlaceholder={t('search.placeholder')}
-        onSearchChange={(value) => {
-          handleFilterChange('search', value);
-          if (value === '') {
-            // Clear all filters when search is cleared
-            clearFilters();
-            handleSearch(1); // Trigger search to show all results
-          }
-        }}
+        onSearchChange={setSearchQuery}
         onSearch={() => handleSearch()}
-        filters={showFilters ? [
-          {
-            key: 'kwCode',
-            label: t('search.filters.kwCode'),
-            placeholder: t('search.filters.kwCodePlaceholder'),
-            type: 'input',
-            value: filters.kwCode || '',
-            onChange: (value) => handleFilterChange('kwCode', value),
-          },
-          {
-            key: 'a4lCode',
-            label: t('search.filters.a4lCode'),
-            placeholder: t('search.filters.a4lCodePlaceholder'),
-            type: 'input',
-            value: filters.a4lCode || '',
-            onChange: (value) => handleFilterChange('a4lCode', value),
-          },
-          {
-            key: 'modelNumber',
-            label: t('search.filters.modelNumber'),
-            placeholder: t('search.filters.modelNumberPlaceholder'),
-            type: 'input',
-            value: filters.modelNumber || '',
-            onChange: (value) => handleFilterChange('modelNumber', value),
-          },
-        ] : []}
       />
 
       <DataTable
