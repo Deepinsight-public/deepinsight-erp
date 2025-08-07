@@ -51,8 +51,8 @@ import {
   Settings,
 } from "./pages/store/OtherStorePages";
 
-const ScrapManagement = lazy(() => import('./pages/store/Scrap'));
-const NewScrap = lazy(() => import('./pages/store/NewScrap'));
+import ScrapManagement from './pages/store/Scrap';
+import NewScrap from './pages/store/NewScrap';
 const SalesOrdersPivot = lazy(() => import('./pages/store/SalesOrdersPivot'));
 
 const queryClient = new QueryClient();

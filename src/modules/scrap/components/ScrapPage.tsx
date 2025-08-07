@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search } from 'lucide-react';
@@ -32,12 +32,15 @@ export function ScrapPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<ScrapApiFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [isPending, startTransition] = useTransition();
 
   const loadScrapItems = async () => {
     try {
       setLoading(true);
       const data = await getScrapItems(filters);
-      setScrapItems(data);
+      startTransition(() => {
+        setScrapItems(data);
+      });
     } catch (error) {
       console.error('Error loading scrap items:', error);
     } finally {
@@ -50,11 +53,15 @@ export function ScrapPage() {
   }, [filters]);
 
   const handleSearch = () => {
-    setFilters(prev => ({ ...prev, search: searchTerm.trim() || undefined }));
+    startTransition(() => {
+      setFilters(prev => ({ ...prev, search: searchTerm.trim() || undefined }));
+    });
   };
 
   const handleFilterChange = (key: keyof ScrapApiFilters, value: string | undefined) => {
-    setFilters(prev => ({ ...prev, [key]: value || undefined }));
+    startTransition(() => {
+      setFilters(prev => ({ ...prev, [key]: value || undefined }));
+    });
   };
 
   const handleRowClick = (scrap: ScrapItem) => {
