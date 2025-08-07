@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { ArrowLeft, Calendar, Package, User, FileText, Settings, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { WarrantyClaim } from '../types/warranty';
 export function WarrantyClaimDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { toast } = useToastService();
   const [claim, setClaim] = useState<WarrantyClaim | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,8 +35,8 @@ export function WarrantyClaimDetail() {
       setClaim(data);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to load warranty claim details',
+        title: t('error'),
+        description: t('warranty.detail.loadError'),
         variant: 'destructive'
       });
     } finally {
@@ -49,15 +51,15 @@ export function WarrantyClaimDetail() {
       setSubmitting(true);
       await submitWarrantyClaim(claim.id);
       toast({
-        title: 'Success',
-        description: 'Warranty claim submitted successfully',
+        title: t('success'),
+        description: t('warranty.detail.submitSuccess'),
       });
       // Reload claim to get updated status
       await loadClaim(claim.id);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to submit warranty claim',
+        title: t('error'),
+        description: t('warranty.detail.submitError'),
         variant: 'destructive'
       });
     } finally {
@@ -89,21 +91,21 @@ export function WarrantyClaimDetail() {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'draft':
-        return 'Draft';
+        return t('warranty.status.draft');
       case 'submitted':
-        return 'Submitted';
+        return t('warranty.status.submitted');
       case 'tech_reviewed':
-        return 'Tech Reviewed';
+        return t('warranty.status.techReviewed');
       case 'approved':
-        return 'Approved';
+        return t('warranty.status.approved');
       case 'resolved':
-        return 'Resolved';
+        return t('warranty.status.resolved');
       case 'closed':
-        return 'Closed';
+        return t('warranty.status.closed');
       case 'rejected':
-        return 'Rejected';
+        return t('warranty.status.rejected');
       case 'cancelled':
-        return 'Cancelled';
+        return t('warranty.status.cancelled');
       default:
         return status;
     }
@@ -112,30 +114,30 @@ export function WarrantyClaimDetail() {
   const linesColumns = [
     {
       key: 'productId',
-      title: 'Product ID',
+      title: t('warranty.detail.items.productId'),
       render: (value: string) => (
         <span className="font-mono text-sm">{value}</span>
       )
     },
     {
       key: 'serialNo',
-      title: 'Serial Number',
+      title: t('warranty.detail.items.serialNo'),
       render: (value: string | null) => value || '—'
     },
     {
       key: 'qty',
-      title: 'Quantity'
+      title: t('warranty.detail.items.qty')
     },
     {
       key: 'uom',
-      title: 'UOM'
+      title: t('warranty.detail.items.uom')
     },
     {
       key: 'warrantyType',
-      title: 'Warranty Type',
+      title: t('warranty.detail.items.warrantyType'),
       render: (value: string) => (
         <Badge variant={value === 'std' ? 'default' : 'secondary'}>
-          {value === 'std' ? 'Standard' : 'Extended'}
+          {value === 'std' ? t('warranty.type.std') : t('warranty.type.ext')}
         </Badge>
       )
     }
@@ -144,7 +146,7 @@ export function WarrantyClaimDetail() {
   const auditColumns = [
     {
       key: 'action',
-      title: 'Action',
+      title: t('warranty.detail.audit.action'),
       render: (value: string) => (
         <Badge variant="outline">
           {value.charAt(0).toUpperCase() + value.slice(1)}
@@ -153,19 +155,19 @@ export function WarrantyClaimDetail() {
     },
     {
       key: 'actorId',
-      title: 'Actor',
+      title: t('warranty.detail.audit.actor'),
       render: (value: string) => (
         <span className="font-mono text-sm">{value}</span>
       )
     },
     {
       key: 'comment',
-      title: 'Comment',
+      title: t('warranty.detail.audit.comment'),
       render: (value: string | null) => value || '—'
     },
     {
       key: 'createdAt',
-      title: 'Date',
+      title: t('warranty.detail.audit.date'),
       render: (value: string) => format(new Date(value), 'MMM dd, yyyy HH:mm')
     }
   ];
@@ -194,12 +196,12 @@ export function WarrantyClaimDetail() {
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold">Warranty Claim Not Found</h1>
+          <h1 className="text-2xl font-bold">{t('warranty.detail.notFound')}</h1>
         </div>
         <Card>
           <CardContent className="pt-6">
             <p className="text-muted-foreground">
-              The warranty claim you're looking for could not be found.
+              {t('warranty.detail.notFoundDesc')}
             </p>
           </CardContent>
         </Card>
@@ -217,7 +219,7 @@ export function WarrantyClaimDetail() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">{claim.claimNo}</h1>
-            <p className="text-muted-foreground">Warranty Claim Details</p>
+            <p className="text-muted-foreground">{t('warranty.detail.title')}</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -227,7 +229,7 @@ export function WarrantyClaimDetail() {
           {claim.status === 'draft' && (
             <Button onClick={handleSubmit} disabled={submitting}>
               <CheckCircle className="h-4 w-4 mr-2" />
-              {submitting ? 'Submitting...' : 'Submit Claim'}
+              {submitting ? t('warranty.detail.submitting') : t('warranty.detail.submitClaim')}
             </Button>
           )}
         </div>
@@ -238,30 +240,30 @@ export function WarrantyClaimDetail() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Claim Overview
+            {t('warranty.detail.overview')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Claim Number</p>
+              <p className="text-sm font-medium text-muted-foreground">{t('warranty.detail.claimNo')}</p>
               <p className="font-mono">{claim.claimNo}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Status</p>
+              <p className="text-sm font-medium text-muted-foreground">{t('warranty.detail.status')}</p>
               <Badge variant={getStatusVariant(claim.status)}>
                 {getStatusLabel(claim.status)}
               </Badge>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Created Date</p>
+              <p className="text-sm font-medium text-muted-foreground">{t('warranty.detail.createdDate')}</p>
               <p className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
                 {format(new Date(claim.createdAt), 'MMM dd, yyyy')}
               </p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Invoice Date</p>
+              <p className="text-sm font-medium text-muted-foreground">{t('warranty.detail.invoiceDate')}</p>
               <p className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
                 {claim.invoiceDate ? format(new Date(claim.invoiceDate), 'MMM dd, yyyy') : '—'}
@@ -272,7 +274,7 @@ export function WarrantyClaimDetail() {
           <Separator />
           
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Fault Description</p>
+            <p className="text-sm font-medium text-muted-foreground">{t('warranty.detail.faultDesc')}</p>
             <p className="text-sm leading-relaxed">{claim.faultDesc}</p>
           </div>
 
@@ -280,7 +282,7 @@ export function WarrantyClaimDetail() {
             <>
               <Separator />
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Warranty Expiry</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('warranty.detail.warrantyExpiry')}</p>
                 <p className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
                   {format(new Date(claim.warrantyExpiry), 'MMM dd, yyyy')}
@@ -294,10 +296,10 @@ export function WarrantyClaimDetail() {
       {/* Tabs for detailed information */}
       <Tabs defaultValue="lines" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="lines">Claim Items</TabsTrigger>
-          {claim.tech && <TabsTrigger value="technical">Technical Review</TabsTrigger>}
-          {claim.resolution && <TabsTrigger value="resolution">Resolution</TabsTrigger>}
-          <TabsTrigger value="audit">Audit Trail</TabsTrigger>
+          <TabsTrigger value="lines">{t('warranty.detail.tabs.lines')}</TabsTrigger>
+          {claim.tech && <TabsTrigger value="technical">{t('warranty.detail.tabs.technical')}</TabsTrigger>}
+          {claim.resolution && <TabsTrigger value="resolution">{t('warranty.detail.tabs.resolution')}</TabsTrigger>}
+          <TabsTrigger value="audit">{t('warranty.detail.tabs.audit')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="lines" className="space-y-4">
@@ -305,10 +307,10 @@ export function WarrantyClaimDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                Warranty Claim Items
+                {t('warranty.detail.items.title')}
               </CardTitle>
               <CardDescription>
-                Products included in this warranty claim
+                {t('warranty.detail.items.desc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -327,29 +329,29 @@ export function WarrantyClaimDetail() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
-                  Technical Review
+                  {t('warranty.detail.tech.title')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Diagnosis</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('warranty.detail.tech.diagnosis')}</p>
                     <p className="text-sm">{claim.tech.diagnosis}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Recommended Solution</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('warranty.detail.tech.solution')}</p>
                     <Badge variant="outline">
                       {claim.tech.solution.charAt(0).toUpperCase() + claim.tech.solution.slice(1)}
                     </Badge>
                   </div>
                   {claim.tech.estCost && (
                     <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">Estimated Cost</p>
+                      <p className="text-sm font-medium text-muted-foreground">{t('warranty.detail.tech.estCost')}</p>
                       <p className="text-sm font-mono">${claim.tech.estCost.toFixed(2)}</p>
                     </div>
                   )}
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Inspected Date</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('warranty.detail.tech.inspectedAt')}</p>
                     <p className="text-sm">{format(new Date(claim.tech.inspectedAt), 'MMM dd, yyyy HH:mm')}</p>
                   </div>
                 </div>
@@ -364,31 +366,31 @@ export function WarrantyClaimDetail() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5" />
-                  Resolution Details
+                  {t('warranty.detail.resolution.title')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Action Taken</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('warranty.detail.resolution.action')}</p>
                     <Badge variant="default">
                       {claim.resolution.action.charAt(0).toUpperCase() + claim.resolution.action.slice(1)}
                     </Badge>
                   </div>
                   {claim.resolution.creditAmount && (
                     <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">Credit Amount</p>
+                      <p className="text-sm font-medium text-muted-foreground">{t('warranty.detail.resolution.creditAmount')}</p>
                       <p className="text-sm font-mono">${claim.resolution.creditAmount.toFixed(2)}</p>
                     </div>
                   )}
                   {claim.resolution.vendorRma && (
                     <div className="space-y-1">
-                      <p className="text-sm font-medium text-muted-foreground">Vendor RMA</p>
+                      <p className="text-sm font-medium text-muted-foreground">{t('warranty.detail.resolution.vendorRma')}</p>
                       <p className="text-sm font-mono">{claim.resolution.vendorRma}</p>
                     </div>
                   )}
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Approved Date</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('warranty.detail.resolution.approvedAt')}</p>
                     <p className="text-sm">{format(new Date(claim.resolution.approvedAt), 'MMM dd, yyyy HH:mm')}</p>
                   </div>
                 </div>
@@ -402,10 +404,10 @@ export function WarrantyClaimDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                Audit Trail
+                {t('warranty.detail.audit.title')}
               </CardTitle>
               <CardDescription>
-                History of actions performed on this warranty claim
+                {t('warranty.detail.audit.desc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
