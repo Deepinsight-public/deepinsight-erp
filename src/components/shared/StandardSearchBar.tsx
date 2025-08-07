@@ -139,12 +139,6 @@ export function StandardSearchBar({
             ))}
 
             <div className="flex gap-2">
-              {showClear && onClear && (
-                <Button variant="outline" onClick={onClear}>
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Clear
-                </Button>
-              )}
               {showExport && onExport && (
                 <Button variant="outline" onClick={onExport}>
                   <Download className="h-4 w-4 mr-2" />
