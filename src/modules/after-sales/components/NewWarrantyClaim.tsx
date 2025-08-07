@@ -104,6 +104,9 @@ export function NewWarrantyClaim() {
       return;
     }
 
+    // Set lines in form data for validation
+    form.setValue('lines', lines);
+
     try {
       setSaving(true);
       
