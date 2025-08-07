@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Breadcrumbs, useToastService } from '@/components';
+import { useToastService } from '@/components';
 import { WarrantyClaimsTable } from './WarrantyClaimsTable';
 import { getWarrantyClaims } from '../api/warranty';
 import { WarrantyHeader } from '../types/warranty';
@@ -18,10 +18,6 @@ export function WarrantyClaims() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
 
-  const breadcrumbs = [
-    { title: 'After-Sales', href: '/store/after-sales/returns' },
-    { title: 'Warranty Claims' }
-  ];
 
   const loadClaims = async () => {
     try {
@@ -50,7 +46,7 @@ export function WarrantyClaims() {
   };
 
   const handleClaimClick = (claimId: string) => {
-    navigate(`/store/after-sales/warranty/${claimId}`);
+    navigate(`/store/after-sales/returns/${claimId}`);
   };
 
   const filteredClaims = claims.filter(claim =>
@@ -60,8 +56,6 @@ export function WarrantyClaims() {
 
   return (
     <div className="space-y-6">
-      <Breadcrumbs items={breadcrumbs} />
-      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Warranty Claims</h1>
@@ -69,7 +63,7 @@ export function WarrantyClaims() {
             Manage warranty claims and product returns under warranty
           </p>
         </div>
-        <Button onClick={() => navigate('/store/after-sales/warranty/new')}>
+        <Button onClick={() => navigate('/store/after-sales/returns/new')}>
           <Plus className="h-4 w-4 mr-2" />
           New Warranty Claim
         </Button>

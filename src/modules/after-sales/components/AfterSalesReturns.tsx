@@ -9,6 +9,7 @@ import { Plus, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ReturnsTable } from './ReturnsTable';
 import { CreateReturnDialog } from './CreateReturnDialog';
+import { WarrantyClaims } from './WarrantyClaims';
 import type { AfterSalesReturn } from '../types/newReturn';
 import { getAllAfterSalesReturns } from '../api/newReturns';
 import { useToastService } from '@/components/shared/ToastService';
@@ -108,12 +109,7 @@ export function AfterSalesReturns() {
         </TabsContent>
         
         <TabsContent value="warranty" className="space-y-4">
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium mb-2">Warranty Validation</h3>
-            <p className="text-muted-foreground">
-              Warranty validation functionality coming soon
-            </p>
-          </div>
+          <WarrantyClaims />
         </TabsContent>
       </Tabs>
 

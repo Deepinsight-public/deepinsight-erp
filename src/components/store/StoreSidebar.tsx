@@ -70,11 +70,6 @@ const menuItems = [
     icon: Search,
   },
   {
-    title: 'warranty',
-    url: '/store/after-sales/warranty',
-    icon: Shield,
-  },
-  {
     title: 'scrap',
     url: '/store/scrap',
     icon: Trash2,
