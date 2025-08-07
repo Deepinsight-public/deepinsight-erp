@@ -70,14 +70,14 @@ export default function Customers() {
         <Breadcrumbs items={[{ title: t('crm') }]} />
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">{t('crm')}</h1>
+            <h1 className="text-3xl font-bold">{t('crm.title')}</h1>
             <p className="text-muted-foreground mt-2">
-              Manage customer relationships and track customer activity.
+              {t('crm.description')}
             </p>
           </div>
           <Button onClick={() => setIsAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Customer
+            {t('crm.addCustomer')}
           </Button>
         </div>
       </div>
@@ -86,7 +86,7 @@ export default function Customers() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search customers..."
+            placeholder={t('crm.searchPlaceholder')}
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-10 pr-10"
@@ -104,17 +104,17 @@ export default function Customers() {
           <DropdownMenuTrigger asChild>
             <Button variant="outline">
               <Download className="h-4 w-4 mr-2" />
-              Export
+              {t('actions.export')}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => handleExport('csv')}>
               <FileText className="h-4 w-4 mr-2" />
-              Export as CSV
+              {t('crm.export.csv')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleExport('xlsx')}>
               <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Export as Excel
+              {t('crm.export.excel')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Clock, CheckCircle, XCircle, AlertCircle, Plus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { PurchaseRequest, PurchaseQueue, QueuePosition } from '../types/purchase
 export function PurchaseRequestsList() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [requests, setRequests] = useState<PurchaseRequest[]>([]);
   const [queueData, setQueueData] = useState<PurchaseQueue | null>(null);
@@ -39,8 +41,8 @@ export function PurchaseRequestsList() {
       setQueueData(queueResult);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to load purchase requests',
+        title: t('error'),
+        description: t('purchaseRequests.loadError'),
         variant: 'destructive'
       });
     } finally {
@@ -96,14 +98,14 @@ export function PurchaseRequestsList() {
   const columns = [
     {
       key: 'id',
-      title: 'Request ID',
+      title: t('purchaseRequests.columns.requestNo'),
       render: (value: string) => (
         <span className="font-medium text-primary">{value.slice(0, 8)}...</span>
       ),
     },
     {
       key: 'items',
-      title: 'Items',
+      title: t('purchaseRequests.columns.items'),
       render: (items: any[]) => (
         <div className="flex flex-col gap-1">
           {items.slice(0, 2).map((item, index) => (
@@ -121,7 +123,7 @@ export function PurchaseRequestsList() {
     },
     {
       key: 'status',
-      title: 'Status',
+      title: t('purchaseRequests.columns.status'),
       render: (value: PurchaseRequest['status']) => (
         <div className="flex items-center gap-2">
           {getStatusIcon(value)}
@@ -133,7 +135,7 @@ export function PurchaseRequestsList() {
     },
     {
       key: 'createdAt',
-      title: 'Created',
+      title: t('purchaseRequests.columns.date'),
       render: (value: string) => new Date(value).toLocaleDateString()
     },
   ];
@@ -143,9 +145,9 @@ export function PurchaseRequestsList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Purchase Requests (抢单)</h1>
+          <h1 className="text-3xl font-bold">{t('purchaseRequests.title')}</h1>
           <p className="text-muted-foreground mt-2">
-            Round-robin inventory allocation system for warehouse distribution.
+            {t('purchaseRequests.description')}
           </p>
         </div>
       </div>
@@ -218,9 +220,9 @@ export function PurchaseRequestsList() {
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-green-800">轮到你抢单 (Round {queueData?.roundNumber})</p>
+                  <p className="font-medium text-green-800">{t('purchaseRequests.queue.yourTurn')}</p>
                   <p className="text-sm text-green-600">
-                    You must place an order now to maintain the round-robin sequence.
+                    {t('purchaseRequests.queue.yourTurnDesc')}
                   </p>
                 </div>
                 <Button 
@@ -228,7 +230,7 @@ export function PurchaseRequestsList() {
                   className="bg-green-600 hover:bg-green-700"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Order
+                  {t('purchaseRequests.create')}
                 </Button>
               </div>
             </div>
@@ -238,10 +240,10 @@ export function PurchaseRequestsList() {
                 <Clock className="h-5 w-5 text-yellow-600" />
                 <div>
                   <p className="font-medium text-yellow-800">
-                    当前顺位：第 {queueData?.yourPosition} 位，轮到 {currentTurnStore?.storeName} 后依次进行
+                    {t('purchaseRequests.queue.waiting')}
                   </p>
                   <p className="text-sm text-yellow-600">
-                    Round {queueData?.roundNumber} - Please wait for your turn in the queue.
+                    {t('purchaseRequests.queue.waitingDesc', { position: queueData?.yourPosition })}
                   </p>
                 </div>
               </div>

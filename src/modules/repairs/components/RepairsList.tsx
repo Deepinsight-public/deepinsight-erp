@@ -27,7 +27,7 @@ export function RepairsList() {
       setRepairs(data);
     } catch (error) {
       console.error('Error loading repairs:', error);
-      showError('Failed to load repairs');
+      showError(t('repairs.loadError'));
     } finally {
       setLoading(false);
     }
@@ -48,7 +48,7 @@ export function RepairsList() {
   };
 
   const breadcrumbs = [
-    { title: 'Repairs' }
+    { title: t('repairs') }
   ];
 
   const filteredRepairs = repairs.filter(repair => {
@@ -65,14 +65,14 @@ export function RepairsList() {
       
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Repairs Management</h1>
+          <h1 className="text-3xl font-bold">{t('repairs.title')}</h1>
           <p className="text-muted-foreground">
-            Manage product repairs and service orders
+            {t('repairs.description')}
           </p>
         </div>
         <Button onClick={() => navigate('/store/repairs/new')}>
           <Plus className="h-4 w-4 mr-2" />
-          Create Repair
+          {t('repairs.create')}
         </Button>
       </div>
 
@@ -81,7 +81,7 @@ export function RepairsList() {
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by Repair ID, Description, or Status..."
+            placeholder={t('repairs.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -89,17 +89,17 @@ export function RepairsList() {
           />
         </div>
         <Button onClick={handleSearch} variant="outline">
-          Search
+          {t('actions.search')}
         </Button>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
-          <TabsTrigger value="all">All Repairs</TabsTrigger>
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="all">{t('repairs.tabs.all')}</TabsTrigger>
+          <TabsTrigger value="pending">{t('repairs.tabs.pending')}</TabsTrigger>
+          <TabsTrigger value="in_progress">{t('repairs.tabs.inProgress')}</TabsTrigger>
+          <TabsTrigger value="completed">{t('repairs.tabs.completed')}</TabsTrigger>
         </TabsList>
         
         <TabsContent value={activeTab} className="space-y-4">

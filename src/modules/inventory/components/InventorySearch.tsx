@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Filter, Download, Package, Barcode } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ interface InventorySearchProps {
 }
 
 export function InventorySearch({ onSearch, onExport }: InventorySearchProps) {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -42,7 +44,7 @@ export function InventorySearch({ onSearch, onExport }: InventorySearchProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Package className="h-5 w-5" />
-          Inventory Search
+          {t('inventorySearch.title')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -53,35 +55,35 @@ export function InventorySearch({ onSearch, onExport }: InventorySearchProps) {
             className="cursor-pointer"
             onClick={() => setSearchType('all')}
           >
-            All
+            {t('inventorySearch.badges.all')}
           </Badge>
           <Badge
             variant={searchType === 'sku' ? 'default' : 'outline'}
             className="cursor-pointer"
             onClick={() => setSearchType('sku')}
           >
-            SKU
+            {t('inventorySearch.badges.sku')}
           </Badge>
           <Badge
             variant={searchType === 'upc' ? 'default' : 'outline'}
             className="cursor-pointer"
             onClick={() => setSearchType('upc')}
           >
-            UPC
+            {t('inventorySearch.badges.upc')}
           </Badge>
           <Badge
             variant={searchType === 'model' ? 'default' : 'outline'}
             className="cursor-pointer"
             onClick={() => setSearchType('model')}
           >
-            Model
+            {t('inventorySearch.badges.model')}
           </Badge>
           <Badge
             variant={searchType === 'serial' ? 'default' : 'outline'}
             className="cursor-pointer"
             onClick={() => setSearchType('serial')}
           >
-            Serial
+            {t('inventorySearch.badges.serial')}
           </Badge>
         </div>
 
@@ -90,7 +92,7 @@ export function InventorySearch({ onSearch, onExport }: InventorySearchProps) {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={`Search by ${searchType}...`}
+              placeholder={t('inventorySearch.placeholder', { type: searchType })}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -101,7 +103,7 @@ export function InventorySearch({ onSearch, onExport }: InventorySearchProps) {
             <Barcode className="h-4 w-4" />
           </Button>
           <Button onClick={handleSearch}>
-            Search
+            {t('actions.search')}
           </Button>
         </div>
 
@@ -109,31 +111,31 @@ export function InventorySearch({ onSearch, onExport }: InventorySearchProps) {
         <div className="flex gap-4">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-32">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t('inventorySearch.filters.status')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="discontinued">Discontinued</SelectItem>
-              <SelectItem value="blocked">Blocked</SelectItem>
+              <SelectItem value="all">{t('inventorySearch.filters.allStatus')}</SelectItem>
+              <SelectItem value="active">{t('inventorySearch.filters.active')}</SelectItem>
+              <SelectItem value="discontinued">{t('inventorySearch.filters.discontinued')}</SelectItem>
+              <SelectItem value="blocked">{t('inventorySearch.filters.blocked')}</SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={stockFilter} onValueChange={setStockFilter}>
             <SelectTrigger className="w-32">
-              <SelectValue placeholder="Stock" />
+              <SelectValue placeholder={t('inventorySearch.filters.stock')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Stock</SelectItem>
-              <SelectItem value="low">Low Stock</SelectItem>
-              <SelectItem value="out">Out of Stock</SelectItem>
-              <SelectItem value="overstock">Overstock</SelectItem>
+              <SelectItem value="all">{t('inventorySearch.filters.allStock')}</SelectItem>
+              <SelectItem value="low">{t('inventorySearch.filters.lowStock')}</SelectItem>
+              <SelectItem value="out">{t('inventorySearch.filters.outOfStock')}</SelectItem>
+              <SelectItem value="overstock">{t('inventorySearch.filters.overstock')}</SelectItem>
             </SelectContent>
           </Select>
 
           <Button variant="outline" onClick={onExport}>
             <Download className="h-4 w-4 mr-2" />
-            Export
+            {t('actions.export')}
           </Button>
         </div>
       </CardContent>

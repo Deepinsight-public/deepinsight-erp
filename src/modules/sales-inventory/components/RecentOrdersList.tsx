@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { DollarSign, Package, ArrowRight, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { SalesOrderDTO, KPIData } from '../types/index';
 export function RecentOrdersList() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [orders, setOrders] = useState<SalesOrderDTO[]>([]);
   const [kpiData, setKpiData] = useState<KPIData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,8 +31,8 @@ export function RecentOrdersList() {
       setKpiData(kpiDataResult);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to load sales orders',
+        title: t('error'),
+        description: t('salesOrders.loadError'),
         variant: 'destructive'
       });
     } finally {
@@ -45,45 +47,45 @@ export function RecentOrdersList() {
   const columns = [
     {
       key: 'orderNumber',
-      title: 'Order No.',
+      title: t('salesOrders.columns.orderNo'),
       render: (value: string) => (
         <span className="font-medium text-primary">{value}</span>
       ),
     },
     {
       key: 'customerName',
-      title: 'Customer',
+      title: t('salesOrders.columns.customer'),
       render: (value: string) => value || 'Walk-in Customer'
     },
     {
       key: 'orderDate',
-      title: 'Date',
+      title: t('salesOrders.columns.date'),
       render: (value: string) => new Date(value).toLocaleDateString()
     },
     {
       key: 'status',
-      title: 'Status',
+      title: t('salesOrders.columns.status'),
       render: (value: string) => (
         <StatusBadge status={value as any} />
       ),
     },
     {
       key: 'totalAmount',
-      title: 'Total Amount',
+      title: t('salesOrders.columns.total'),
       render: (value: number) => (
         <span className="font-medium">${value.toFixed(2)}</span>
       ),
     },
     {
       key: 'actions',
-      title: 'Actions',
+      title: t('salesOrders.columns.actions'),
       render: (_: any, record: SalesOrderDTO) => (
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate(`/store/sales-orders/${record.id}`)}
         >
-          View
+          {t('salesOrders.actions.view')}
         </Button>
       ),
     },
@@ -99,13 +101,13 @@ export function RecentOrdersList() {
       {kpiData && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <KPIWidget
-            title="Today's Sales"
+            title={t('salesOrders.kpi.todaySales')}
             value={kpiData.todaySales ?? 0}
             icon={DollarSign}
             format="currency"
           />
           <KPIWidget
-            title="Today's Orders"
+            title={t('salesOrders.kpi.todayOrders')}
             value={(kpiData.todayOrderCount || 0).toString()}
             icon={Package}
           />
@@ -115,9 +117,9 @@ export function RecentOrdersList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Recent Sales Orders</h1>
+          <h1 className="text-3xl font-bold">{t('salesOrders.recent.title')}</h1>
           <p className="text-muted-foreground mt-2">
-            Latest 5 sales orders from your store.
+            {t('salesOrders.recent.description')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -129,7 +131,8 @@ export function RecentOrdersList() {
             Custom Pivot
           </Button>
           <Button onClick={() => navigate('/store/sales-orders/new')}>
-            New Order
+            <BarChart2 className="h-4 w-4 mr-2" />
+            {t('salesOrders.actions.createNew')}
           </Button>
         </div>
       </div>
@@ -140,7 +143,7 @@ export function RecentOrdersList() {
         columns={columns}
         loading={loading}
         onRowClick={handleRowClick}
-        title="Recent Orders"
+        title={t('salesOrders.recent.title')}
       />
 
       {/* View All Sales Orders Banner */}
@@ -149,7 +152,7 @@ export function RecentOrdersList() {
           onClick={() => navigate('/store/sales-orders/history')}
           className="font-medium"
         >
-          View All Sales Orders
+          {t('salesOrders.actions.viewAll')}
           <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </div>

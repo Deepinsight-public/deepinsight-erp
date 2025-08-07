@@ -51,7 +51,7 @@ export default function Inventory() {
   const columns = [
     {
       key: 'productName',
-      title: 'Product',
+      title: t('inventory.columns.product'),
       render: (value: string, record: any) => (
         <div>
           <div className="font-medium">{value}</div>
@@ -61,14 +61,14 @@ export default function Inventory() {
     },
     {
       key: 'currentStock',
-      title: 'Current Stock',
+      title: t('inventory.columns.currentStock'),
       render: (value: number) => (
         <span className="font-medium">{value}</span>
       ),
     },
     {
       key: 'availableStock',
-      title: 'Available',
+      title: t('inventory.columns.available'),
       render: (value: number, record: any) => {
         const isLowStock = value <= record.minStockLevel;
         return (
@@ -85,25 +85,25 @@ export default function Inventory() {
     },
     {
       key: 'reservedStock',
-      title: 'Reserved',
+      title: t('inventory.columns.reserved'),
       render: (value: number) => (
         <span className="text-muted-foreground">{value}</span>
       ),
     },
     {
       key: 'minStockLevel',
-      title: 'Min Level',
+      title: t('inventory.columns.minLevel'),
       render: (value: number) => (
         <span className="text-sm">{value}</span>
       ),
     },
     {
       key: 'status',
-      title: 'Status',
+      title: t('inventory.columns.status'),
       render: (value: string, record: any) => {
         const isLowStock = record.availableStock <= record.minStockLevel;
         if (isLowStock) {
-          return <Badge variant="destructive" className="text-xs">Low Stock</Badge>;
+          return <Badge variant="destructive" className="text-xs">{t('inventory.status.lowStock')}</Badge>;
         }
         return <StatusBadge status={value as any} />;
       },
@@ -121,12 +121,12 @@ export default function Inventory() {
   return (
     <div className="space-y-6">
       <div>
-        <Breadcrumbs items={[{ title: 'Inventory' }]} />
+        <Breadcrumbs items={[{ title: t('inventory') }]} />
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Inventory Management</h1>
+            <h1 className="text-3xl font-bold">{t('inventory.title')}</h1>
             <p className="text-muted-foreground mt-2">
-              Comprehensive inventory operations including search, transfers, counts, and purchase management.
+              {t('inventory.description')}
             </p>
           </div>
         </div>
@@ -137,20 +137,20 @@ export default function Inventory() {
         <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="h-5 w-5 text-warning" />
-            <h3 className="font-medium text-warning">Low Stock Alert</h3>
+            <h3 className="font-medium text-warning">{t('inventory.lowStockAlert.title')}</h3>
           </div>
           <p className="text-sm text-warning/80">
-            {lowStockItems.length} item(s) are below minimum stock level and need attention.
+            {t('inventory.lowStockAlert.description', { count: lowStockItems.length })}
           </p>
         </div>
       )}
 
       <Tabs defaultValue="search" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="search">Search</TabsTrigger>
-          <TabsTrigger value="transfers">Transfers</TabsTrigger>
-          <TabsTrigger value="counts">Count</TabsTrigger>
-          <TabsTrigger value="purchase">Purchase</TabsTrigger>
+          <TabsTrigger value="search">{t('inventory.tabs.search')}</TabsTrigger>
+          <TabsTrigger value="transfers">{t('inventory.tabs.transfers')}</TabsTrigger>
+          <TabsTrigger value="counts">{t('inventory.tabs.counts')}</TabsTrigger>
+          <TabsTrigger value="purchase">{t('inventory.tabs.purchase')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="search" className="mt-6 space-y-6">
@@ -162,7 +162,7 @@ export default function Inventory() {
             data={mockInventoryItems}
             columns={columns}
             onRowClick={handleRowClick}
-            title="Inventory List"
+            title={t('inventory.list.title')}
           />
         </TabsContent>
 
@@ -177,9 +177,9 @@ export default function Inventory() {
         <TabsContent value="purchase" className="mt-6">
           <div className="text-center py-8 text-muted-foreground">
             <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Purchase management is available in the Purchase Requests section.</p>
+            <p>{t('inventory.purchase.message')}</p>
             <Button variant="outline" className="mt-4" onClick={() => window.location.href = '/store/purchase-requests'}>
-              Go to Purchase Requests
+              {t('inventory.purchase.goToRequests')}
             </Button>
           </div>
         </TabsContent>
