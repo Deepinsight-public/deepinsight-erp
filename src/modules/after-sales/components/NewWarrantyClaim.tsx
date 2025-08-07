@@ -21,6 +21,7 @@ const warrantyLineSchema = z.object({
   productId: z.string().min(1, 'Product is required'),
   serialNo: z.string().optional(),
   qty: z.number().min(1, 'Quantity must be at least 1'),
+  uom: z.string().default('ea'),
   warrantyType: z.enum(['std', 'ext']),
   attachment: z.string().optional()
 });
@@ -69,13 +70,14 @@ export function NewWarrantyClaim() {
   });
 
   const addLine = () => {
-    setLines([...lines, {
+    const newLine = {
       productId: '',
       serialNo: '',
       qty: 1,
       uom: 'ea',
-      warrantyType: 'std'
-    }]);
+      warrantyType: 'std' as const
+    };
+    setLines([...lines, newLine]);
   };
 
   const removeLine = (index: number) => {
@@ -89,8 +91,16 @@ export function NewWarrantyClaim() {
   };
 
   const onSubmit = async (data: WarrantyFormData) => {
+    // Validate that we have product lines
     if (lines.length === 0) {
       showError('Error', 'Please add at least one product line');
+      return;
+    }
+
+    // Validate that all lines have required data
+    const invalidLines = lines.some(line => !line.productId || line.qty < 1);
+    if (invalidLines) {
+      showError('Error', 'Please ensure all product lines have valid product and quantity');
       return;
     }
 
@@ -99,19 +109,27 @@ export function NewWarrantyClaim() {
       
       // Get user's store ID from profile  
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const storeId = user.store_id || '550e8400-e29b-41d4-a716-446655440000';
+      const storeId = user.store_id;
+      
+      if (!storeId) {
+        throw new Error('Store ID not found. Please ensure you are logged in properly.');
+      }
 
       const createData: CreateWarrantyData = {
-        ...data,
+        customerId: data.customerId || undefined,
+        salesOrderId: data.salesOrderId || undefined,
+        invoiceDate: data.invoiceDate,
+        faultDesc: data.faultDesc,
         storeId,
         lines
       };
 
-      const newClaim = await createWarrantyClaim(createData);
+      await createWarrantyClaim(createData);
       
       showSuccess('Success', 'Warranty claim created successfully');
       navigate('/store/after-sales/returns?tab=warranty');
     } catch (error) {
+      console.error('Failed to create warranty claim:', error);
       showError('Error', error instanceof Error ? error.message : 'Failed to create warranty claim');
     } finally {
       setSaving(false);
@@ -147,7 +165,11 @@ export function NewWarrantyClaim() {
                     <FormItem>
                       <FormLabel>Customer (Optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Select customer..." {...field} />
+                        <Input 
+                          placeholder="Enter customer ID..." 
+                          {...field} 
+                          value={field.value || ''}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -161,7 +183,32 @@ export function NewWarrantyClaim() {
                     <FormItem>
                       <FormLabel>Sales Order (Optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Select sales order..." {...field} />
+                        <Input 
+                          placeholder="Enter sales order ID..." 
+                          {...field} 
+                          value={field.value || ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="invoiceDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Invoice Date (Optional)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date"
+                          {...field} 
+                          value={field.value ? field.value.toISOString().split('T')[0] : ''}
+                          onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -174,7 +221,7 @@ export function NewWarrantyClaim() {
                 name="faultDesc"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Fault Description</FormLabel>
+                    <FormLabel>Fault Description *</FormLabel>
                     <FormControl>
                       <Textarea 
                         placeholder="Describe the product defect or issue in detail..."
@@ -283,13 +330,14 @@ export function NewWarrantyClaim() {
           </Card>
 
           <div className="flex gap-2">
-            <Button type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving || lines.length === 0}>
               {saving ? 'Creating...' : 'Create Warranty Claim'}
             </Button>
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => navigate('/store/after-sales/returns?tab=warranty')}
+              disabled={saving}
             >
               Cancel
             </Button>
