@@ -77,17 +77,22 @@ export function NewWarrantyClaim() {
       uom: 'ea',
       warrantyType: 'std' as const
     };
-    setLines([...lines, newLine]);
+    const updatedLines = [...lines, newLine];
+    setLines(updatedLines);
+    form.setValue('lines', updatedLines);
   };
 
   const removeLine = (index: number) => {
-    setLines(lines.filter((_, i) => i !== index));
+    const updatedLines = lines.filter((_, i) => i !== index);
+    setLines(updatedLines);
+    form.setValue('lines', updatedLines);
   };
 
   const updateLine = (index: number, field: keyof typeof lines[0], value: any) => {
     const updatedLines = [...lines];
     updatedLines[index] = { ...updatedLines[index], [field]: value };
     setLines(updatedLines);
+    form.setValue('lines', updatedLines);
   };
 
   const onSubmit = async (data: WarrantyFormData) => {
