@@ -523,7 +523,24 @@ const resources = {
       'warranty.type.ext': 'Extended',
       'warranty.detail.loadError': 'Failed to load warranty claim details',
       'warranty.detail.submitSuccess': 'Warranty claim submitted successfully',
-      'warranty.detail.submitError': 'Failed to submit warranty claim',
+
+      // Customer edit dialog
+      'customers.edit.title': 'Edit Customer',
+      'customers.edit.description': 'Update customer information.',
+      'customers.edit.nameRequired': 'Name is required',
+      'customers.edit.emailInvalid': 'Invalid email address',
+      'customers.edit.nameLabel': 'Name',
+      'customers.edit.emailLabel': 'Email',
+      'customers.edit.phoneLabel': 'Phone',
+      'customers.edit.addressLabel': 'Delivery Address',
+      'customers.edit.namePlaceholder': 'Customer name',
+      'customers.edit.emailPlaceholder': 'customer@email.com',
+      'customers.edit.phonePlaceholder': 'Phone number',
+      'customers.edit.addressPlaceholder': 'Customer delivery address',
+      'customers.edit.updateButton': 'Update Customer',
+      'customers.edit.updateSuccess': 'Customer updated successfully',
+      'customers.edit.updateError': 'Failed to update customer',
+
 
       // Store
       storeName: 'Store Name',
@@ -1165,7 +1182,24 @@ const resources = {
       'warranty.type.ext': '扩展',
       'warranty.detail.loadError': '加载保修索赔详情失败',
       'warranty.detail.submitSuccess': '保修索赔提交成功',
-      'warranty.detail.submitError': '提交保修索赔失败',
+
+      // Customer edit dialog
+      'customers.edit.title': '编辑客户',
+      'customers.edit.description': '更新客户信息。',
+      'customers.edit.nameRequired': '姓名为必填项',
+      'customers.edit.emailInvalid': '邮箱地址无效',
+      'customers.edit.nameLabel': '姓名',
+      'customers.edit.emailLabel': '邮箱',
+      'customers.edit.phoneLabel': '电话',
+      'customers.edit.addressLabel': '送货地址',
+      'customers.edit.namePlaceholder': '客户姓名',
+      'customers.edit.emailPlaceholder': '客户邮箱',
+      'customers.edit.phonePlaceholder': '电话号码',
+      'customers.edit.addressPlaceholder': '客户送货地址',
+      'customers.edit.updateButton': '更新客户',
+      'customers.edit.updateSuccess': '客户更新成功',
+      'customers.edit.updateError': '更新客户失败',
+
 
       // Store
       storeName: '门店名称',

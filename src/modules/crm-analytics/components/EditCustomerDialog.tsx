@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useTranslation } from 'react-i18next';
 import { FormDialog } from '@/components/shared/FormDialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -11,8 +12,8 @@ import { updateCustomer } from '../api/customers';
 import { toast } from 'sonner';
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email address'),
+  name: z.string().min(1, 'customers.edit.nameRequired'),
+  email: z.string().email('customers.edit.emailInvalid'),
   phone: z.string().optional(),
   address: z.string().optional(),
 });
@@ -32,6 +33,7 @@ export function EditCustomerDialog({
   customer,
   onCustomerUpdated,
 }: EditCustomerDialogProps) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   const form = useForm<FormData>({
@@ -69,10 +71,10 @@ export function EditCustomerDialog({
       const updatedCustomer = await updateCustomer(customer.id, updateData);
       onCustomerUpdated(updatedCustomer);
       onOpenChange(false);
-      toast.success('Customer updated successfully');
+      toast.success(t('customers.edit.updateSuccess'));
     } catch (error) {
       console.error('Failed to update customer:', error);
-      toast.error('Failed to update customer');
+      toast.error(t('customers.edit.updateError'));
     } finally {
       setLoading(false);
     }
@@ -87,12 +89,12 @@ export function EditCustomerDialog({
     <FormDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Edit Customer"
-      description="Update customer information."
+      title={t('customers.edit.title')}
+      description={t('customers.edit.description')}
       loading={loading}
       onSubmit={form.handleSubmit(handleSubmit)}
       onCancel={handleCancel}
-      submitLabel="Update Customer"
+      submitLabel={t('customers.edit.updateButton')}
     >
       <Form {...form}>
         <div className="grid gap-4">
@@ -101,9 +103,9 @@ export function EditCustomerDialog({
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Name</FormLabel>
+                <FormLabel>{t('customers.edit.nameLabel')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Customer name" {...field} />
+                  <Input placeholder={t('customers.edit.namePlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -115,9 +117,9 @@ export function EditCustomerDialog({
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{t('customers.edit.emailLabel')}</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="customer@email.com" {...field} />
+                  <Input type="email" placeholder={t('customers.edit.emailPlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -129,9 +131,9 @@ export function EditCustomerDialog({
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phone</FormLabel>
+                <FormLabel>{t('customers.edit.phoneLabel')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Phone number" {...field} />
+                  <Input placeholder={t('customers.edit.phonePlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -143,9 +145,9 @@ export function EditCustomerDialog({
             name="address"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Delivery Address</FormLabel>
+                <FormLabel>{t('customers.edit.addressLabel')}</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Customer delivery address" {...field} />
+                  <Textarea placeholder={t('customers.edit.addressPlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

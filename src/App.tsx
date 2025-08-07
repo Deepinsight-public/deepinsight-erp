@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { lazy } from "react";
+import { useTranslation } from 'react-i18next';
 import { ErrorBoundary } from "@/components";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Auth from "@/pages/Auth";
@@ -58,10 +59,11 @@ const queryClient = new QueryClient();
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div className="min-h-screen flex items-center justify-center">{t('loading')}</div>;
   }
 
   if (!user) {
