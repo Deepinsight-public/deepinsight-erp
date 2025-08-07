@@ -18,6 +18,7 @@ import { useToastService } from '@/components/shared/ToastService';
 import { SelectWithSearch } from '@/components/shared/SelectWithSearch';
 
 import { createRepair } from '../api/repairs';
+import { searchSalesOrders, getSalesOrderDetails } from '../api/salesOrders';
 import { CreateRepairData } from '../types';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +27,7 @@ const repairFormSchema = z.object({
   productId: z.string().min(1, 'Product selection is required'),
   customerId: z.string().optional(),
   customerName: z.string().optional(),
+  salesOrderId: z.string().optional(),
   description: z.string().min(1, 'Description is required'),
   cost: z.string().optional(),
   estimatedCompletion: z.date().optional(),
@@ -40,6 +42,9 @@ interface NewRepairFormProps {
 export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderSearchQuery, setOrderSearchQuery] = useState('');
+  const [orderSearchResults, setOrderSearchResults] = useState<any[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const { showSuccess, showError } = useToastService();
 
   const form = useForm<RepairFormData>({
@@ -49,23 +54,78 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
       productId: '',
       customerId: '',
       customerName: '',
+      salesOrderId: '',
       description: '',
       cost: '',
     }
   });
 
+  // Handle order search
+  const handleOrderSearch = async (query: string) => {
+    if (query.length < 2) {
+      setOrderSearchResults([]);
+      return;
+    }
+    
+    try {
+      const results = await searchSalesOrders(query);
+      setOrderSearchResults(results);
+    } catch (error) {
+      console.error('Error searching orders:', error);
+      setOrderSearchResults([]);
+    }
+  };
+
+  // Handle order selection and auto-fill warranty info
+  const handleOrderSelect = async (orderId: string) => {
+    try {
+      const orderDetails = await getSalesOrderDetails(orderId);
+      if (orderDetails) {
+        setSelectedOrder(orderDetails);
+        form.setValue('salesOrderId', orderId);
+        form.setValue('customerName', orderDetails.customer_name);
+        
+        // Auto-determine warranty status and expiry
+        if (orderDetails.warranty_years && orderDetails.warranty_years > 0) {
+          const warrantyExpiry = new Date(orderDetails.order_date);
+          warrantyExpiry.setFullYear(warrantyExpiry.getFullYear() + orderDetails.warranty_years);
+          
+          const isUnderWarranty = warrantyExpiry > new Date();
+          form.setValue('type', isUnderWarranty ? 'warranty' : 'paid');
+        }
+      }
+    } catch (error) {
+      console.error('Error getting order details:', error);
+      showError('Failed to load order details');
+    }
+  };
+
   const onSubmit = async (data: RepairFormData) => {
     try {
       setIsSubmitting(true);
+      
+      // Calculate warranty status and expiry if order is selected
+      let warrantyStatus = 'unknown';
+      let warrantyExpiresAt: Date | undefined;
+      
+      if (selectedOrder && selectedOrder.warranty_years) {
+        const orderDate = new Date(selectedOrder.order_date);
+        warrantyExpiresAt = new Date(orderDate);
+        warrantyExpiresAt.setFullYear(warrantyExpiresAt.getFullYear() + selectedOrder.warranty_years);
+        warrantyStatus = warrantyExpiresAt > new Date() ? 'active' : 'expired';
+      }
       
       const repairData: CreateRepairData = {
         type: data.type,
         productId: data.productId,
         customerId: data.customerId || undefined,
         customerName: data.customerName || undefined,
+        salesOrderId: data.salesOrderId || undefined,
         description: data.description,
         cost: data.cost ? parseFloat(data.cost) : undefined,
         estimatedCompletion: data.estimatedCompletion,
+        warrantyStatus,
+        warrantyExpiresAt,
       };
 
       const repair = await createRepair(repairData);
@@ -164,6 +224,48 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
                       />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Original Order Search */}
+              <FormField
+                control={form.control}
+                name="salesOrderId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Original Order (Optional)</FormLabel>
+                    <FormControl>
+                      <SelectWithSearch
+                        options={orderSearchResults.map(order => ({
+                          value: order.id,
+                          label: `${order.order_number} - ${order.customer_name} (${new Date(order.order_date).toLocaleDateString()})`
+                        }))}
+                        value={field.value || ''}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          if (value) {
+                            handleOrderSelect(value);
+                          } else {
+                            setSelectedOrder(null);
+                          }
+                        }}
+                        onSearchChange={handleOrderSearch}
+                        placeholder="Search by order number or customer..."
+                        searchPlaceholder="Type to search orders..."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    {selectedOrder && (
+                      <div className="mt-2 p-3 bg-muted rounded-md text-sm">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div><strong>Order:</strong> {selectedOrder.order_number}</div>
+                          <div><strong>Date:</strong> {new Date(selectedOrder.order_date).toLocaleDateString()}</div>
+                          <div><strong>Customer:</strong> {selectedOrder.customer_name}</div>
+                          <div><strong>Warranty:</strong> {selectedOrder.warranty_years || 0} years</div>
+                        </div>
+                      </div>
+                    )}
                   </FormItem>
                 )}
               />

@@ -12,8 +12,11 @@ export interface Repair {
   description: string;
   customerId?: string;
   customerName?: string;
+  salesOrderId?: string;
   cost?: number;
   estimatedCompletion?: string;
+  warrantyStatus?: string;
+  warrantyExpiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -30,8 +33,11 @@ export interface CreateRepairData {
   productId: string;
   customerId?: string;
   customerName?: string;
+  salesOrderId?: string;
   type: string;
   description: string;
   cost?: number;
   estimatedCompletion?: Date;
+  warrantyStatus?: string;
+  warrantyExpiresAt?: Date;
 }

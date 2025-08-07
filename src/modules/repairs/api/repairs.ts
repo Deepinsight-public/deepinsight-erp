@@ -90,10 +90,13 @@ export const createRepair = async (repairData: CreateRepairData): Promise<Repair
       product_id: repairData.productId,
       customer_id: repairData.customerId,
       customer_name: repairData.customerName,
+      sales_order_id: repairData.salesOrderId,
       type: repairData.type,
       description: repairData.description,
       cost: repairData.cost,
       estimated_completion: repairData.estimatedCompletion ? repairData.estimatedCompletion.toISOString() : null,
+      warranty_status: repairData.warrantyStatus || 'unknown',
+      warranty_expires_at: repairData.warrantyExpiresAt ? repairData.warrantyExpiresAt.toISOString() : null,
       status: 'pending',
     })
     .select('*')
@@ -115,8 +118,11 @@ export const createRepair = async (repairData: CreateRepairData): Promise<Repair
     description: data.description || '',
     customerId: data.customer_id,
     customerName: data.customer_name,
+    salesOrderId: data.sales_order_id,
     cost: data.cost ? parseFloat(data.cost.toString()) : undefined,
     estimatedCompletion: data.estimated_completion,
+    warrantyStatus: data.warranty_status,
+    warrantyExpiresAt: data.warranty_expires_at,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };

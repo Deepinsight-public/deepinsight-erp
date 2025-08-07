@@ -553,10 +553,13 @@ export type Database = {
           id: string
           product_id: string
           repair_id: string
+          sales_order_id: string | null
           status: string
           store_id: string
           type: string
           updated_at: string
+          warranty_expires_at: string | null
+          warranty_status: string | null
         }
         Insert: {
           cost?: number | null
@@ -568,10 +571,13 @@ export type Database = {
           id?: string
           product_id: string
           repair_id: string
+          sales_order_id?: string | null
           status?: string
           store_id: string
           type: string
           updated_at?: string
+          warranty_expires_at?: string | null
+          warranty_status?: string | null
         }
         Update: {
           cost?: number | null
@@ -583,12 +589,23 @@ export type Database = {
           id?: string
           product_id?: string
           repair_id?: string
+          sales_order_id?: string | null
           status?: string
           store_id?: string
           type?: string
           updated_at?: string
+          warranty_expires_at?: string | null
+          warranty_status?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "repairs_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       returns: {
         Row: {
