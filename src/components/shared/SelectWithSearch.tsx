@@ -73,7 +73,12 @@ export function SelectWithSearch({
         <Command className="bg-background">
           <CommandInput 
             placeholder={searchPlaceholder}
-            onValueChange={onSearchChange}
+            onValueChange={(value) => {
+              console.log('CommandInput onValueChange triggered:', value);
+              if (onSearchChange) {
+                onSearchChange(value);
+              }
+            }}
             className="bg-background"
           />
           <CommandList className="bg-background">
