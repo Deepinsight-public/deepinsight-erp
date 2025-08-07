@@ -59,11 +59,11 @@ const queryClient = new QueryClient();
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { t } = useTranslation();
+  const { t, ready } = useTranslation();
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">{t('loading')}</div>;
+    return <div className="min-h-screen flex items-center justify-center">{ready ? t('loading') : 'Loading...'}</div>;
   }
 
   if (!user) {
