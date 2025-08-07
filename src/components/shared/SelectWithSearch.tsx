@@ -66,15 +66,19 @@ export function SelectWithSearch({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn('p-0', popoverClassName)} style={{ width: 'var(--radix-popover-trigger-width)' }}>
-        <Command>
+      <PopoverContent 
+        className={cn('p-0 bg-background border shadow-md z-50', popoverClassName)} 
+        style={{ width: 'var(--radix-popover-trigger-width)' }}
+      >
+        <Command className="bg-background">
           <CommandInput 
             placeholder={searchPlaceholder}
             onValueChange={onSearchChange}
+            className="bg-background"
           />
-          <CommandList>
-            <CommandEmpty>{emptyText}</CommandEmpty>
-            <CommandGroup>
+          <CommandList className="bg-background">
+            <CommandEmpty className="bg-background">{emptyText}</CommandEmpty>
+            <CommandGroup className="bg-background">
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
@@ -83,7 +87,7 @@ export function SelectWithSearch({
                     onValueChange(currentValue === value ? '' : currentValue);
                     setOpen(false);
                   }}
-                  className="px-3 py-2 hover:bg-primary/5 cursor-pointer"
+                  className="px-3 py-2 hover:bg-accent hover:text-accent-foreground cursor-pointer bg-background"
                 >
                   <Check
                     className={cn(

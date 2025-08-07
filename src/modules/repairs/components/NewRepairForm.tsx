@@ -82,7 +82,7 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
 
   // Handle customer search
   const handleCustomerSearch = async (query: string) => {
-    if (query.length < 2) {
+    if (query.length < 1) {
       setCustomerOptions([]);
       return;
     }
@@ -98,7 +98,7 @@ export function NewRepairForm({ onSuccess }: NewRepairFormProps) {
 
   // Handle product search
   const handleProductSearch = async (query: string) => {
-    if (query.length < 2) {
+    if (query.length < 1) {
       setProductOptions([]);
       return;
     }
