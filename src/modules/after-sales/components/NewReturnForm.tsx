@@ -325,8 +325,8 @@ export function NewReturnForm() {
                         options={warehouseOptions}
                         value={field.value}
                         onValueChange={field.onChange}
-                        placeholder="Select warehouse..."
-                        searchPlaceholder="Search warehouses..."
+                        placeholder="Select"
+                        searchPlaceholder="Search"
                         emptyText="No warehouses found."
                       />
                     </FormControl>
@@ -365,8 +365,8 @@ export function NewReturnForm() {
                       value={field.value}
                       onValueChange={handleProductSelect}
                       onSearchChange={handleProductSearch}
-                      placeholder="Search and select product..."
-                      searchPlaceholder="Search by SKU or product name..."
+                      placeholder="Select"
+                      searchPlaceholder="Search"
                       emptyText="No products found."
                     />
                   </FormControl>
@@ -387,7 +387,7 @@ export function NewReturnForm() {
                       options={RETURN_REASONS}
                       value={field.value}
                       onValueChange={field.onChange}
-                      placeholder="Select return reason..."
+                      placeholder="Select"
                       renderOption={(option) => option.label}
                     />
                   </FormControl>
