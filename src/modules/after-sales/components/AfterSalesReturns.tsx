@@ -70,31 +70,31 @@ export function AfterSalesReturns() {
         </p>
       </div>
 
-      {/* Search Bar */}
-      <div className="flex gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by Return No., Reason, or Status..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-          />
-        </div>
-        <Button onClick={handleSearch} variant="outline">
-          Search
-        </Button>
-      </div>
-
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
           <TabsTrigger value="processing">Return Processing</TabsTrigger>
-          <TabsTrigger value="warranty">Warranty Validation</TabsTrigger>
+          <TabsTrigger value="warranty">Warranty Claim</TabsTrigger>
         </TabsList>
         
         <TabsContent value="processing" className="space-y-4">
+          {/* Search Bar for Return Processing */}
+          <div className="flex gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by Return No., Reason, or Status..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              />
+            </div>
+            <Button onClick={handleSearch} variant="outline">
+              Search
+            </Button>
+          </div>
+          
           <div className="flex justify-end mb-4">
             <Button onClick={() => navigate('/store/after-sales/returns/new')}>
               <Plus className="h-4 w-4 mr-2" />
