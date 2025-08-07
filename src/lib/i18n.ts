@@ -13,8 +13,6 @@ const resources = {
       afterSales: 'After-Sales',
       repairs: 'Repairs',
       orderSearch: 'Order Search',
-      customerReturns: 'Customer Returns',
-      returnsToHQ: 'Returns to HQ',
       scrap: 'Scrap',
       settings: 'Settings',
       
@@ -155,8 +153,6 @@ const resources = {
       afterSales: '售后服务',
       repairs: '维修管理',
       orderSearch: '订单查询',
-      customerReturns: '客户退货',
-      returnsToHQ: '退货总部',
       scrap: '报废管理',
       settings: '设置',
       

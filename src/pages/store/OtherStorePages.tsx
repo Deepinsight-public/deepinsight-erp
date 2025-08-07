@@ -235,41 +235,6 @@ export function OrderSearch() {
   );
 }
 
-export function CustomerReturns() {
-  const { t } = useTranslation();
-  return (
-    <StorePageStub
-      title="Customer Returns"
-      description="Process returns initiated by customers."
-      breadcrumbs={[{ title: t('customerReturns') }]}
-      features={[
-        'Customer return requests',
-        'Return authorization',
-        'Return shipping labels',
-        'Return processing',
-        'Customer refunds'
-      ]}
-    />
-  );
-}
-
-export function HQReturns() {
-  const { t } = useTranslation();
-  return (
-    <StorePageStub
-      title="Returns to HQ"
-      description="Manage returns sent back to headquarters or suppliers."
-      breadcrumbs={[{ title: t('returnsToHQ') }]}
-      features={[
-        'HQ return requests',
-        'Bulk return processing',
-        'Return shipping',
-        'Credit processing',
-        'Return tracking'
-      ]}
-    />
-  );
-}
 
 export function Scrap() {
   const { t } = useTranslation();

@@ -45,8 +45,6 @@ import {
   CustomerInteractions,
   AfterSalesScrap,
   OrderSearch,
-  CustomerReturns,
-  HQReturns,
   Settings,
 } from "./pages/store/OtherStorePages";
 
@@ -139,9 +137,6 @@ export default function App() {
                   {/* Order Search */}
                   <Route path="orders/search" element={<OrderSearch />} />
                   
-                  {/* Returns */}
-                  <Route path="customer-returns" element={<CustomerReturns />} />
-                  <Route path="hq-returns" element={<HQReturns />} />
                   
                   {/* Scrap Management */}
                   <Route path="scrap" element={<ScrapManagement />} />

@@ -69,16 +69,6 @@ const menuItems = [
     icon: Search,
   },
   {
-    title: 'customerReturns',
-    url: '/store/customer-returns',
-    icon: RotateCcw,
-  },
-  {
-    title: 'returnsToHQ',
-    url: '/store/hq-returns',
-    icon: ArrowUp,
-  },
-  {
     title: 'scrap',
     url: '/store/scrap',
     icon: Trash2,
