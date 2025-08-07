@@ -238,7 +238,6 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
                       <TableHeader>
                         <TableRow>
                           <TableHead>{t('scrapManagement.form.product')} *</TableHead>
-                          <TableHead>{t('scrapManagement.form.batchSerial')}</TableHead>
                           <TableHead>{t('scrapManagement.form.quantity')} *</TableHead>
                           <TableHead>{t('scrapManagement.form.uom')}</TableHead>
                           <TableHead>{t('scrapManagement.form.unitCost')} *</TableHead>
@@ -264,18 +263,9 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
                                     emptyText={t('scrapManagement.form.noProducts')}
                                   />
                                 )}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <FormField
-                                control={form.control}
-                                name={`lines.${index}.batchNo`}
-                                render={({ field }) => (
-                                  <Input {...field} placeholder={t('scrapManagement.form.optional')} />
-                                )}
-                              />
-                            </TableCell>
-                            <TableCell>
+                               />
+                             </TableCell>
+                             <TableCell>
                               <FormField
                                 control={form.control}
                                 name={`lines.${index}.qty`}
