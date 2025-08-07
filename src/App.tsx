@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { lazy } from "react";
+import { lazy, Suspense } from "react";
 import { useTranslation } from 'react-i18next';
 import { ErrorBoundary } from "@/components";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
@@ -102,7 +102,11 @@ export default function App() {
                   {/* Sales Orders */}
                   <Route path="sales-orders" element={<SalesOrders />} />
                   <Route path="sales-orders/history" element={<SalesOrdersHistory />} />
-                  <Route path="sales-orders/pivot" element={<SalesOrdersPivot />} />
+                  <Route path="sales-orders/pivot" element={
+                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+                      <SalesOrdersPivot />
+                    </Suspense>
+                  } />
                   <Route path="sales-orders/new" element={<NewSalesOrder />} />
                   <Route path="sales-orders/success" element={<SalesOrderSuccess />} />
                   <Route path="sales-orders/:id" element={<SalesOrderDetail />} />
