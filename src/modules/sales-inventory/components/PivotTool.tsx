@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, startTransition } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BarChart2, Download, FileSpreadsheet, FileText, ChevronRight } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
@@ -64,7 +64,10 @@ export function PivotTool({
       };
 
       const data = await sourceQuery(params);
-      setSourceData(data);
+      
+      startTransition(() => {
+        setSourceData(data);
+      });
       
       // Check if we need server-side pivot for large datasets
       if (data.length > 5000) {
@@ -82,21 +85,27 @@ export function PivotTool({
         variant: 'destructive'
       });
     } finally {
-      setLoading(false);
+      startTransition(() => {
+        setLoading(false);
+      });
     }
   };
 
   // Build pivot tree when data or grouping changes
   useEffect(() => {
     if (sourceData.length > 0 && groupBy.length > 0) {
-      const tree = buildPivotTree(sourceData, groupBy, summariseFields);
-      setPivotTree(tree);
-      // Auto-expand first level by default
-      const firstLevelIds = tree.map(node => node.id);
-      setExpanded(new Set(firstLevelIds));
+      startTransition(() => {
+        const tree = buildPivotTree(sourceData, groupBy, summariseFields);
+        setPivotTree(tree);
+        // Auto-expand first level by default
+        const firstLevelIds = tree.map(node => node.id);
+        setExpanded(new Set(firstLevelIds));
+      });
     } else {
-      setPivotTree([]);
-      setExpanded(new Set());
+      startTransition(() => {
+        setPivotTree([]);
+        setExpanded(new Set());
+      });
     }
   }, [sourceData, groupBy, summariseFields]);
 

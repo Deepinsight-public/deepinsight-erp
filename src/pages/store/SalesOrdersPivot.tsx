@@ -7,7 +7,7 @@ export default function SalesOrdersPivot() {
     <div className="space-y-6">
       <Breadcrumbs items={[
         { title: 'Sales Orders', href: '/store/sales-orders' },
-        { title: 'Custom Pivot' }
+        { title: 'Pivot Analysis' }
       ]} />
       
       <PivotTool
