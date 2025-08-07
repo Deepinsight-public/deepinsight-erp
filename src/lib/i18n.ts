@@ -260,15 +260,7 @@ const resources = {
       'repairs.messages.createError': 'Failed to create repair. Please try again.',
       'repairs.messages.orderDetailsError': 'Failed to load order details',
 
-      // After-Sales Management
-      'afterSales.title': 'After-Sales Service',
-      'afterSales.description': 'Manage returns, warranty claims and after-sales processes',
-      'afterSales.tabs.processing': 'Return Processing',
-      'afterSales.tabs.warranty': 'Warranty Claims',
-      'afterSales.search.placeholder': 'Search returns...',
-      'afterSales.search.button': 'Search',
-      'afterSales.createReturn': 'Create Return',
-      'afterSales.loadError': 'Failed to load after-sales data',
+      // After-Sales Management (updated existing keys)
       
       // Returns Table
       'returns.table.title': 'Returns',
@@ -526,14 +518,7 @@ const resources = {
       'warranty.detail.audit.actor': 'Actor',
       'warranty.detail.audit.comment': 'Comment',
       'warranty.detail.audit.date': 'Date',
-      'warranty.status.draft': 'Draft',
-      'warranty.status.submitted': 'Submitted',
-      'warranty.status.techReviewed': 'Tech Reviewed',
-      'warranty.status.approved': 'Approved',
-      'warranty.status.resolved': 'Resolved',
-      'warranty.status.closed': 'Closed',
-      'warranty.status.rejected': 'Rejected',
-      'warranty.status.cancelled': 'Cancelled',
+      // Warranty status keys already defined above
       'warranty.type.std': 'Standard',
       'warranty.type.ext': 'Extended',
       'warranty.detail.loadError': 'Failed to load warranty claim details',
