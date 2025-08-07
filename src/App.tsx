@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound";
 import { AfterSalesReturns } from "@/modules/after-sales/components/AfterSalesReturns";
 import NewAfterSalesReturn from "./pages/store/NewAfterSalesReturn";
 import NewWarrantyClaim from "./pages/store/NewWarrantyClaim";
+import WarrantyClaimDetail from "./pages/store/WarrantyClaimDetail";
 import AfterSalesReturnDetail from "./pages/store/AfterSalesReturnDetail";
 import Repairs from "./pages/store/Repairs";
 import NewRepair from "./pages/store/NewRepair";
@@ -128,6 +129,7 @@ export default function App() {
                   <Route path="after-sales/returns" element={<AfterSalesReturns />} />
                   <Route path="after-sales/returns/new" element={<NewAfterSalesReturn />} />
                   <Route path="after-sales/warranty/new" element={<NewWarrantyClaim />} />
+                  <Route path="after-sales/warranty/:id" element={<WarrantyClaimDetail />} />
                   <Route path="after-sales/returns/:id" element={<AfterSalesReturnDetail />} />
                   <Route path="after-sales/scrap" element={<AfterSalesScrap />} />
                   
