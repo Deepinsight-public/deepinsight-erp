@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Filter, Download, RotateCcw } from 'lucide-react';
+import { Search, Filter, Download, RotateCcw, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -91,9 +91,18 @@ export function StandardSearchBar({
               placeholder={searchPlaceholder}
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10"
+              className="pl-10 pr-10"
               onKeyPress={(e) => e.key === 'Enter' && onSearch()}
             />
+            {searchValue && (
+              <button
+                onClick={() => onSearchChange('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground transition-colors"
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
           <Button onClick={onSearch}>
             <Search className="h-4 w-4 mr-2" />
