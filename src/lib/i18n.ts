@@ -195,6 +195,18 @@ const resources = {
       'crm.searchPlaceholder': 'Search customers...',
       'crm.export.csv': 'Export as CSV',
       'crm.export.excel': 'Export as Excel',
+      'crm.customers.title': 'Customers',
+      'crm.customers.description': 'Manage your customer database',
+      'crm.customers.columns.name': 'Name',
+      'crm.customers.columns.email': 'Email', 
+      'crm.customers.columns.phone': 'Phone',
+      'crm.customers.columns.address': 'Address',
+      'crm.customers.columns.status': 'Status',
+      'crm.customers.columns.actions': 'Actions',
+      'crm.customers.actions.edit': 'Edit',
+      'crm.customers.actions.delete': 'Delete',
+      'crm.customers.noCustomers': 'No customers found',
+      'crm.customers.loadError': 'Failed to load customers',
       
       // Repairs
       'repairs.title': 'Repairs Management',
@@ -482,7 +494,8 @@ const resources = {
       'scrap.messages.submitSuccess': 'Scrap request submitted for approval',
       'scrap.messages.saveError': 'Failed to save scrap request',
       'scrap.messages.submitError': 'Failed to submit scrap request',
-      'scrap.messages.inventoryWarning': 'Product {product} has no available inventory'
+      'scrap.messages.inventoryWarning': 'Product {product} has no available inventory',
+
     }
   },
   zh: {
@@ -1123,7 +1136,27 @@ const resources = {
       'scrap.messages.submitSuccess': '报废申请已提交审批',
       'scrap.messages.saveError': '保存报废申请失败',
       'scrap.messages.submitError': '提交报废申请失败',
-      'scrap.messages.inventoryWarning': '产品 {product} 没有可用库存'
+      'scrap.messages.inventoryWarning': '产品 {product} 没有可用库存',
+
+      // Customer Relationship Management (CRM)
+      'crm.title': '客户关系管理',
+      'crm.description': '管理客户关系并跟踪客户活动。',
+      'crm.addCustomer': '添加客户',
+      'crm.searchPlaceholder': '搜索客户...',
+      'crm.export.csv': '导出为CSV',
+      'crm.export.excel': '导出为Excel',
+      'crm.customers.title': '客户',
+      'crm.customers.description': '管理您的客户数据库',
+      'crm.customers.columns.name': '姓名',
+      'crm.customers.columns.email': '邮箱',
+      'crm.customers.columns.phone': '电话', 
+      'crm.customers.columns.address': '地址',
+      'crm.customers.columns.status': '状态',
+      'crm.customers.columns.actions': '操作',
+      'crm.customers.actions.edit': '编辑',
+      'crm.customers.actions.delete': '删除',
+      'crm.customers.noCustomers': '未找到客户',
+      'crm.customers.loadError': '加载客户失败',
     }
   }
 };

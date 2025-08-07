@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/components';
 import { Button } from '@/components/ui/button';
 import { Pencil } from 'lucide-react';
@@ -13,6 +14,7 @@ interface CustomerListProps {
 }
 
 export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm, refreshTrigger }: CustomerListProps) {
+  const { t } = useTranslation();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,7 +37,7 @@ export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm, refr
   const columns = [
     {
       key: 'name',
-      title: 'Name',
+      title: t('crm.customers.columns.name'),
       render: (value: string, record: Customer) => (
         <div className="flex flex-col">
           <span className="font-medium">{value}</span>
@@ -46,12 +48,12 @@ export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm, refr
     },
     {
       key: 'phone',
-      title: 'Phone',
+      title: t('crm.customers.columns.phone'),
       width: '140px',
     },
     {
       key: 'email',
-      title: 'Email',
+      title: t('crm.customers.columns.email'),
       render: (value: string | null) => (
         <span className="text-muted-foreground">{value || '-'}</span>
       ),
@@ -59,7 +61,7 @@ export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm, refr
     },
     {
       key: 'address',
-      title: 'Delivery Address',
+      title: t('crm.customers.columns.address'),
       render: (value: string | null) => (
         <span className="text-sm text-muted-foreground truncate block max-w-[200px]" title={value || ''}>
           {value || '-'}
@@ -69,7 +71,7 @@ export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm, refr
     },
     {
       key: 'status',
-      title: 'Status',
+      title: t('crm.customers.columns.status'),
       render: (value: string) => (
         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
           value === 'active' 
@@ -83,7 +85,7 @@ export function CustomerList({ onCustomerClick, onCustomerEdit, searchTerm, refr
     },
     {
       key: 'actions',
-      title: 'Actions',
+      title: t('crm.customers.columns.actions'),
       render: (value: any, record: Customer) => (
         <Button
           variant="ghost"
