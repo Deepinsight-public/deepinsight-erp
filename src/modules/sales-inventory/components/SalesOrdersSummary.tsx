@@ -327,7 +327,7 @@ export function SalesOrdersSummary() {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between p-6 border-b bg-background">
+      <div className="flex-shrink-0 flex items-center justify-between p-6 border-b">
         <div>
           <h1 className="text-3xl font-bold">{t('sales.summary.title')}</h1>
           <p className="text-muted-foreground mt-2">
@@ -401,7 +401,7 @@ export function SalesOrdersSummary() {
       </div>
 
       {/* Filters */}
-      <div className="flex-shrink-0 p-6 bg-background border-b">
+      <div className="flex-shrink-0 p-6">
         <Card>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -464,21 +464,17 @@ export function SalesOrdersSummary() {
         </Card>
       </div>
 
-      {/* Data Table Container - Controlled Scrolling */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <Card className="h-full m-6 mt-0">
-          <CardContent className="p-0 h-full flex flex-col">
-            {/* Fixed Table Header */}
-            <div className="flex-shrink-0 overflow-hidden border-b bg-background">
+      {/* Data Table - Scrollable */}
+      <div className="flex-1 min-h-0">
+        <Card className="h-full">
+          <CardContent className="p-0 h-full">
+            <div className="h-full overflow-hidden">
               <div className="overflow-x-auto">
                 <Table className="min-w-full">
-                  <TableHeader>
+                  <TableHeader className="sticky top-0 z-10 bg-background border-b">
                     <TableRow>
                       {visibleColumns.map((column) => (
-                        <TableHead 
-                          key={column.key} 
-                          className="bg-background border-r last:border-r-0 whitespace-nowrap sticky top-0 z-10"
-                        >
+                        <TableHead key={column.key} className="bg-background">
                           {column.title}
                         </TableHead>
                       ))}
@@ -486,68 +482,54 @@ export function SalesOrdersSummary() {
                   </TableHeader>
                 </Table>
               </div>
-            </div>
-
-            {/* Scrollable Table Body */}
-            <div className="flex-1 overflow-auto">
-              <Table className="min-w-full">
-                <TableBody>
-                  {loading ? (
-                    Array.from({ length: 10 }).map((_, index) => (
-                      <TableRow key={index}>
-                        {visibleColumns.map((column) => (
-                          <TableCell 
-                            key={column.key}
-                            className="border-r last:border-r-0 whitespace-nowrap"
-                          >
-                            <div className="h-4 bg-muted animate-pulse rounded" />
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  ) : orders.length === 0 ? (
-                    <TableRow>
-                      <TableCell 
-                        colSpan={visibleColumns.length} 
-                        className="text-center py-12 text-muted-foreground"
-                      >
-                        <div className="flex flex-col items-center gap-2">
-                          <AlertCircle className="h-8 w-8 text-muted-foreground/50" />
-                          <p>{t('message.noData')}</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    orders.map((order, index) => (
-                      <TableRow 
-                        key={order.orderId || index}
-                        className="cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => navigate(`/store/sales-orders/${order.orderId}`)}
-                      >
-                        {tableColumns.map((column) => {
-                          const value = order[column.key as keyof typeof order];
-                          return (
-                            <TableCell 
-                              key={column.key}
-                              className="border-r last:border-r-0 whitespace-nowrap"
-                            >
-                              {column.render ? column.render(value, order) : value}
+              <div className="h-full overflow-x-auto overflow-y-auto">
+                <Table className="min-w-full">
+                  <TableBody>
+                    {loading ? (
+                      Array.from({ length: 10 }).map((_, index) => (
+                        <TableRow key={index}>
+                          {visibleColumns.map((column) => (
+                            <TableCell key={column.key}>
+                              <div className="h-4 bg-muted animate-pulse rounded" />
                             </TableCell>
-                          );
-                        })}
+                          ))}
+                        </TableRow>
+                      ))
+                    ) : orders.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
+                          {t('message.noData')}
+                        </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      orders.map((order, index) => (
+                        <TableRow 
+                          key={index}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => navigate(`/store/sales-orders/${order.orderId}`)}
+                        >
+                          {tableColumns.map((column) => {
+                            const value = order[column.key as keyof typeof order];
+                            return (
+                              <TableCell key={column.key}>
+                                {column.render ? column.render(value, order) : value}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Fixed Pagination Footer */}
+      {/* Pagination footer */}
       {total > 50 && (
-        <div className="flex-shrink-0 flex justify-center p-4 border-t bg-background">
+        <div className="flex-shrink-0 flex justify-center p-4 border-t">
           <p className="text-muted-foreground">
             Showing {orders.length} of {total} orders
           </p>
