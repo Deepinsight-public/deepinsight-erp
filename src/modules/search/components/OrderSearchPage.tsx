@@ -72,12 +72,11 @@ export function OrderSearchPage() {
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     
-    // If search is cleared, reset to original state
+    // If search is cleared, reload original data
     if (!value.trim()) {
       setFilters({});
-      setProducts(originalProducts);
-      setTotal(originalProducts.length);
-      setCurrentPage(1);
+      // Reload original data instead of using stored state
+      handleSearch(1, { search: undefined, filters: {} });
     } else {
       // Trigger debounced search
       debouncedSearch(value);
@@ -87,14 +86,13 @@ export function OrderSearchPage() {
   const clearFilters = () => {
     setFilters({});
     setSearchQuery('');
-    setProducts(originalProducts);
-    setTotal(originalProducts.length);
-    setCurrentPage(1);
+    // Reload original data when clearing
+    handleSearch(1, { search: undefined, filters: {} });
   };
 
   // Load initial data
   useEffect(() => {
-    handleSearch();
+    handleSearch(1, { search: undefined, filters: {} });
   }, []);
 
   const columns = [
