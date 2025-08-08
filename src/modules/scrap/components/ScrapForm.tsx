@@ -97,14 +97,53 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
     getWarehouses().then(setWarehouseOptions).catch(console.error);
   }, []);
 
-  // Load products - simplified search function
+  // Load all products on component mount
+  useEffect(() => {
+    loadAllProducts();
+  }, []);
+
+  // Load products - preload all products and handle search
+  const loadAllProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, sku, product_name, price')
+        .eq('is_active', true)
+        .order('product_name')
+        .limit(100);
+
+      if (error) {
+        console.error('Error loading products:', error);
+        return;
+      }
+
+      const options = data?.map(product => ({
+        value: product.id,
+        label: `${product.sku} - ${product.product_name}`,
+        cost: product.price || 0,
+        product
+      })) || [];
+
+      setProductOptions(options);
+    } catch (error) {
+      console.error('Error loading products:', error);
+    }
+  };
+
   const handleProductSearch = async (search: string) => {
+    if (!search.trim()) {
+      // If no search term, reload all products
+      loadAllProducts();
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('products')
         .select('id, sku, product_name, price')
         .or(`sku.ilike.%${search}%,product_name.ilike.%${search}%`)
         .eq('is_active', true)
+        .order('product_name')
         .limit(20);
 
       if (error) {
