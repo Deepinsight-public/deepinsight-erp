@@ -108,7 +108,7 @@ export function ScrapPage() {
       title: t('scrapManagement.form.product'),
       render: (scrap: ScrapItem) => (
         <div>
-          {scrap.product ? (
+          {scrap?.product ? (
             <>
               <div className="font-medium">{scrap.product.productName}</div>
               <div className="text-sm text-muted-foreground">{scrap.product.sku}</div>
