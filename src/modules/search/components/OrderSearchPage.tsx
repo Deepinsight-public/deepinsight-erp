@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,16 +11,14 @@ import type { ProductSearchItem, ProductSearchFilters } from '../types';
 export function OrderSearchPage() {
   const { t } = useTranslation();
   const [products, setProducts] = useState<ProductSearchItem[]>([]);
-  const [originalProducts, setOriginalProducts] = useState<ProductSearchItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<ProductSearchFilters>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
-  const handleSearch = async (page = 1, isInitialLoad = false) => {
+  const handleSearch = async (page = 1) => {
     setLoading(true);
     try {
       const result = await searchProducts({ 
@@ -32,11 +30,6 @@ export function OrderSearchPage() {
       setProducts(result.data);
       setTotal(result.total);
       setCurrentPage(page);
-      
-      // Store original data when no search query (initial load or cleared search)
-      if (isInitialLoad || (!searchQuery && Object.keys(filters).length === 0)) {
-        setOriginalProducts(result.data);
-      }
     } catch (error) {
       console.error('Search failed:', error);
     } finally {
@@ -51,53 +44,13 @@ export function OrderSearchPage() {
     }));
   };
 
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    
-    // Clear existing timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    
-    // If search is cleared, clear all filters and restore original data immediately
-    if (!value) {
-      setFilters({});
-      setProducts(originalProducts);
-      setTotal(originalProducts.length);
-      return;
-    }
-    
-    // Debounce search for live updates
-    searchTimeoutRef.current = setTimeout(() => {
-      handleSearch(1);
-    }, 300);
-  };
-
   const clearFilters = () => {
     setFilters({});
     setSearchQuery('');
-    setProducts(originalProducts);
-    setTotal(originalProducts.length);
   };
 
   useEffect(() => {
-    handleSearch(1, true); // Initial load
-  }, []);
-
-  // Handle filter changes (excluding search query which is handled by handleSearchChange)
-  useEffect(() => {
-    if (Object.keys(filters).length > 0) {
-      handleSearch(1);
-    }
-  }, [filters]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
+    handleSearch();
   }, []);
 
   const columns = [
@@ -160,33 +113,8 @@ export function OrderSearchPage() {
         title={t('search.title') || 'Product Search'}
         searchValue={searchQuery}
         searchPlaceholder={t('search.placeholder')}
-        onSearchChange={handleSearchChange}
+        onSearchChange={setSearchQuery}
         onSearch={() => handleSearch()}
-        showExport={true}
-        onExport={() => {
-          // Export functionality placeholder
-          console.log('Export products');
-        }}
-        badges={[
-          {
-            key: 'all',
-            label: t('search.badges.all') || 'All Products',
-            active: !filters.type,
-            onClick: () => handleFilterChange('type', '')
-          },
-          {
-            key: 'inStock',
-            label: t('search.badges.inStock') || 'In Stock',
-            active: filters.inStock === 'true',
-            onClick: () => handleFilterChange('inStock', filters.inStock === 'true' ? '' : 'true')
-          },
-          {
-            key: 'outOfStock',
-            label: t('search.badges.outOfStock') || 'Out of Stock',
-            active: filters.inStock === 'false',
-            onClick: () => handleFilterChange('inStock', filters.inStock === 'false' ? '' : 'false')
-          }
-        ]}
         filters={showFilters ? [
           {
             key: 'kwCode',
@@ -212,20 +140,6 @@ export function OrderSearchPage() {
             value: filters.modelNumber || '',
             onChange: (value) => handleFilterChange('modelNumber', value),
           },
-          {
-            key: 'type',
-            label: t('search.filters.type') || 'Product Type',
-            placeholder: t('search.filters.typePlaceholder') || 'Select type...',
-            type: 'select',
-            value: filters.type || '',
-            onChange: (value) => handleFilterChange('type', value),
-            options: [
-              { value: '', label: t('search.filters.allTypes') || 'All Types' },
-              { value: 'appliance', label: t('search.types.appliance') || 'Appliance' },
-              { value: 'part', label: t('search.types.part') || 'Part' },
-              { value: 'accessory', label: t('search.types.accessory') || 'Accessory' }
-            ]
-          }
         ] : []}
       />
 
