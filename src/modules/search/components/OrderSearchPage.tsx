@@ -115,6 +115,31 @@ export function OrderSearchPage() {
         searchPlaceholder={t('search.placeholder')}
         onSearchChange={setSearchQuery}
         onSearch={() => handleSearch()}
+        showExport={true}
+        onExport={() => {
+          // Export functionality placeholder
+          console.log('Export products');
+        }}
+        badges={[
+          {
+            key: 'all',
+            label: t('search.badges.all') || 'All Products',
+            active: !filters.type,
+            onClick: () => handleFilterChange('type', '')
+          },
+          {
+            key: 'inStock',
+            label: t('search.badges.inStock') || 'In Stock',
+            active: filters.inStock === 'true',
+            onClick: () => handleFilterChange('inStock', filters.inStock === 'true' ? '' : 'true')
+          },
+          {
+            key: 'outOfStock',
+            label: t('search.badges.outOfStock') || 'Out of Stock',
+            active: filters.inStock === 'false',
+            onClick: () => handleFilterChange('inStock', filters.inStock === 'false' ? '' : 'false')
+          }
+        ]}
         filters={showFilters ? [
           {
             key: 'kwCode',
@@ -140,6 +165,20 @@ export function OrderSearchPage() {
             value: filters.modelNumber || '',
             onChange: (value) => handleFilterChange('modelNumber', value),
           },
+          {
+            key: 'type',
+            label: t('search.filters.type') || 'Product Type',
+            placeholder: t('search.filters.typePlaceholder') || 'Select type...',
+            type: 'select',
+            value: filters.type || '',
+            onChange: (value) => handleFilterChange('type', value),
+            options: [
+              { value: '', label: t('search.filters.allTypes') || 'All Types' },
+              { value: 'appliance', label: t('search.types.appliance') || 'Appliance' },
+              { value: 'part', label: t('search.types.part') || 'Part' },
+              { value: 'accessory', label: t('search.types.accessory') || 'Accessory' }
+            ]
+          }
         ] : []}
       />
 

@@ -16,6 +16,8 @@ export interface ProductSearchFilters {
   a4lCode?: string;
   modelNumber?: string;
   search?: string;
+  type?: string;
+  inStock?: string;
 }
 
 export interface ProductSearchParams extends ProductSearchFilters {
