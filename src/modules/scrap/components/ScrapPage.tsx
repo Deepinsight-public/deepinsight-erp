@@ -37,6 +37,7 @@ export function ScrapPage() {
     try {
       setLoading(true);
       const data = await getScrapHeaders(filters);
+      console.log('Scrap data received:', data);
       startTransition(() => {
         setScrapItems(data);
       });
@@ -71,17 +72,19 @@ export function ScrapPage() {
     {
       key: 'scrapNo',
       title: t('scrapManagement.list.scrapNo'),
-      render: (scrap: ScrapHeader) => (
-        <span className="font-medium font-mono">{scrap.scrapNo}</span>
-      )
+      render: (value: any, record: ScrapHeader) => {
+        console.log('Rendering scrap number:', record.scrapNo, record);
+        return <span className="font-medium font-mono">{record.scrapNo || 'N/A'}</span>;
+      }
     },
     {
       key: 'createdAt',
-      title: t('scrapManagement.list.createdDate'),
-      render: (scrap: ScrapHeader) => {
-        if (!scrap.createdAt) return '-';
+      title: t('scrapManagement.list.date'),
+      render: (value: any, record: ScrapHeader) => {
+        console.log('Rendering date:', record.createdAt, record);
+        if (!record.createdAt) return '-';
         try {
-          const date = new Date(scrap.createdAt);
+          const date = new Date(record.createdAt);
           if (isNaN(date.getTime())) return '-';
           return format(date, 'MMM dd, yyyy');
         } catch (error) {
@@ -93,27 +96,27 @@ export function ScrapPage() {
     {
       key: 'status',
       title: t('scrapManagement.list.status'),
-      render: (scrap: ScrapHeader) => (
+      render: (value: any, record: ScrapHeader) => (
         <Badge 
           variant="secondary"
-          className={STATUS_COLORS[scrap.status] || 'bg-gray-100 text-gray-800'}
+          className={STATUS_COLORS[record.status] || 'bg-gray-100 text-gray-800'}
         >
-          {t(`scrapManagement.status.${scrap.status}`)}
+          {t(`scrapManagement.status.${record.status}`)}
         </Badge>
       )
     },
     {
-      key: 'totalQty',
-      title: t('scrapManagement.list.totalQty'),
-      render: (scrap: ScrapHeader) => (
-        <span className="font-medium">{scrap.totalQty || 0}</span>
+      key: 'reason',
+      title: t('scrapManagement.form.reason'),
+      render: (value: any, record: ScrapHeader) => (
+        <span className="capitalize">Coming soon</span>
       )
     },
     {
-      key: 'totalValue',
-      title: t('scrapManagement.list.totalValue'),
-      render: (scrap: ScrapHeader) => (
-        <span className="font-medium">${scrap.totalValue?.toFixed(2) || '0.00'}</span>
+      key: 'totalQty',
+      title: t('scrapManagement.list.quantity'),
+      render: (value: any, record: ScrapHeader) => (
+        <span className="font-medium">{record.totalQty || 0}</span>
       )
     }
   ];
