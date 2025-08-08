@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,14 +11,16 @@ import type { ProductSearchItem, ProductSearchFilters } from '../types';
 export function OrderSearchPage() {
   const { t } = useTranslation();
   const [products, setProducts] = useState<ProductSearchItem[]>([]);
+  const [originalProducts, setOriginalProducts] = useState<ProductSearchItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<ProductSearchFilters>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
-  const handleSearch = async (page = 1) => {
+  const handleSearch = async (page = 1, isInitialLoad = false) => {
     setLoading(true);
     try {
       const result = await searchProducts({ 
@@ -30,6 +32,11 @@ export function OrderSearchPage() {
       setProducts(result.data);
       setTotal(result.total);
       setCurrentPage(page);
+      
+      // Store original data when no search query (initial load or cleared search)
+      if (isInitialLoad || (!searchQuery && Object.keys(filters).length === 0)) {
+        setOriginalProducts(result.data);
+      }
     } catch (error) {
       console.error('Search failed:', error);
     } finally {
@@ -44,13 +51,52 @@ export function OrderSearchPage() {
     }));
   };
 
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // If search is cleared, restore original data immediately
+    if (!value && Object.keys(filters).length === 0) {
+      setProducts(originalProducts);
+      setTotal(originalProducts.length);
+      return;
+    }
+    
+    // Debounce search for live updates
+    searchTimeoutRef.current = setTimeout(() => {
+      handleSearch(1);
+    }, 300);
+  };
+
   const clearFilters = () => {
     setFilters({});
     setSearchQuery('');
+    setProducts(originalProducts);
+    setTotal(originalProducts.length);
   };
 
   useEffect(() => {
-    handleSearch();
+    handleSearch(1, true); // Initial load
+  }, []);
+
+  // Handle filter changes (excluding search query which is handled by handleSearchChange)
+  useEffect(() => {
+    if (Object.keys(filters).length > 0) {
+      handleSearch(1);
+    }
+  }, [filters]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
   }, []);
 
   const columns = [
@@ -113,7 +159,7 @@ export function OrderSearchPage() {
         title={t('search.title') || 'Product Search'}
         searchValue={searchQuery}
         searchPlaceholder={t('search.placeholder')}
-        onSearchChange={setSearchQuery}
+        onSearchChange={handleSearchChange}
         onSearch={() => handleSearch()}
         showExport={true}
         onExport={() => {
