@@ -79,7 +79,17 @@ export function ScrapPage() {
     {
       key: 'createdAt',
       title: t('scrapManagement.list.createdDate'),
-      render: (scrap: ScrapItem) => format(new Date(scrap.createdAt), 'MMM dd, yyyy')
+      render: (scrap: ScrapItem) => {
+        if (!scrap.createdAt) return '-';
+        try {
+          const date = new Date(scrap.createdAt);
+          if (isNaN(date.getTime())) return '-';
+          return format(date, 'MMM dd, yyyy');
+        } catch (error) {
+          console.error('Error formatting date:', error);
+          return '-';
+        }
+      }
     },
     {
       key: 'status',
