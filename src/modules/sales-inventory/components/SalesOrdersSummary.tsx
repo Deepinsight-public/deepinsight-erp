@@ -465,77 +465,63 @@ export function SalesOrdersSummary() {
       </div>
 
       {/* Data Table - Scrollable */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0">
         <Card className="h-full">
           <CardContent className="p-0 h-full">
-            <div className="h-full overflow-x-auto overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
-              <style>{`
-                .sales-table thead th { 
-                  position: sticky; 
-                  top: 0; 
-                  z-index: 20; 
-                  background: hsl(var(--background)); 
-                  border-bottom: 1px solid hsl(var(--border)); 
-                }
-                .sales-table thead th:first-child,
-                .sales-table tbody td:first-child { 
-                  position: sticky; 
-                  left: 0; 
-                  z-index: 25; 
-                  background: hsl(var(--background)); 
-                  box-shadow: 1px 0 0 hsl(var(--border)); 
-                }
-                .sales-table table {
-                  min-width: 1400px;
-                }
-              `}</style>
-              <Table className="sales-table">
-                <TableHeader>
-                  <TableRow>
-                    {visibleColumns.map((column) => (
-                      <TableHead key={column.key}>
-                        {column.title}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    Array.from({ length: 5 }).map((_, index) => (
-                      <TableRow key={index}>
-                        {visibleColumns.map((column) => (
-                          <TableCell key={column.key}>
-                            <div className="h-4 bg-muted animate-pulse rounded" />
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  ) : orders.length === 0 ? (
+            <div className="h-full overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table className="min-w-full">
+                  <TableHeader className="sticky top-0 z-10 bg-background border-b">
                     <TableRow>
-                      <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
-                        {t('message.noData')}
-                      </TableCell>
+                      {visibleColumns.map((column) => (
+                        <TableHead key={column.key} className="bg-background">
+                          {column.title}
+                        </TableHead>
+                      ))}
                     </TableRow>
-                  ) : (
-                    orders.map((order, index) => (
-                      <TableRow 
-                        key={index}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => navigate(`/store/sales-orders/${order.orderId}`)}
-                      >
-                        {tableColumns.map((column) => {
-                          const value = order[column.key as keyof typeof order];
-                          return (
+                  </TableHeader>
+                </Table>
+              </div>
+              <div className="h-full overflow-x-auto overflow-y-auto">
+                <Table className="min-w-full">
+                  <TableBody>
+                    {loading ? (
+                      Array.from({ length: 10 }).map((_, index) => (
+                        <TableRow key={index}>
+                          {visibleColumns.map((column) => (
                             <TableCell key={column.key}>
-                              {column.render ? column.render(value, order) : value}
+                              <div className="h-4 bg-muted animate-pulse rounded" />
                             </TableCell>
-                          );
-                        })}
+                          ))}
+                        </TableRow>
+                      ))
+                    ) : orders.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
+                          {t('message.noData')}
+                        </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      orders.map((order, index) => (
+                        <TableRow 
+                          key={index}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => navigate(`/store/sales-orders/${order.orderId}`)}
+                        >
+                          {tableColumns.map((column) => {
+                            const value = order[column.key as keyof typeof order];
+                            return (
+                              <TableCell key={column.key}>
+                                {column.render ? column.render(value, order) : value}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </CardContent>
         </Card>
