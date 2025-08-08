@@ -32,23 +32,14 @@ export const scrapLineSchema = z.object({
     message: 'Reason is required',
   }),
   attachmentId: z.string().uuid().optional(),
-}).refine((data) => {
-  // If reason is damage or expired, attachment is required
-  if (['damage', 'expired'].includes(data.reason) && !data.attachmentId) {
-    return false;
-  }
-  return true;
-}, {
-  message: 'Attachment is required for damage or expired items',
-  path: ['attachmentId'],
 });
 
 export const scrapHeaderSchema = z.object({
   id: z.string().uuid().optional(),
   scrapNo: z.string().optional(),
   status: z.enum(['draft', 'submitted', 'l1_approved', 'final_approved', 'posted', 'rejected', 'cancelled'] as const).default('draft'),
-  storeId: z.string().uuid(),
-  warehouseId: z.string().uuid(),
+  storeId: z.string().uuid().optional(),
+  warehouseId: z.string().min(1, 'Warehouse is required'),
   lines: z.array(scrapLineSchema).min(1, {
     message: 'At least one line item is required',
   }),

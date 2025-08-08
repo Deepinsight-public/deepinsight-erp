@@ -179,12 +179,7 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
         data.storeId = userStoreId;
       }
 
-      // Validate required fields
-      if (!data.storeId) {
-        toast.error(t('scrapManagement.messages.storeRequired'));
-        return;
-      }
-
+      // Basic validation before API call
       if (!data.warehouseId) {
         toast.error(t('scrapManagement.messages.warehouseRequired'));
         return;
@@ -193,6 +188,27 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
       if (!data.lines || data.lines.length === 0) {
         toast.error(t('scrapManagement.messages.linesRequired'));
         return;
+      }
+
+      // Validate each line item
+      for (let i = 0; i < data.lines.length; i++) {
+        const line = data.lines[i];
+        if (!line.productId) {
+          toast.error(t('scrapManagement.messages.productRequired', { line: i + 1 }));
+          return;
+        }
+        if (!line.reason) {
+          toast.error(t('scrapManagement.messages.reasonRequired', { line: i + 1 }));
+          return;
+        }
+        if (line.qty <= 0) {
+          toast.error(t('scrapManagement.messages.qtyRequired', { line: i + 1 }));
+          return;
+        }
+        if (line.unitCost <= 0) {
+          toast.error(t('scrapManagement.messages.costRequired', { line: i + 1 }));
+          return;
+        }
       }
 
       const result = await createScrapHeader({
@@ -225,12 +241,7 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
         data.storeId = userStoreId;
       }
 
-      // Validate required fields
-      if (!data.storeId) {
-        toast.error(t('scrapManagement.messages.storeRequired'));
-        return;
-      }
-
+      // Basic validation before API call
       if (!data.warehouseId) {
         toast.error(t('scrapManagement.messages.warehouseRequired'));
         return;
@@ -241,7 +252,7 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
         return;
       }
 
-      // Validate all line items have required fields
+      // Validate each line item
       for (let i = 0; i < data.lines.length; i++) {
         const line = data.lines[i];
         if (!line.productId) {
@@ -459,7 +470,10 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={form.handleSubmit(handleSave)}
+                  onClick={() => {
+                    const formData = form.getValues();
+                    handleSave(formData);
+                  }}
                   disabled={isSubmitting}
                 >
                   <Save className="h-4 w-4 mr-2" />
@@ -482,7 +496,10 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-                      <AlertDialogAction onClick={form.handleSubmit(handleSubmit)}>
+                      <AlertDialogAction onClick={() => {
+                        const formData = form.getValues();
+                        handleSubmit(formData);
+                      }}>
                         {t('scrapManagement.form.submit')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
