@@ -72,28 +72,49 @@ export async function getScrapItems(filters?: ScrapFilters): Promise<ScrapItem[]
       throw error;
     }
 
-    // Map and fetch product information for each item
-    const items = [];
+    // Collect all unique product IDs first
+    const allProductIds = new Set<string>();
     for (const item of data || []) {
-      const firstLine = item.scrap_lines && item.scrap_lines.length > 0 ? item.scrap_lines[0] : null;
-      
-      let product;
-      if (firstLine?.product_id) {
-        const { data: productData } = await supabase
-          .from('products')
-          .select('sku, product_name')
-          .eq('id', firstLine.product_id)
-          .single();
-        
-        if (productData) {
-          product = {
-            sku: productData.sku,
-            productName: productData.product_name
-          };
+      if (item.scrap_lines) {
+        for (const line of item.scrap_lines) {
+          if (line.product_id) {
+            allProductIds.add(line.product_id);
+          }
         }
       }
+    }
 
-      items.push({
+    // Fetch all products in one query
+    let productMap = new Map();
+    if (allProductIds.size > 0) {
+      const { data: productsData } = await supabase
+        .from('products')
+        .select('id, sku, product_name')
+        .in('id', Array.from(allProductIds));
+      
+      if (productsData) {
+        for (const product of productsData) {
+          productMap.set(product.id, {
+            sku: product.sku,
+            productName: product.product_name
+          });
+        }
+      }
+    }
+
+    // Map the scrap items with product information
+    const items = (data || []).map(item => {
+      const firstLine = item.scrap_lines && item.scrap_lines.length > 0 ? item.scrap_lines[0] : null;
+      const product = firstLine?.product_id ? productMap.get(firstLine.product_id) : undefined;
+
+      console.log('Mapping scrap item:', {
+        id: item.id,
+        scrapNo: item.scrap_no,
+        product,
+        reason: firstLine?.reason
+      });
+
+      return {
         id: item.id,
         scrapNo: item.scrap_no,
         createdAt: item.created_at,
@@ -102,9 +123,10 @@ export async function getScrapItems(filters?: ScrapFilters): Promise<ScrapItem[]
         totalValue: item.total_value,
         product,
         reason: firstLine?.reason || ''
-      });
-    }
+      };
+    });
 
+    console.log('Final mapped items:', items);
     return items;
   } catch (error) {
     console.error('Error in getScrapItems:', error);
