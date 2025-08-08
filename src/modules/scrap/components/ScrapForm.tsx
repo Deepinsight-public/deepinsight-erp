@@ -41,6 +41,7 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [warehouseOptions, setWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
   const [productOptions, setProductOptions] = useState<{ value: string; label: string; cost?: number }[]>([]);
+  const [userStoreId, setUserStoreId] = useState<string>('');
 
   const form = useForm<ScrapHeaderData>({
     resolver: zodResolver(scrapHeaderSchema),
@@ -64,6 +65,32 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
     control: form.control,
     name: 'lines',
   });
+
+  // Load user's store ID and set it in form
+  useEffect(() => {
+    const loadUserStore = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('store_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profile?.store_id) {
+          setUserStoreId(profile.store_id);
+          form.setValue('storeId', profile.store_id);
+        }
+      } catch (error) {
+        console.error('Error loading user store:', error);
+        toast.error(t('scrapManagement.messages.loadStoreError'));
+      }
+    };
+
+    loadUserStore();
+  }, [form, t]);
 
   // Load warehouses
   useEffect(() => {
@@ -105,7 +132,7 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
       
       // Check inventory availability
       try {
-        const storeId = form.getValues('storeId');
+        const storeId = userStoreId || form.getValues('storeId');
         if (storeId) {
           const available = await checkInventoryAvailability(productId, storeId);
           if (available <= 0) {
@@ -147,6 +174,27 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
     try {
       setIsSubmitting(true);
       
+      // Ensure storeId is set
+      if (!data.storeId && userStoreId) {
+        data.storeId = userStoreId;
+      }
+
+      // Validate required fields
+      if (!data.storeId) {
+        toast.error(t('scrapManagement.messages.storeRequired'));
+        return;
+      }
+
+      if (!data.warehouseId) {
+        toast.error(t('scrapManagement.messages.warehouseRequired'));
+        return;
+      }
+
+      if (!data.lines || data.lines.length === 0) {
+        toast.error(t('scrapManagement.messages.linesRequired'));
+        return;
+      }
+
       const result = await createScrapHeader({
         ...data,
         status: 'draft',
@@ -172,12 +220,54 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
     try {
       setIsSubmitting(true);
       
+      // Ensure storeId is set
+      if (!data.storeId && userStoreId) {
+        data.storeId = userStoreId;
+      }
+
+      // Validate required fields
+      if (!data.storeId) {
+        toast.error(t('scrapManagement.messages.storeRequired'));
+        return;
+      }
+
+      if (!data.warehouseId) {
+        toast.error(t('scrapManagement.messages.warehouseRequired'));
+        return;
+      }
+
+      if (!data.lines || data.lines.length === 0) {
+        toast.error(t('scrapManagement.messages.linesRequired'));
+        return;
+      }
+
+      // Validate all line items have required fields
+      for (let i = 0; i < data.lines.length; i++) {
+        const line = data.lines[i];
+        if (!line.productId) {
+          toast.error(t('scrapManagement.messages.productRequired', { line: i + 1 }));
+          return;
+        }
+        if (!line.reason) {
+          toast.error(t('scrapManagement.messages.reasonRequired', { line: i + 1 }));
+          return;
+        }
+        if (line.qty <= 0) {
+          toast.error(t('scrapManagement.messages.qtyRequired', { line: i + 1 }));
+          return;
+        }
+        if (line.unitCost <= 0) {
+          toast.error(t('scrapManagement.messages.costRequired', { line: i + 1 }));
+          return;
+        }
+      }
+
       const result = await createScrapHeader({
         ...data,
         status: 'draft',
       });
 
-      await submitScrap(result.id);
+      await submitScrap(result.id, 'Submitted for approval');
 
       toast.success(t('scrapManagement.messages.submitSuccess'));
       navigate(`/store/scrap/${result.id}`);
