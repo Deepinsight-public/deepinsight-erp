@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,19 +17,26 @@ export function OrderSearchPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [originalProducts, setOriginalProducts] = useState<ProductSearchItem[]>([]);
 
-  const handleSearch = async (page = 1) => {
+  const handleSearch = async (page = 1, searchParams?: { search?: string; filters?: ProductSearchFilters }) => {
     setLoading(true);
     try {
+      const params = searchParams || { search: searchQuery || undefined, filters };
       const result = await searchProducts({ 
-        ...filters, 
-        search: searchQuery || undefined, 
+        ...params.filters, 
+        search: params.search, 
         page, 
         limit: 20 
       });
       setProducts(result.data);
       setTotal(result.total);
       setCurrentPage(page);
+      
+      // Store original data when no search or filters are applied
+      if (!params.search && (!params.filters || Object.keys(params.filters).length === 0)) {
+        setOriginalProducts(result.data);
+      }
     } catch (error) {
       console.error('Search failed:', error);
     } finally {
@@ -37,18 +44,55 @@ export function OrderSearchPage() {
     }
   };
 
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return (searchValue: string) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          handleSearch(1, { search: searchValue || undefined, filters });
+        }, 300);
+      };
+    })(),
+    [filters]
+  );
+
   const handleFilterChange = (key: keyof ProductSearchFilters, value: string) => {
-    setFilters(prev => ({
-      ...prev,
+    const newFilters = {
+      ...filters,
       [key]: value || undefined
-    }));
+    };
+    setFilters(newFilters);
+    
+    // Trigger search with new filters
+    handleSearch(1, { search: searchQuery || undefined, filters: newFilters });
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    
+    // If search is cleared, reset to original state
+    if (!value.trim()) {
+      setFilters({});
+      setProducts(originalProducts);
+      setTotal(originalProducts.length);
+      setCurrentPage(1);
+    } else {
+      // Trigger debounced search
+      debouncedSearch(value);
+    }
   };
 
   const clearFilters = () => {
     setFilters({});
     setSearchQuery('');
+    setProducts(originalProducts);
+    setTotal(originalProducts.length);
+    setCurrentPage(1);
   };
 
+  // Load initial data
   useEffect(() => {
     handleSearch();
   }, []);
@@ -113,8 +157,8 @@ export function OrderSearchPage() {
         title={t('search.title') || 'Product Search'}
         searchValue={searchQuery}
         searchPlaceholder={t('search.placeholder')}
-        onSearchChange={setSearchQuery}
-        onSearch={() => handleSearch()}
+        onSearchChange={handleSearchChange}
+        onSearch={() => handleSearch(1)}
         filters={showFilters ? [
           {
             key: 'kwCode',
