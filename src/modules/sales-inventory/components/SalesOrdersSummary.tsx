@@ -325,9 +325,9 @@ export function SalesOrdersSummary() {
   ];
 
   return (
-    <div className="space-y-6 overflow-x-hidden">
+    <div className="h-screen flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex-shrink-0 flex items-center justify-between p-6 border-b">
         <div>
           <h1 className="text-3xl font-bold">{t('sales.summary.title')}</h1>
           <p className="text-muted-foreground mt-2">
@@ -401,145 +401,149 @@ export function SalesOrdersSummary() {
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <Label>{t('sales.summary.filters.dateRange')}</Label>
-              <DateRangePicker
-                value={dateRange}
-                onChange={setDateRange}
-                placeholder={t('sales.summary.filters.dateRangePlaceholder')}
-              />
-            </div>
-            
-            <div>
-              <Label>{t('sales.summary.filters.status')}</Label>
-              <Select value={statusFilter.join(',')} onValueChange={(value) => 
-                setStatusFilter(value ? value.split(',') : [])
-              }>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('sales.summary.filters.statusPlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="flex-shrink-0 p-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <Label>{t('sales.summary.filters.dateRange')}</Label>
+                <DateRangePicker
+                  value={dateRange}
+                  onChange={setDateRange}
+                  placeholder={t('sales.summary.filters.dateRangePlaceholder')}
+                />
+              </div>
+              
+              <div>
+                <Label>{t('sales.summary.filters.status')}</Label>
+                <Select value={statusFilter.join(',')} onValueChange={(value) => 
+                  setStatusFilter(value ? value.split(',') : [])
+                }>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('sales.summary.filters.statusPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Label>{t('sales.summary.filters.paymentStatus')}</Label>
-              <Select value={paymentStatusFilter} onValueChange={(value) => setPaymentStatusFilter(value === 'all' ? '' as any : (value as any))}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('sales.summary.filters.paymentStatusPlaceholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('sales.summary.filters.all')}</SelectItem>
-                  {paymentStatusOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <div>
+                <Label>{t('sales.summary.filters.paymentStatus')}</Label>
+                <Select value={paymentStatusFilter} onValueChange={(value) => setPaymentStatusFilter(value === 'all' ? '' as any : (value as any))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('sales.summary.filters.paymentStatusPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('sales.summary.filters.all')}</SelectItem>
+                    {paymentStatusOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Label>{t('sales.summary.filters.search')}</Label>
-              <StandardSearchBar
-                title=""
-                searchValue={searchQuery}
-                searchPlaceholder={t('sales.summary.filters.searchPlaceholder')}
-                onSearchChange={setSearchQuery}
-                onSearch={() => loadData()}
-              />
+              <div>
+                <Label>{t('sales.summary.filters.search')}</Label>
+                <StandardSearchBar
+                  title=""
+                  searchValue={searchQuery}
+                  searchPlaceholder={t('sales.summary.filters.searchPlaceholder')}
+                  onSearchChange={setSearchQuery}
+                  onSearch={() => loadData()}
+                />
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Data Table */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="relative w-full overflow-x-auto overscroll-x-contain" style={{ scrollbarGutter: 'stable' }}>
-            <style>{`
-              .sales-table thead th { 
-                position: sticky; 
-                top: 0; 
-                z-index: 20; 
-                background: hsl(var(--background)); 
-                border-bottom: 1px solid hsl(var(--border)); 
-              }
-              .sales-table thead th:first-child,
-              .sales-table tbody td:first-child { 
-                position: sticky; 
-                left: 0; 
-                z-index: 25; 
-                background: hsl(var(--background)); 
-                box-shadow: 1px 0 0 hsl(var(--border)); 
-              }
-              .sales-table table {
-                min-width: 1400px;
-              }
-            `}</style>
-            <Table className="sales-table">
-              <TableHeader>
-                <TableRow>
-                  {visibleColumns.map((column) => (
-                    <TableHead key={column.key}>
-                      {column.title}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, index) => (
-                    <TableRow key={index}>
-                      {visibleColumns.map((column) => (
-                        <TableCell key={column.key}>
-                          <div className="h-4 bg-muted animate-pulse rounded" />
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : orders.length === 0 ? (
+      {/* Data Table - Scrollable */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <Card className="h-full">
+          <CardContent className="p-0 h-full">
+            <div className="h-full overflow-x-auto overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
+              <style>{`
+                .sales-table thead th { 
+                  position: sticky; 
+                  top: 0; 
+                  z-index: 20; 
+                  background: hsl(var(--background)); 
+                  border-bottom: 1px solid hsl(var(--border)); 
+                }
+                .sales-table thead th:first-child,
+                .sales-table tbody td:first-child { 
+                  position: sticky; 
+                  left: 0; 
+                  z-index: 25; 
+                  background: hsl(var(--background)); 
+                  box-shadow: 1px 0 0 hsl(var(--border)); 
+                }
+                .sales-table table {
+                  min-width: 1400px;
+                }
+              `}</style>
+              <Table className="sales-table">
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
-                      {t('message.noData')}
-                    </TableCell>
+                    {visibleColumns.map((column) => (
+                      <TableHead key={column.key}>
+                        {column.title}
+                      </TableHead>
+                    ))}
                   </TableRow>
-                ) : (
-                  orders.map((order, index) => (
-                    <TableRow 
-                      key={index}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/store/sales-orders/${order.orderId}`)}
-                    >
-                      {tableColumns.map((column) => {
-                        const value = order[column.key as keyof typeof order];
-                        return (
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    Array.from({ length: 5 }).map((_, index) => (
+                      <TableRow key={index}>
+                        {visibleColumns.map((column) => (
                           <TableCell key={column.key}>
-                            {column.render ? column.render(value, order) : value}
+                            <div className="h-4 bg-muted animate-pulse rounded" />
                           </TableCell>
-                        );
-                      })}
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : orders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
+                        {t('message.noData')}
+                      </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                  ) : (
+                    orders.map((order, index) => (
+                      <TableRow 
+                        key={index}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => navigate(`/store/sales-orders/${order.orderId}`)}
+                      >
+                        {tableColumns.map((column) => {
+                          const value = order[column.key as keyof typeof order];
+                          return (
+                            <TableCell key={column.key}>
+                              {column.render ? column.render(value, order) : value}
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Pagination placeholder */}
+      {/* Pagination footer */}
       {total > 50 && (
-        <div className="flex justify-center">
+        <div className="flex-shrink-0 flex justify-center p-4 border-t">
           <p className="text-muted-foreground">
             Showing {orders.length} of {total} orders
           </p>
