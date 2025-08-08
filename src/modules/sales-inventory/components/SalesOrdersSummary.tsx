@@ -455,12 +455,16 @@ export function SalesOrdersSummary() {
       </Card>
 
       {/* Data Table */}
-      <DataTable
-        data={orders}
-        columns={tableColumns}
-        loading={loading}
-        onRowClick={(order) => navigate(`/store/sales-orders/${order.orderId}`)}
-      />
+      <div className="w-full overflow-x-auto">
+        <div className="min-w-[1200px]">
+          <DataTable
+            data={orders}
+            columns={tableColumns}
+            loading={loading}
+            onRowClick={(order) => navigate(`/store/sales-orders/${order.orderId}`)}
+          />
+        </div>
+      </div>
 
       {/* Pagination placeholder */}
       {total > 50 && (
