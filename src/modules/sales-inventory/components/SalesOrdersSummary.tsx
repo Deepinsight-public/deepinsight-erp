@@ -455,15 +455,20 @@ export function SalesOrdersSummary() {
       </Card>
 
       {/* Data Table */}
-      <div className="w-full overflow-x-auto">
-        <div className="min-w-[1200px]">
-          <DataTable
-            data={orders}
-            columns={tableColumns}
-            loading={loading}
-            onRowClick={(order) => navigate(`/store/sales-orders/${order.orderId}`)}
-          />
-        </div>
+      <style>{`
+        .so-sticky thead th { position: sticky; top: 0; z-index: 20; background: hsl(var(--background)); }
+        .so-sticky thead th:first-child,
+        .so-sticky tbody td:first-child { position: sticky; left: 0; z-index: 25; background: hsl(var(--background)); box-shadow: 1px 0 0 hsl(var(--border)); }
+        .so-sticky .relative.w-full.overflow-auto { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-gutter: stable; }
+        .so-sticky table { min-width: 1400px; }
+      `}</style>
+      <div className="so-sticky">
+        <DataTable
+          data={orders}
+          columns={tableColumns}
+          loading={loading}
+          onRowClick={(order) => navigate(`/store/sales-orders/${order.orderId}`)}
+        />
       </div>
 
       {/* Pagination placeholder */}
