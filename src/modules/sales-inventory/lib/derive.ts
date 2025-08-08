@@ -28,6 +28,7 @@ export function deriveSalesOrderMetrics(row: SalesOrderSummary): DerivedMetrics 
   const accessoryFee = safeNumber(row.accessoryFee);
   const deliveryFee = safeNumber(row.deliveryFee);
   const otherFee = safeNumber(row.otherFee);
+  const mapTotal = safeNumber(row.mapTotal);
 
   // Calculate derived metrics
   const effectiveTaxRate = safeDivide(taxTotal, totalAmount - taxTotal);
@@ -36,6 +37,7 @@ export function deriveSalesOrderMetrics(row: SalesOrderSummary): DerivedMetrics 
   const savingsPct = safeDivide(savingsVsMsrp, msrpTotal);
   const paidPct = safeDivide(paidTotal, totalAmount);
   const feesTotal = accessoryFee + deliveryFee + otherFee;
+  const productMapRate = safeDivide(productsTotal + servicesTotal, mapTotal);
 
   // Calculate age in days (only if there's a balance)
   let ageDays = 0;
@@ -67,5 +69,6 @@ export function deriveSalesOrderMetrics(row: SalesOrderSummary): DerivedMetrics 
     paymentStatus,
     hasWarranty,
     feesTotal,
+    productMapRate,
   };
 }

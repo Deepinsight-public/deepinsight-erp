@@ -7,9 +7,12 @@ export interface SalesOrderSummary {
   customerId?: string;
   customerName?: string;
   cashierId?: string;
+  cashierName?: string;
   orderType: 'retail' | 'wholesale';
   status: 'draft' | 'submitted' | 'pending' | 'confirmed' | 'shipped' | 'completed' | 'cancelled';
   walkInDelivery?: string;
+  deliveryDate?: string;
+  customerSource?: string;
   
   // Item counts and totals
   itemsCount: number;
@@ -19,6 +22,7 @@ export interface SalesOrderSummary {
   deliveryFee: number;
   otherFee: number;
   warrantyAmount: number;
+  warrantyYears?: number;
   taxTotal: number;
   totalAmount: number;
   paidTotal: number;
@@ -28,11 +32,21 @@ export interface SalesOrderSummary {
   productsTotal?: number;
   servicesTotal?: number;
   msrpTotal?: number;
+  mapTotal?: number;
   savingsVsMsrp?: number;
   cogsTotal?: number;
   grossProfit?: number;
   marginPct?: number;
+  productMapRate?: number;
   invoiceUrl?: string;
+  
+  // Payment details
+  paymentMethod1?: string;
+  paymentAmount1?: number;
+  paymentMethod2?: string;
+  paymentAmount2?: number;
+  paymentMethod3?: string;
+  paymentAmount3?: number;
 }
 
 export interface SalesOrderSummaryFilters {
@@ -57,6 +71,7 @@ export interface DerivedMetrics {
   paymentStatus: 'paid' | 'partial' | 'unpaid';
   hasWarranty: boolean;
   feesTotal: number;
+  productMapRate: number;
 }
 
 export interface SalesOrderSummaryResponse {

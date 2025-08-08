@@ -83,22 +83,38 @@ export function SalesOrdersSummary() {
     { key: 'customerName', title: t('sales.summary.columns.customer'), visible: true },
     { key: 'status', title: t('sales.summary.columns.status'), visible: true },
     { key: 'itemsCount', title: t('sales.summary.columns.items'), visible: true },
-    { key: 'feesTotal', title: t('sales.summary.columns.fees'), visible: true },
+    { key: 'extendedWarranty', title: t('sales.summary.columns.extendedWarranty'), visible: true },
+    { key: 'warrantyAmount', title: t('sales.summary.columns.warrantyAmount'), visible: true },
+    { key: 'mapTotal', title: t('sales.summary.columns.map'), visible: true },
+    { key: 'productMapRate', title: t('sales.summary.columns.productMapRate'), visible: true },
+    { key: 'walkInDelivery', title: t('sales.summary.columns.deliveryType'), visible: true },
+    { key: 'deliveryDate', title: t('sales.summary.columns.deliveryDate'), visible: true },
+    { key: 'deliveryFee', title: t('sales.summary.columns.deliveryFee'), visible: true },
+    { key: 'accessoryFee', title: t('sales.summary.columns.accessoryFee'), visible: true },
+    { key: 'otherFee', title: t('sales.summary.columns.otherFee'), visible: true },
+    { key: 'cogsTotal', title: t('sales.summary.columns.productCost'), visible: true },
+    { key: 'grossProfit', title: t('sales.summary.columns.grossProfit'), visible: true },
+    { key: 'cashierName', title: t('sales.summary.columns.cashier'), visible: true },
+    { key: 'customerSource', title: t('sales.summary.columns.source'), visible: true },
+    { key: 'paymentMethod1', title: t('sales.summary.columns.payment1'), visible: true },
+    { key: 'paymentAmount1', title: t('sales.summary.columns.payment1Amount'), visible: true },
+    { key: 'paymentMethod2', title: t('sales.summary.columns.payment2'), visible: true },
+    { key: 'paymentAmount2', title: t('sales.summary.columns.payment2Amount'), visible: true },
+    { key: 'paymentMethod3', title: t('sales.summary.columns.payment3'), visible: true },
+    { key: 'paymentAmount3', title: t('sales.summary.columns.payment3Amount'), visible: true },
     { key: 'discountAmount', title: t('sales.summary.columns.discount'), visible: true },
     { key: 'taxTotal', title: t('sales.summary.columns.tax'), visible: true },
     { key: 'totalAmount', title: t('sales.summary.columns.total'), visible: true },
-    { key: 'paidTotal', title: t('sales.summary.columns.paid'), visible: true },
-    { key: 'balanceAmount', title: t('sales.summary.columns.balance'), visible: true },
-    { key: 'paymentStatus', title: t('sales.summary.columns.paymentStatus'), visible: true },
-    { key: 'ageDays', title: t('sales.summary.columns.ageDays'), visible: true },
     { key: 'actions', title: t('sales.summary.columns.actions'), visible: true },
     
     // Advanced columns
+    { key: 'paidTotal', title: t('sales.summary.columns.paid'), visible: false, advanced: true },
+    { key: 'balanceAmount', title: t('sales.summary.columns.balance'), visible: false, advanced: true },
+    { key: 'paymentStatus', title: t('sales.summary.columns.paymentStatus'), visible: false, advanced: true },
     { key: 'avgItemPrice', title: t('sales.summary.columns.avgItemPrice'), visible: false, advanced: true },
     { key: 'effectiveTaxRate', title: t('sales.summary.columns.effectiveTaxRate'), visible: false, advanced: true },
     { key: 'warrantyShare', title: t('sales.summary.columns.warrantyShare'), visible: false, advanced: true },
     { key: 'orderType', title: t('sales.summary.columns.orderType'), visible: false, advanced: true },
-    { key: 'walkInDelivery', title: t('sales.summary.columns.walkInDelivery'), visible: false, advanced: true },
   ]);
 
   const loadData = async (page = 1) => {
@@ -186,25 +202,38 @@ export function SalesOrdersSummary() {
           return <StatusBadge status={value} />;
         case 'itemsCount':
           return <span className="text-right">{value}</span>;
-        case 'feesTotal':
-          return (
-            <div className="text-right">
-              <span>{formatCurrency(value)}</span>
-              {value > 0 && (
-                <div className="text-xs text-muted-foreground">
-                  Acc: {formatCurrency(record.accessoryFee)} • 
-                  Del: {formatCurrency(record.deliveryFee)} • 
-                  Other: {formatCurrency(record.otherFee)}
-                </div>
-              )}
-            </div>
-          );
+        case 'extendedWarranty':
+          return record.warrantyYears && record.warrantyYears > 1 ? (
+            <span className="text-center">✓</span>
+          ) : null;
+        case 'warrantyAmount':
+        case 'mapTotal':
+        case 'deliveryFee':
+        case 'accessoryFee':
+        case 'otherFee':
+        case 'cogsTotal':
+        case 'grossProfit':
+        case 'paymentAmount1':
+        case 'paymentAmount2':
+        case 'paymentAmount3':
         case 'discountAmount':
         case 'taxTotal':
         case 'totalAmount':
         case 'paidTotal':
         case 'avgItemPrice':
-          return <span className="text-right">{formatCurrency(value)}</span>;
+          return <span className="text-right">{formatCurrency(value || 0)}</span>;
+        case 'productMapRate':
+          return value ? (
+            <span className="text-right">{formatPercent(value)}</span>
+          ) : null;
+        case 'deliveryDate':
+          return value ? format(new Date(value), 'MMM dd, yyyy') : null;
+        case 'paymentMethod1':
+        case 'paymentMethod2':
+        case 'paymentMethod3':
+        case 'cashierName':
+        case 'customerSource':
+          return value || null;
         case 'balanceAmount':
           return (
             <span className={`text-right ${value > 0 ? 'text-warning' : ''}`}>
@@ -222,12 +251,6 @@ export function SalesOrdersSummary() {
               {t(`sales.summary.paymentStatus.${value}`)}
             </Badge>
           );
-        case 'ageDays':
-          return value > 0 ? (
-            <span className={value > 30 ? 'text-destructive' : 'text-warning'}>
-              {value} days
-            </span>
-          ) : null;
         case 'effectiveTaxRate':
         case 'warrantyShare':
           return <span className="text-right">{formatPercent(value)}</span>;
