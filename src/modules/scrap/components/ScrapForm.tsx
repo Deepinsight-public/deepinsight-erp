@@ -260,7 +260,7 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
       if (onSave) {
         onSave(data);
       } else {
-        navigate(`/store/scrap/${result.id}`);
+        navigate('/store/scrap');
       }
     } catch (error) {
       console.error('Error saving scrap:', error);
@@ -320,7 +320,7 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
       await submitScrap(result.id, 'Submitted for approval');
 
       toast.success(t('scrapManagement.messages.submitSuccess'));
-      navigate(`/store/scrap/${result.id}`);
+      navigate('/store/scrap');
     } catch (error) {
       console.error('Error submitting scrap:', error);
       toast.error(t('scrapManagement.messages.submitError'));
