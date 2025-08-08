@@ -142,72 +142,109 @@ export const getScrapHeaders = async (filters?: ScrapFilters): Promise<ScrapHead
 
 // Fetch single scrap header with lines and audit trail
 export const getScrapById = async (id: string): Promise<ScrapHeader | null> => {
-  const { data, error } = await supabase
-    .from('scrap_headers')
-    .select(`
-      *,
-      lines:scrap_lines(
-        *,
-        product:products(sku, product_name, price)
-      ),
-      audit:scrap_audit(
+  try {
+    // First get the header
+    const { data: headerData, error: headerError } = await supabase
+      .from('scrap_headers')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (headerError) {
+      if (headerError.code === 'PGRST116') return null;
+      console.error('Error fetching scrap header:', headerError);
+      throw headerError;
+    }
+
+    if (!headerData) return null;
+
+    // Get the lines separately
+    const { data: linesData, error: linesError } = await supabase
+      .from('scrap_lines')
+      .select('*')
+      .eq('header_id', id);
+
+    if (linesError) {
+      console.error('Error fetching scrap lines:', linesError);
+      throw linesError;
+    }
+
+    // Get audit trail
+    const { data: auditData, error: auditError } = await supabase
+      .from('scrap_audit')
+      .select(`
         *,
         actor:profiles(full_name, role)
-      )
-    `)
-    .eq('id', id)
-    .single();
+      `)
+      .eq('header_id', id);
 
-  if (error) {
-    if (error.code === 'PGRST116') return null;
-    console.error('Error fetching scrap:', error);
+    if (auditError) {
+      console.error('Error fetching scrap audit:', auditError);
+      // Don't throw error for audit, just log it
+    }
+
+    // Get product details for each line
+    const linesWithProducts = [];
+    for (const line of linesData || []) {
+      let productData = null;
+      if (line.product_id) {
+        const { data: product } = await supabase
+          .from('products')
+          .select('sku, product_name, price')
+          .eq('id', line.product_id)
+          .single();
+        productData = product;
+      }
+
+      linesWithProducts.push({
+        id: line.id,
+        headerId: line.header_id,
+        productId: line.product_id,
+        batchNo: line.batch_no,
+        qty: line.qty,
+        uom: line.uom,
+        unitCost: Number(line.unit_cost),
+        reason: line.reason,
+        attachmentId: line.attachment_id,
+        createdAt: line.created_at,
+        updatedAt: line.updated_at,
+        product: productData ? {
+          sku: productData.sku,
+          productName: productData.product_name,
+          price: Number(productData.price || 0),
+        } : undefined,
+      });
+    }
+
+    return {
+      id: headerData.id,
+      scrapNo: headerData.scrap_no,
+      status: headerData.status as ScrapStatus,
+      storeId: headerData.store_id,
+      warehouseId: headerData.warehouse_id,
+      createdBy: headerData.created_by,
+      createdAt: headerData.created_at,
+      updatedAt: headerData.updated_at,
+      totalQty: headerData.total_qty,
+      totalValue: Number(headerData.total_value),
+      lines: linesWithProducts,
+      audit: (auditData || []).map((audit: any) => ({
+        id: audit.id,
+        headerId: audit.header_id,
+        action: audit.action,
+        actorId: audit.actor_id,
+        comment: audit.comment,
+        createdAt: audit.created_at,
+        actor: audit.actor ? {
+          fullName: audit.actor.full_name,
+          role: audit.actor.role,
+        } : undefined,
+      })),
+    };
+  } catch (error) {
+    console.error('Error in getScrapById:', error);
     throw error;
   }
-
-  if (!data) return null;
-
-  return {
-    id: data.id,
-    scrapNo: data.scrap_no,
-    status: data.status as ScrapStatus,
-    storeId: data.store_id,
-    warehouseId: data.warehouse_id,
-    createdBy: data.created_by,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-    totalQty: data.total_qty,
-    totalValue: Number(data.total_value),
-    lines: (data.lines || []).map((line: any) => ({
-      id: line.id,
-      headerId: line.header_id,
-      productId: line.product_id,
-      batchNo: line.batch_no,
-      qty: line.qty,
-      uom: line.uom,
-      unitCost: Number(line.unit_cost),
-      reason: line.reason,
-      attachmentId: line.attachment_id,
-      createdAt: line.created_at,
-      updatedAt: line.updated_at,
-      product: line.product ? {
-        sku: line.product.sku,
-        productName: line.product.product_name,
-        price: Number(line.product.price || 0),
-      } : undefined,
-    })),
-    audit: (data.audit || []).map((audit: any) => ({
-      id: audit.id,
-      headerId: audit.header_id,
-      action: audit.action,
-      actorId: audit.actor_id,
-      comment: audit.comment,
-      createdAt: audit.created_at,
-      actor: audit.actor ? {
-        fullName: audit.actor.full_name,
-        role: audit.actor.role,
-      } : undefined,
-    })),
-  };
 };
 
 // Create new scrap header with lines
@@ -268,11 +305,21 @@ export const createScrapHeader = async (data: ScrapHeaderData): Promise<ScrapHea
     throw linesError;
   }
 
-  // Fetch and return the complete record
-  const created = await getScrapById(header.id);
-  if (!created) throw new Error('Failed to fetch created scrap record');
-
-  return created;
+  // Return the created header data directly instead of fetching again
+  return {
+    id: header.id,
+    scrapNo: header.scrap_no,
+    status: header.status as ScrapStatus,
+    storeId: header.store_id,
+    warehouseId: header.warehouse_id,
+    createdBy: header.created_by,
+    createdAt: header.created_at,
+    updatedAt: header.updated_at,
+    totalQty: header.total_qty,
+    totalValue: Number(header.total_value),
+    lines: [],
+    audit: [],
+  };
 };
 
 // Update scrap header
@@ -389,17 +436,27 @@ export const cancelScrap = async (id: string, comment?: string): Promise<void> =
 
 // Check inventory availability
 export const checkInventoryAvailability = async (productId: string, storeId: string): Promise<number> => {
-  const { data, error } = await supabase
-    .from('inventory')
-    .select('quantity, reserved_quantity')
-    .eq('product_id', productId)
-    .eq('store_id', storeId)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('inventory')
+      .select('quantity, reserved_quantity')
+      .eq('product_id', productId)
+      .eq('store_id', storeId)
+      .maybeSingle(); // Use maybeSingle instead of single to handle no results
 
-  if (error) {
+    if (error) {
+      console.error('Error checking inventory:', error);
+      return 0;
+    }
+
+    // If no inventory record exists, return 0
+    if (!data) {
+      return 0;
+    }
+
+    return (data.quantity || 0) - (data.reserved_quantity || 0);
+  } catch (error) {
     console.error('Error checking inventory:', error);
     return 0;
   }
-
-  return (data?.quantity || 0) - (data?.reserved_quantity || 0);
 };
