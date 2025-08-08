@@ -18,6 +18,14 @@ import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -455,44 +463,79 @@ export function SalesOrdersSummary() {
       </Card>
 
       {/* Data Table */}
-      <div className="overflow-x-hidden">
-        <div 
-          className="relative max-w-full" 
-          style={{ 
-            overflowX: 'auto', 
-            overscrollBehaviorX: 'contain', 
-            scrollbarGutter: 'stable' 
-          }}
-        >
-          <div className="inline-block min-w-[1400px] align-top">
+      <Card>
+        <CardContent className="p-0">
+          <div className="relative w-full overflow-x-auto overscroll-x-contain" style={{ scrollbarGutter: 'stable' }}>
             <style>{`
-              .so-sticky thead th { 
+              .sales-table thead th { 
                 position: sticky; 
                 top: 0; 
                 z-index: 20; 
                 background: hsl(var(--background)); 
                 border-bottom: 1px solid hsl(var(--border)); 
               }
-              .so-sticky thead th:first-child,
-              .so-sticky tbody td:first-child { 
+              .sales-table thead th:first-child,
+              .sales-table tbody td:first-child { 
                 position: sticky; 
                 left: 0; 
                 z-index: 25; 
                 background: hsl(var(--background)); 
                 box-shadow: 1px 0 0 hsl(var(--border)); 
               }
+              .sales-table table {
+                min-width: 1400px;
+              }
             `}</style>
-            <div className="so-sticky">
-              <DataTable
-                data={orders}
-                columns={tableColumns}
-                loading={loading}
-                onRowClick={(order) => navigate(`/store/sales-orders/${order.orderId}`)}
-              />
-            </div>
+            <Table className="sales-table">
+              <TableHeader>
+                <TableRow>
+                  {visibleColumns.map((column) => (
+                    <TableHead key={column.key}>
+                      {column.title}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <TableRow key={index}>
+                      {visibleColumns.map((column) => (
+                        <TableCell key={column.key}>
+                          <div className="h-4 bg-muted animate-pulse rounded" />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : orders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
+                      {t('message.noData')}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  orders.map((order, index) => (
+                    <TableRow 
+                      key={index}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/store/sales-orders/${order.orderId}`)}
+                    >
+                      {tableColumns.map((column) => {
+                        const value = order[column.key as keyof typeof order];
+                        return (
+                          <TableCell key={column.key}>
+                            {column.render ? column.render(value, order) : value}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Pagination placeholder */}
       {total > 50 && (
