@@ -59,8 +59,9 @@ export function OrderSearchPage() {
       clearTimeout(searchTimeoutRef.current);
     }
     
-    // If search is cleared, restore original data immediately
-    if (!value && Object.keys(filters).length === 0) {
+    // If search is cleared, clear all filters and restore original data immediately
+    if (!value) {
+      setFilters({});
       setProducts(originalProducts);
       setTotal(originalProducts.length);
       return;
