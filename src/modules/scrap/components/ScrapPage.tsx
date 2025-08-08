@@ -11,9 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/shared/DataTable';
 
-import { getScrapItems } from '../api/scrap';
-import type { ScrapItem, ScrapFilters } from '../types';
-import type { ScrapFilters as ScrapApiFilters } from '../types/scrap';
+import { getScrapHeaders } from '../api/scrap';
+import type { ScrapHeader, ScrapFilters } from '../types/scrap';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-800',
@@ -28,16 +27,16 @@ const STATUS_COLORS: Record<string, string> = {
 export function ScrapPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [scrapItems, setScrapItems] = useState<ScrapItem[]>([]);
+  const [scrapItems, setScrapItems] = useState<ScrapHeader[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<ScrapApiFilters>({});
+  const [filters, setFilters] = useState<ScrapFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [isPending, startTransition] = useTransition();
 
   const loadScrapItems = async () => {
     try {
       setLoading(true);
-      const data = await getScrapItems(filters);
+      const data = await getScrapHeaders(filters);
       startTransition(() => {
         setScrapItems(data);
       });
@@ -58,13 +57,13 @@ export function ScrapPage() {
     });
   };
 
-  const handleFilterChange = (key: keyof ScrapApiFilters, value: string | undefined) => {
+  const handleFilterChange = (key: keyof ScrapFilters, value: string | undefined) => {
     startTransition(() => {
       setFilters(prev => ({ ...prev, [key]: value || undefined }));
     });
   };
 
-  const handleRowClick = (scrap: ScrapItem) => {
+  const handleRowClick = (scrap: ScrapHeader) => {
     navigate(`/store/scrap/${scrap.id}`);
   };
 
@@ -72,14 +71,14 @@ export function ScrapPage() {
     {
       key: 'scrapNo',
       title: t('scrapManagement.list.scrapNo'),
-      render: (scrap: ScrapItem) => (
+      render: (scrap: ScrapHeader) => (
         <span className="font-medium font-mono">{scrap.scrapNo}</span>
       )
     },
     {
       key: 'createdAt',
       title: t('scrapManagement.list.createdDate'),
-      render: (scrap: ScrapItem) => {
+      render: (scrap: ScrapHeader) => {
         if (!scrap.createdAt) return '-';
         try {
           const date = new Date(scrap.createdAt);
@@ -94,7 +93,7 @@ export function ScrapPage() {
     {
       key: 'status',
       title: t('scrapManagement.list.status'),
-      render: (scrap: ScrapItem) => (
+      render: (scrap: ScrapHeader) => (
         <Badge 
           variant="secondary"
           className={STATUS_COLORS[scrap.status] || 'bg-gray-100 text-gray-800'}
@@ -104,26 +103,17 @@ export function ScrapPage() {
       )
     },
     {
-      key: 'product',
-      title: t('scrapManagement.form.product'),
-      render: (scrap: ScrapItem) => (
-        <div>
-          {scrap?.product ? (
-            <>
-              <div className="font-medium">{scrap.product.productName}</div>
-              <div className="text-sm text-muted-foreground">{scrap.product.sku}</div>
-            </>
-          ) : (
-            <span className="text-muted-foreground">-</span>
-          )}
-        </div>
+      key: 'totalQty',
+      title: t('scrapManagement.list.totalQty'),
+      render: (scrap: ScrapHeader) => (
+        <span className="font-medium">{scrap.totalQty || 0}</span>
       )
     },
     {
-      key: 'reason',
-      title: t('scrapManagement.form.reason'),
-      render: (scrap: ScrapItem) => (
-        <span className="capitalize">{scrap.reason || '-'}</span>
+      key: 'totalValue',
+      title: t('scrapManagement.list.totalValue'),
+      render: (scrap: ScrapHeader) => (
+        <span className="font-medium">${scrap.totalValue?.toFixed(2) || '0.00'}</span>
       )
     }
   ];
