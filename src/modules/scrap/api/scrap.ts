@@ -72,18 +72,40 @@ export async function getScrapItems(filters?: ScrapFilters): Promise<ScrapItem[]
       throw error;
     }
 
-    return (data || []).map(item => ({
-      id: item.id,
-      scrapNo: item.scrap_no,
-      createdAt: item.created_at,
-      status: item.status,
-      totalQty: item.total_qty,
-      totalValue: item.total_value,
-      product: undefined, // Will be populated separately if needed
-      reason: item.scrap_lines && item.scrap_lines.length > 0 
-        ? item.scrap_lines[0].reason || ''
-        : ''
-    }));
+    // Map and fetch product information for each item
+    const items = [];
+    for (const item of data || []) {
+      const firstLine = item.scrap_lines && item.scrap_lines.length > 0 ? item.scrap_lines[0] : null;
+      
+      let product;
+      if (firstLine?.product_id) {
+        const { data: productData } = await supabase
+          .from('products')
+          .select('sku, product_name')
+          .eq('id', firstLine.product_id)
+          .single();
+        
+        if (productData) {
+          product = {
+            sku: productData.sku,
+            productName: productData.product_name
+          };
+        }
+      }
+
+      items.push({
+        id: item.id,
+        scrapNo: item.scrap_no,
+        createdAt: item.created_at,
+        status: item.status,
+        totalQty: item.total_qty,
+        totalValue: item.total_value,
+        product,
+        reason: firstLine?.reason || ''
+      });
+    }
+
+    return items;
   } catch (error) {
     console.error('Error in getScrapItems:', error);
     return []; // Return empty array instead of throwing
