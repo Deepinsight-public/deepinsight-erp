@@ -107,13 +107,6 @@ export async function getScrapItems(filters?: ScrapFilters): Promise<ScrapItem[]
       const firstLine = item.scrap_lines && item.scrap_lines.length > 0 ? item.scrap_lines[0] : null;
       const product = firstLine?.product_id ? productMap.get(firstLine.product_id) : undefined;
 
-      console.log('Mapping scrap item:', {
-        id: item.id,
-        scrapNo: item.scrap_no,
-        product,
-        reason: firstLine?.reason
-      });
-
       return {
         id: item.id,
         scrapNo: item.scrap_no,
@@ -126,7 +119,6 @@ export async function getScrapItems(filters?: ScrapFilters): Promise<ScrapItem[]
       };
     });
 
-    console.log('Final mapped items:', items);
     return items;
   } catch (error) {
     console.error('Error in getScrapItems:', error);
