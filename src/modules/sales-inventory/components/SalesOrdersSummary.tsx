@@ -327,7 +327,7 @@ export function SalesOrdersSummary() {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-border bg-background">
+      <div className="flex-shrink-0 flex items-center justify-between p-6 border-b">
         <div>
           <h1 className="text-3xl font-bold">{t('sales.summary.title')}</h1>
           <p className="text-muted-foreground mt-2">
@@ -401,7 +401,7 @@ export function SalesOrdersSummary() {
       </div>
 
       {/* Filters */}
-      <div className="flex-shrink-0 p-6 bg-background border-b border-border">
+      <div className="flex-shrink-0 p-6">
         <Card>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -464,79 +464,86 @@ export function SalesOrdersSummary() {
         </Card>
       </div>
 
-      {/* Data Table - Fixed Height with Scrollable Body */}
+      {/* Data Table - Scrollable */}
       <div className="flex-1 min-h-0 overflow-hidden">
-        <div className="h-full flex flex-col">
-          {/* Table Header - Fixed */}
-          <div className="flex-shrink-0 bg-background border-b border-border">
-            <div className="overflow-x-auto" style={{ scrollbarGutter: 'stable' }}>
-              <div style={{ minWidth: '1400px' }}>
-                <div className="grid grid-flow-col auto-cols-max gap-0">
-                  {visibleColumns.map((column) => (
-                    <div 
-                      key={column.key} 
-                      className="px-4 py-3 text-left text-sm font-medium text-muted-foreground border-r border-border last:border-r-0"
-                      style={{ minWidth: '120px' }}
-                    >
-                      {column.title}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Table Body - Scrollable */}
-          <div className="flex-1 overflow-x-auto overflow-y-auto bg-background">
-            <div style={{ minWidth: '1400px' }}>
-              {loading ? (
-                Array.from({ length: 10 }).map((_, index) => (
-                  <div key={index} className="grid grid-flow-col auto-cols-max gap-0 border-b border-border hover:bg-muted/50">
+        <Card className="h-full">
+          <CardContent className="p-0 h-full">
+            <div className="h-full overflow-x-auto overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
+              <style>{`
+                .sales-table thead th { 
+                  position: sticky; 
+                  top: 0; 
+                  z-index: 20; 
+                  background: hsl(var(--background)); 
+                  border-bottom: 1px solid hsl(var(--border)); 
+                }
+                .sales-table thead th:first-child,
+                .sales-table tbody td:first-child { 
+                  position: sticky; 
+                  left: 0; 
+                  z-index: 25; 
+                  background: hsl(var(--background)); 
+                  box-shadow: 1px 0 0 hsl(var(--border)); 
+                }
+                .sales-table table {
+                  min-width: 1400px;
+                }
+              `}</style>
+              <Table className="sales-table">
+                <TableHeader>
+                  <TableRow>
                     {visibleColumns.map((column) => (
-                      <div 
-                        key={column.key} 
-                        className="px-4 py-3 border-r border-border last:border-r-0"
-                        style={{ minWidth: '120px' }}
-                      >
-                        <div className="h-4 bg-muted animate-pulse rounded" />
-                      </div>
+                      <TableHead key={column.key}>
+                        {column.title}
+                      </TableHead>
                     ))}
-                  </div>
-                ))
-              ) : orders.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  {t('message.noData')}
-                </div>
-              ) : (
-                orders.map((order, index) => (
-                  <div
-                    key={index}
-                    className="grid grid-flow-col auto-cols-max gap-0 border-b border-border cursor-pointer hover:bg-muted/50"
-                    onClick={() => navigate(`/store/sales-orders/${order.orderId}`)}
-                  >
-                    {tableColumns.map((column) => {
-                      const value = order[column.key as keyof typeof order];
-                      return (
-                        <div 
-                          key={column.key} 
-                          className="px-4 py-3 text-sm border-r border-border last:border-r-0"
-                          style={{ minWidth: '120px' }}
-                        >
-                          {column.render ? column.render(value, order) : value}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))
-              )}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    Array.from({ length: 5 }).map((_, index) => (
+                      <TableRow key={index}>
+                        {visibleColumns.map((column) => (
+                          <TableCell key={column.key}>
+                            <div className="h-4 bg-muted animate-pulse rounded" />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : orders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
+                        {t('message.noData')}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    orders.map((order, index) => (
+                      <TableRow 
+                        key={index}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => navigate(`/store/sales-orders/${order.orderId}`)}
+                      >
+                        {tableColumns.map((column) => {
+                          const value = order[column.key as keyof typeof order];
+                          return (
+                            <TableCell key={column.key}>
+                              {column.render ? column.render(value, order) : value}
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Pagination footer */}
       {total > 50 && (
-        <div className="flex-shrink-0 flex justify-center p-4 border-t border-border bg-background">
+        <div className="flex-shrink-0 flex justify-center p-4 border-t">
           <p className="text-muted-foreground">
             Showing {orders.length} of {total} orders
           </p>
