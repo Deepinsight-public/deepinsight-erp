@@ -402,12 +402,12 @@ export function SalesOrdersSummary() {
 
             <div>
               <Label>{t('sales.summary.filters.paymentStatus')}</Label>
-              <Select value={paymentStatusFilter} onValueChange={(value) => setPaymentStatusFilter(value as any)}>
+              <Select value={paymentStatusFilter} onValueChange={(value) => setPaymentStatusFilter(value === 'all' ? '' as any : (value as any))}>
                 <SelectTrigger>
                   <SelectValue placeholder={t('sales.summary.filters.paymentStatusPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t('sales.summary.filters.all')}</SelectItem>
+                  <SelectItem value="all">{t('sales.summary.filters.all')}</SelectItem>
                   {paymentStatusOptions.map(option => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
