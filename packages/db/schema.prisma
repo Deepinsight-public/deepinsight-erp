@@ -1,0 +1,850 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  HQ_ADMIN
+  STORE_MANAGER
+  STORE_EMPLOYEE
+}
+
+enum StoreType {
+  HQ
+  WAREHOUSE
+  STORE
+}
+
+enum OrderType {
+  RETAIL
+  PRESALE
+}
+
+enum RetailOrderStatus {
+  DRAFT
+  SUBMITTED
+  PAID
+  FULFILLING
+  COMPLETED
+  CANCELLED
+}
+
+enum TransferStatus {
+  DRAFT
+  SHIPPED
+  RECEIVED
+  DISCREPANCY
+  CANCELLED
+}
+
+enum TransferKind {
+  STORE_TO_STORE
+  STORE_TO_HQ
+  HQ_TO_STORE
+}
+
+enum ReturnStatus {
+  DRAFT
+  SUBMITTED
+  RECEIVED
+  HQ_APPROVED
+  STOCKED
+  REJECTED
+  CANCELLED
+}
+
+enum Po1Status {
+  DRAFT
+  SUBMITTED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CLOSED
+  CANCELLED
+}
+
+enum RepairType {
+  IN_HOUSE
+  CPS_ONPOINT
+  WALK_IN
+}
+
+enum RepairStatus {
+  CREATED
+  QUOTED
+  IN_REPAIR
+  COMPLETED
+  CANCELLED
+}
+
+enum LogisticsType {
+  DELIVERY
+  PICKUP
+}
+
+enum LogisticsLineStatus {
+  TO_ASSIGN
+  SCHEDULED
+  LOADED
+  IN_TRANSIT
+  DELIVERED
+  REJECTED
+  RESCHEDULED
+  CANCELLED
+}
+
+enum EventType {
+  PO1_CREATED
+  PO1_RECEIVED_AT_STORE
+  PO2_SHIPPED
+  PO2_RECEIVED
+  RETAIL_SOLD
+  RETURN_SUBMITTED
+  RETURN_APPROVED
+  RETURN_STOCKED
+  TRANSFER_SHIPPED
+  TRANSFER_RECEIVED
+  SCRAP_SUBMITTED
+  SCRAP_APPROVED
+  STOCKCOUNT_STARTED
+  STOCKCOUNT_CLOSED
+  LOGISTICS_SCHEDULED
+  LOGISTICS_DELIVERED
+  REPAIR_CREATED
+  REPAIR_COMPLETED
+}
+
+enum DocumentType {
+  PO1
+  PO2
+  RETAIL
+  TRANSFER
+  RETURN
+  SCRAP
+  STOCKCOUNT
+  LOGISTICS
+  REPAIR
+}
+
+enum RefundMode {
+  ADJUSTED_PRICE
+}
+
+enum ProductType {
+  DRYER
+  WASHER
+  RANGE
+  FRIDGE
+  DISHWASHER
+  MICROWAVE
+  HOOD
+  OTHER
+}
+
+enum RestockStatus {
+  PENDING
+  IN_STOCK
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  firstName   String
+  lastName    String
+  role        Role
+  store       Store?   @relation(fields: [storeId], references: [id])
+  storeId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([delete])
+}
+
+model Store {
+  id          String      @id @default(cuid())
+  storeCode   String      @unique
+  name        String
+  type        StoreType
+  address1    String?
+  address2    String?
+  city        String?
+  state       String?
+  zip         String?
+  phone       String?
+  defaultTax  Decimal      @default(0)
+  users       User[]
+  items       Item[]       @relation("StoreItems")
+  balanceLogs StoreBalanceLedger[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([type])
+  @@index([delete])
+}
+
+model Vendor {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  delete    Boolean?
+  delete_by String?
+  delete_on DateTime?
+
+  @@index([delete])
+}
+
+model Customer {
+  id         String   @id @default(cuid())
+  firstName  String
+  lastName   String
+  phone      String?
+  email      String?
+  address    String?
+  city       String?
+  state      String?
+  zip        String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  delete     Boolean?
+  delete_by  String?
+  delete_on  DateTime?
+
+  @@index([phone])
+  @@index([email])
+  @@index([delete])
+}
+
+model Product {
+  id            String      @id @default(cuid())
+  brand         String?
+  model         String
+  kwCode        String?
+  description   String?
+  mapPrice      Decimal
+  productType   ProductType @default(OTHER)
+  dimensions    String?
+  features      String?
+  items         Item[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  delete        Boolean?
+  delete_by     String?
+  delete_on     DateTime?
+
+  @@index([model])
+  @@index([kwCode])
+  @@index([delete])
+}
+
+model Item {
+  id                String   @id @default(cuid())
+  a4lCode           String   @unique
+  epc               String   @unique
+  serialNo          String?  @unique
+  product           Product  @relation(fields: [productId], references: [id])
+  productId         String
+  gradeLabel        String?
+  loadDate          DateTime?
+  currentStore      Store?   @relation("StoreItems", fields: [currentStoreId], references: [id])
+  currentStoreId    String?
+  status            String?
+
+  events            ItemEvent[]
+  scans             ScanLog[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([productId])
+  @@index([currentStoreId])
+  @@index([a4lCode])
+  @@index([epc])
+  @@index([serialNo])
+  @@index([delete])
+}
+
+model Po1Order {
+  id              String    @id @default(cuid())
+  docNo           String    @unique
+  vendor          Vendor    @relation(fields: [vendorId], references: [id])
+  vendorId        String
+  shipToStore     Store?    @relation("Po1ShipToStore", fields: [shipToStoreId], references: [id])
+  shipToStoreId   String?
+  shipToWarehouse Store?    @relation("Po1ShipToWarehouse", fields: [shipToWarehouseId], references: [id])
+  shipToWarehouseId String?
+  isDropShip      Boolean   @default(false)
+  status          Po1Status @default(DRAFT)
+  eta             DateTime?
+  createdBy       User?     @relation(fields: [createdById], references: [id])
+  createdById     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  lines           Po1Line[]
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([delete])
+}
+
+model Po1Line {
+  id          String    @id @default(cuid())
+  order       Po1Order  @relation(fields: [orderId], references: [id])
+  orderId     String
+  product     Product   @relation(fields: [productId], references: [id])
+  productId   String
+  expectedQty Int
+  unitCost    Decimal
+  productBarcode String?
+  receipts    Po1Receipt[]
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([delete])
+}
+
+model Po1Receipt {
+  id         String   @id @default(cuid())
+  po1Line    Po1Line  @relation(fields: [po1LineId], references: [id])
+  po1LineId  String
+  item       Item     @relation(fields: [itemId], references: [id])
+  itemId     String
+  receivedAt Store    @relation(fields: [receivedAtStoreId], references: [id])
+  receivedAtStoreId String
+  receivedBy User?    @relation(fields: [receivedById], references: [id])
+  receivedById String?
+  receivedOn DateTime @default(now())
+
+  delete    Boolean?
+  delete_by String?
+  delete_on DateTime?
+
+  @@index([receivedAtStoreId])
+  @@index([delete])
+}
+
+model RetailOrder {
+  id           String             @id @default(cuid())
+  docNo        String             @unique
+  orderType    OrderType          @default(RETAIL)
+  status       RetailOrderStatus  @default(DRAFT)
+
+  store        Store              @relation(fields: [storeId], references: [id])
+  storeId      String
+  customer     Customer?          @relation(fields: [customerId], references: [id])
+  customerId   String?
+
+  fulfillmentType LogisticsType?
+  deliveredOn     DateTime?
+  deliveryFee     Decimal @default(0)
+  accessoryFee    Decimal @default(0)
+  otherFee        Decimal @default(0)
+
+  payment1Method   String?
+  payment1Amount   Decimal?
+  payment2Method   String?
+  payment2Amount   Decimal?
+  payment3Method   String?
+  payment3Amount   Decimal?
+
+  customerFirstName String?
+  customerLastName  String?
+  cashierFirstName  String?
+  cashierLastName   String?
+
+  taxRate          Decimal  @default(0)
+  deposit          Decimal  @default(0)
+  source           String?
+
+  createdBy        User?    @relation(fields: [createdById], references: [id])
+  createdById      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  lines        RetailLine[]
+  logistics    LogisticsTask[]
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([storeId])
+  @@index([customerId])
+  @@index([delete])
+}
+
+model RetailLine {
+  id                String   @id @default(cuid())
+  order             RetailOrder @relation(fields: [orderId], references: [id])
+  orderId           String
+  item              Item     @relation(fields: [itemId], references: [id])
+  itemId            String   @unique
+
+  unitPrice         Decimal
+  mapAtSale         Decimal
+  isExtendedWarranty Boolean  @default(false)
+  warrantyAmount     Decimal  @default(0)
+  priceMapRate       Decimal?
+  unitCostAtSale     Decimal?
+  grossProfit        Decimal?
+
+  extWarrantyMonths Int      @default(0)
+  warrantyCardNo    String?
+  warrantyStartAt   DateTime?
+  warrantyEndAt     DateTime?
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([orderId])
+  @@index([delete])
+}
+
+model TransferOrder {
+  id          String         @id @default(cuid())
+  docNo       String         @unique
+  kind        TransferKind   @default(STORE_TO_STORE)
+
+  fromStore   Store          @relation("TransferFrom", fields: [fromStoreId], references: [id])
+  fromStoreId String
+  toStore     Store          @relation("TransferTo", fields: [toStoreId], references: [id])
+  toStoreId   String
+
+  status      TransferStatus @default(DRAFT)
+  reason      String?
+  createdBy   User?          @relation(fields: [createdById], references: [id])
+  createdById String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  lines       TransferLine[]
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([kind])
+  @@index([fromStoreId])
+  @@index([toStoreId])
+  @@index([delete])
+}
+
+model TransferLine {
+  id        String   @id @default(cuid())
+  orderId   String
+  item      Item     @relation(fields: [itemId], references: [id])
+  itemId    String   @unique
+
+  delete    Boolean?
+  delete_by String?
+  delete_on DateTime?
+
+  @@index([orderId])
+  @@index([delete])
+}
+
+model ReturnOrder {
+  id            String       @id @default(cuid())
+  docNo         String       @unique
+  store         Store        @relation(fields: [storeId], references: [id])
+  storeId       String
+  returnWH      Store?       @relation("ReturnToWarehouse", fields: [returnWHId], references: [id])
+  returnWHId    String?
+  originalOrder RetailOrder  @relation(fields: [originalOrderId], references: [id])
+  originalOrderId String
+  isCustomerReturn Boolean   @default(false)
+  status        ReturnStatus @default(DRAFT)
+  refundMode    RefundMode   @default(ADJUSTED_PRICE)
+  createdBy     User?        @relation(fields: [createdById], references: [id])
+  createdById   String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  lines         ReturnLine[]
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([storeId])
+  @@index([returnWHId])
+  @@index([originalOrderId])
+  @@index([delete])
+}
+
+model ReturnLine {
+  id                String       @id @default(cuid())
+  order             ReturnOrder  @relation(fields: [orderId], references: [id])
+  orderId           String
+  originalLine      RetailLine   @relation(fields: [originalLineId], references: [id])
+  originalLineId    String
+  item              Item         @relation(fields: [itemId], references: [id])
+  itemId            String @unique
+
+  productBarcode    String?
+  reason            String?
+
+  restockStatus     RestockStatus @default(PENDING)
+  restockedOn       DateTime?
+  restockedBy       User?         @relation(fields: [restockedById], references: [id])
+  restockedById     String?
+
+  receivedBy        User?        @relation(fields: [receivedById], references: [id])
+  receivedById      String?
+  receivedOn        DateTime?
+  hqApprovedBy      User?        @relation(fields: [hqApprovedById], references: [id])
+  hqApprovedById    String?
+  hqApprovedOn      DateTime?
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([orderId])
+  @@index([originalLineId])
+  @@index([restockStatus])
+  @@index([delete])
+}
+
+model ScrapOrder {
+  id          String   @id @default(cuid())
+  docNo       String   @unique
+  store       Store    @relation(fields: [storeId], references: [id])
+  storeId     String
+  brand       String?
+  reason      String
+  status      String
+  photoUrls   String[]
+
+  createdBy   User?     @relation(fields: [createdById], references: [id])
+  createdById String?
+  approvedBy  User?     @relation("ScrapApprovedBy", fields: [approvedById], references: [id])
+  approvedById String?
+  approvedOn  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lines       ScrapLine[]
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([storeId])
+  @@index([delete])
+}
+
+model ScrapLine {
+  id        String     @id @default(cuid())
+  order     ScrapOrder @relation(fields: [orderId], references: [id])
+  orderId   String
+  item      Item       @relation(fields: [itemId], references: [id])
+  itemId    String @unique
+
+  delete    Boolean?
+  delete_by String?
+  delete_on DateTime?
+
+  @@index([orderId])
+  @@index([delete])
+}
+
+model StoreBalanceLedger {
+  id         String   @id @default(cuid())
+  store      Store    @relation(fields: [storeId], references: [id])
+  storeId    String
+  amount     Decimal
+  reason     String?
+  refType    DocumentType
+  refId      String
+  createdAt  DateTime @default(now())
+
+  delete    Boolean?
+  delete_by String?
+  delete_on DateTime?
+
+  @@index([storeId])
+  @@index([refType, refId])
+  @@index([delete])
+}
+
+model LogisticsTask {
+  id           String        @id @default(cuid())
+  docNo        String        @unique
+  type         LogisticsType
+  order        RetailOrder   @relation(fields: [orderId], references: [id])
+  orderId      String
+  scheduledAt  DateTime?
+  assignee     User?         @relation(fields: [assigneeId], references: [id])
+  assigneeId   String?
+  address      String?
+  phone        String?
+  createdBy    User?         @relation(fields: [createdById], references: [id])
+  createdById  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  lines        LogisticsLine[]
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([orderId])
+  @@index([delete])
+}
+
+model LogisticsLine {
+  id           String              @id @default(cuid())
+  task         LogisticsTask       @relation(fields: [taskId], references: [id])
+  taskId       String
+  retailLine   RetailLine          @relation(fields: [retailLineId], references: [id])
+  retailLineId String @unique
+  item         Item                @relation(fields: [itemId], references: [id])
+  itemId       String @unique
+  status       LogisticsLineStatus @default(TO_ASSIGN)
+  proofUrl     String?
+  deliveredAt  DateTime?
+
+  delete    Boolean?
+  delete_by String?
+  delete_on DateTime?
+
+  @@index([taskId])
+  @@index([delete])
+}
+
+model RepairOrder {
+  id               String       @id @default(cuid())
+  docNo            String       @unique
+  store            Store        @relation(fields: [storeId], references: [id])
+  storeId          String
+  type             RepairType
+  status           RepairStatus @default(CREATED)
+
+  customerFirstName String
+  customerLastName  String
+  customerPhone    String?
+  customerAddress  String?
+  contactEmail     String?
+
+  reportDate       DateTime?
+  productModel     String
+  faultDescription String?
+
+  firstVisitDate   DateTime?
+  secondVisitDate  DateTime?
+
+  serviceFee       Decimal @default(0)
+  partsFee         Decimal @default(0)
+  otherFee         Decimal @default(0)
+  totalAmount      Decimal @default(0)
+
+  documentUrl      String?
+
+  createdBy        User?    @relation(fields: [createdById], references: [id])
+  createdById      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  parts            RepairPart[]
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([storeId])
+  @@index([delete])
+}
+
+model RepairPart {
+  id           String      @id @default(cuid())
+  order        RepairOrder @relation(fields: [orderId], references: [id])
+  orderId      String
+  partName     String
+  partNumber   String?
+  quantity     Int
+  unitPrice    Decimal @default(0)
+
+  delete    Boolean?
+  delete_by String?
+  delete_on DateTime?
+
+  @@index([orderId])
+  @@index([delete])
+}
+
+model StockCountSession {
+  id         String   @id @default(cuid())
+  store      Store    @relation(fields: [storeId], references: [id])
+  storeId    String
+  startedAt  DateTime @default(now())
+  endedAt    DateTime?
+  createdBy  User?    @relation(fields: [createdById], references: [id])
+  createdById String?
+  details    StockCountDetail[]
+
+  delete    Boolean?
+  delete_by String?
+  delete_on DateTime?
+
+  @@index([storeId])
+  @@index([delete])
+}
+
+model StockCountDetail {
+  id          String            @id @default(cuid())
+  session     StockCountSession @relation(fields: [sessionId], references: [id])
+  sessionId   String
+  item        Item              @relation(fields: [itemId], references: [id])
+  itemId      String
+  expectedBin String?
+  foundBin    String?
+  result      String?
+
+  delete    Boolean?
+  delete_by String?
+  delete_on DateTime?
+
+  @@index([sessionId])
+  @@index([delete])
+}
+
+model ScanLog {
+  id         String    @id @default(cuid())
+  item       Item      @relation(fields: [itemId], references: [id])
+  itemId     String
+  epc        String
+  action     String
+  store      Store?     @relation(fields: [storeId], references: [id])
+  storeId    String?
+  docType    DocumentType?
+  docId      String?
+  createdBy  User?      @relation(fields: [createdById], references: [id])
+  createdById String?
+  createdAt  DateTime   @default(now())
+
+  delete    Boolean?
+  delete_by String?
+  delete_on DateTime?
+
+  @@index([epc])
+  @@index([docType, docId])
+  @@index([delete])
+}
+
+model ItemEvent {
+  id         String       @id @default(cuid())
+  item       Item         @relation(fields: [itemId], references: [id])
+  itemId     String
+  type       EventType
+  docType    DocumentType?
+  docId      String?
+  docNo      String?
+  store      Store?       @relation(fields: [storeId], references: [id])
+  storeId    String?
+  payload    Json?
+  createdBy  User?        @relation(fields: [createdById], references: [id])
+  createdById String?
+  createdAt  DateTime     @default(now())
+
+  delete    Boolean?
+  delete_by String?
+  delete_on DateTime?
+
+  @@index([itemId, createdAt])
+  @@index([docType, docId])
+  @@index([delete])
+}
+
+model SystemSetting {
+  id                 String   @id @default(cuid())
+  repairDisclaimerCn String?
+  repairDisclaimerEn String?
+  updatedBy          User?    @relation(fields: [updatedById], references: [id])
+  updatedById        String?
+  updatedAt          DateTime @updatedAt
+
+  delete    Boolean?
+  delete_by String?
+  delete_on DateTime?
+
+  @@index([delete])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actor      User?    @relation(fields: [actorId], references: [id])
+  actorId    String?
+  entityType String
+  entityId   String
+  field      String?
+  oldValue   String?
+  newValue   String?
+  createdAt  DateTime @default(now())
+
+  delete    Boolean?
+  delete_by String?
+  delete_on DateTime?
+
+  @@index([entityType, entityId])
+  @@index([delete])
+}
+
+// Compatibility models for purchase_requests
+model PurchaseRequest {
+  id          String   @id @default(cuid())
+  storeId     String
+  requesterId String
+  status      String   @default("pending")
+  remarks     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lines       PurchaseRequestLine[]
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([storeId])
+  @@index([delete])
+}
+
+model PurchaseRequestLine {
+  id          String          @id @default(cuid())
+  request     PurchaseRequest @relation(fields: [requestId], references: [id])
+  requestId   String
+  productId   String
+  qty         Int
+  createdAt   DateTime        @default(now())
+
+  delete      Boolean?
+  delete_by   String?
+  delete_on   DateTime?
+
+  @@index([requestId])
+  @@index([delete])
+}
