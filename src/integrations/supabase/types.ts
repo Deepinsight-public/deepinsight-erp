@@ -608,6 +608,13 @@ export type Database = {
             referencedRelation: "sales_orders"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "repairs_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "vw_sales_orders_list"
+            referencedColumns: ["id"]
+          },
         ]
       }
       returns: {
@@ -705,6 +712,13 @@ export type Database = {
             columns: ["sales_order_id"]
             isOneToOne: false
             referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_order_items_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "vw_sales_orders_list"
             referencedColumns: ["id"]
           },
         ]
@@ -1351,7 +1365,149 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vw_inventory: {
+        Row: {
+          brand: string | null
+          created_at: string | null
+          epc: string | null
+          grade_label: string | null
+          id: string | null
+          kw_code: string | null
+          load_date: string | null
+          map_price: number | null
+          model: string | null
+          serial_no: string | null
+          sku: string | null
+          status: string | null
+          store_id: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_returns_unified: {
+        Row: {
+          created_at: string | null
+          customer_first_name: string | null
+          customer_last_name: string | null
+          id: string | null
+          is_customer_return: boolean | null
+          original_order_id: string | null
+          return_category: string | null
+          return_number: string | null
+          return_type: string | null
+          return_wh_id: string | null
+          status: string | null
+          store_id: string | null
+          store_name: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
+      vw_sales_orders_list: {
+        Row: {
+          accessory_fee: number | null
+          avg_price_map_rate: number | null
+          cashier_first_name: string | null
+          cashier_last_name: string | null
+          created_at: string | null
+          customer_email: string | null
+          customer_first: string | null
+          customer_first_name: string | null
+          customer_id: string | null
+          customer_last: string | null
+          customer_last_name: string | null
+          customer_phone: string | null
+          customer_source: string | null
+          delivery_date: string | null
+          delivery_fee: number | null
+          deposit: number | null
+          has_extended_warranty: number | null
+          id: string | null
+          order_date: string | null
+          order_number: string | null
+          order_type: string | null
+          other_fee: number | null
+          payment_amount1: number | null
+          payment_amount2: number | null
+          payment_amount3: number | null
+          payment_method1: string | null
+          payment_method2: string | null
+          payment_method3: string | null
+          status: string | null
+          store_id: string | null
+          store_name: string | null
+          tax_rate: number | null
+          total_amount: number | null
+          total_gross_profit: number | null
+          total_map: number | null
+          updated_at: string | null
+          walk_in_delivery: string | null
+          warranty_amount: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_sales_summary: {
+        Row: {
+          avg_price_map_rate: number | null
+          customer_source: string | null
+          order_count: number | null
+          sale_date: string | null
+          store_id: string | null
+          store_name: string | null
+          total_map: number | null
+          total_profit: number | null
+          total_sales: number | null
+          total_warranty: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_warranties: {
+        Row: {
+          claim_no: string | null
+          created_at: string | null
+          customer_first_name: string | null
+          customer_id: string | null
+          customer_last_name: string | null
+          ext_warranty_months: number | null
+          id: string | null
+          is_extended_warranty: boolean | null
+          product_brand: string | null
+          product_model: string | null
+          status: string | null
+          store_id: string | null
+          store_name: string | null
+          updated_at: string | null
+          warranty_amount: number | null
+          warranty_card_no: string | null
+          warranty_end_at: string | null
+          warranty_start_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       create_sales_order_with_stock_deduction: {
