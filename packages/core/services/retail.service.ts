@@ -1,4 +1,4 @@
-// Deno compatible imports will be injected at runtime
+// Retail/Sales management service (refactored from sales-orders.service.ts)
 import { 
   SalesOrderCreate, 
   SalesOrderResponse, 
@@ -8,16 +8,20 @@ import {
   ApiError,
   ErrorCodes 
 } from '/packages/shared/src/index.ts';
+import { RBACService } from '../rbac.ts';
+import { AuditLogger, withAudit } from '../audit.ts';
 
-export class SalesOrdersService {
+export class RetailService {
   private supabaseUrl: string;
   private supabaseKey: string;
   private authToken?: string;
+  private auditLogger: AuditLogger;
 
-  constructor(supabaseUrl: string, supabaseKey: string, authToken?: string) {
+  constructor(supabaseUrl: string, supabaseKey: string, auditLogger: AuditLogger, authToken?: string) {
     this.supabaseUrl = supabaseUrl;
     this.supabaseKey = supabaseKey;
     this.authToken = authToken;
+    this.auditLogger = auditLogger;
   }
 
   private getClient() {
@@ -31,9 +35,10 @@ export class SalesOrdersService {
 
   async getSalesOrders(
     userContext: UserContext,
-    options: PaginationOptions & { status?: string },
-    canSeeCosts: boolean
+    options: PaginationOptions & { status?: string }
   ): Promise<SalesOrderList> {
+    RBACService.requirePermission(userContext, 'sales_orders', 'read');
+
     const { page, limit, status } = options;
     const from = (page - 1) * limit;
     const to = from + limit - 1;
@@ -46,7 +51,10 @@ export class SalesOrdersService {
       .order("created_at", { ascending: false });
 
     if (status) query = query.eq("status", status);
-    if (userContext.storeId) query = query.eq("store_id", userContext.storeId);
+    if (userContext.storeId) {
+      RBACService.requireStoreAccess(userContext, userContext.storeId);
+      query = query.eq("store_id", userContext.storeId);
+    }
 
     const { data, error, count } = await query.range(from, to);
     
@@ -55,13 +63,9 @@ export class SalesOrdersService {
     }
 
     // Filter out cost data for store employees
-    const filteredData = data?.map(order => {
-      if (!canSeeCosts) {
-        const { total_gross_profit, avg_price_map_rate, ...orderWithoutCosts } = order;
-        return orderWithoutCosts;
-      }
-      return order;
-    });
+    const filteredData = data?.map(order => 
+      RBACService.filterCostData(userContext, order)
+    );
 
     return {
       orders: filteredData?.map(this.mapDatabaseToResponse) || [],
@@ -75,9 +79,10 @@ export class SalesOrdersService {
 
   async getSalesOrder(
     orderId: string,
-    userContext: UserContext,
-    canSeeCosts: boolean
+    userContext: UserContext
   ): Promise<SalesOrderResponse> {
+    RBACService.requirePermission(userContext, 'sales_orders', 'read');
+
     const supabase = this.getClient();
     
     const { data: order, error } = await supabase
@@ -88,6 +93,11 @@ export class SalesOrdersService {
 
     if (error) {
       throw new ApiError(ErrorCodes.ORDER_NOT_FOUND, 404, 'Order not found');
+    }
+
+    // Verify store access
+    if (order.store_id) {
+      RBACService.requireStoreAccess(userContext, order.store_id);
     }
 
     // Get order lines
@@ -107,18 +117,23 @@ export class SalesOrdersService {
     };
 
     // Filter cost data if needed
-    if (!canSeeCosts) {
-      const { total_gross_profit, avg_price_map_rate, ...orderWithoutCosts } = orderWithLines;
-      return this.mapDatabaseToResponse(orderWithoutCosts);
-    }
-
-    return this.mapDatabaseToResponse(orderWithLines);
+    const filteredOrder = RBACService.filterCostData(userContext, orderWithLines);
+    return this.mapDatabaseToResponse(filteredOrder);
   }
 
+  @withAudit('sales_order', 'create')
   async createSalesOrder(
     orderData: SalesOrderCreate,
     userContext: UserContext
   ): Promise<SalesOrderResponse> {
+    RBACService.requirePermission(userContext, 'sales_orders', 'create');
+
+    if (userContext.storeId) {
+      RBACService.requireStoreAccess(userContext, userContext.storeId);
+    }
+
+    const supabase = this.getClient();
+    
     const dbOrderData = {
       order_number: `ORD-${Date.now()}`,
       customer_name: orderData.customerName ?? null,
@@ -142,19 +157,10 @@ export class SalesOrdersService {
       accessory: orderData.accessory ?? null,
       other_services: orderData.otherServices ?? null,
       other_fee: orderData.otherFee ?? 0,
-      delivery_fee: orderData.deliveryFee ?? 0,
-      accessory_fee: orderData.accessoryFee ?? 0,
-      payment_method_1: orderData.paymentMethod1 ?? null,
-      payment_amount_1: orderData.paymentAmount1 ?? 0,
-      payment_method_2: orderData.paymentMethod2 ?? null,
-      payment_amount_2: orderData.paymentAmount2 ?? 0,
-      payment_method_3: orderData.paymentMethod3 ?? null,
-      payment_amount_3: orderData.paymentAmount3 ?? 0,
+      payment_method: orderData.paymentMethod1 ?? null,
       payment_note: orderData.paymentNote ?? null,
       customer_source: orderData.customerSource ?? null,
       cashier_id: orderData.cashierId ?? null,
-      cashier_first: orderData.cashierFirst ?? null,
-      cashier_last: orderData.cashierLast ?? null,
       store_id: userContext.storeId,
       created_by: userContext.userId,
     };
@@ -179,8 +185,6 @@ export class SalesOrdersService {
       };
     });
 
-    const supabase = this.getClient();
-    
     // Use stock deduction function for submitted orders
     if (orderData.status === "submitted") {
       const { data, error } = await supabase.rpc(
@@ -223,6 +227,33 @@ export class SalesOrdersService {
     }
 
     return this.mapDatabaseToResponse(order);
+  }
+
+  @withAudit('sales_order', 'update')
+  async updateSalesOrderStatus(
+    orderId: string,
+    status: string,
+    userContext: UserContext
+  ): Promise<SalesOrderResponse> {
+    RBACService.requirePermission(userContext, 'sales_orders', 'update');
+
+    const supabase = this.getClient();
+    
+    // First verify the order exists and user has access
+    const existingOrder = await this.getSalesOrder(orderId, userContext);
+
+    const { data, error } = await supabase
+      .from("sales_orders")
+      .update({ status })
+      .eq("id", orderId)
+      .select("*")
+      .single();
+
+    if (error) {
+      throw new ApiError(ErrorCodes.DATABASE_ERROR, 400, error.message);
+    }
+
+    return this.mapDatabaseToResponse(data);
   }
 
   private mapDatabaseToResponse(dbOrder: any): SalesOrderResponse {
