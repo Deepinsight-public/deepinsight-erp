@@ -376,6 +376,42 @@ export type Database = {
         }
         Relationships: []
       }
+      logistics_lines: {
+        Row: {
+          created_at: string | null
+          delivered_at: string | null
+          delivered_by: string | null
+          delivery_address: string | null
+          delivery_status: string | null
+          id: string
+          order_id: string
+          proof_url: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          delivered_at?: string | null
+          delivered_by?: string | null
+          delivery_address?: string | null
+          delivery_status?: string | null
+          id?: string
+          order_id: string
+          proof_url?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          delivered_at?: string | null
+          delivered_by?: string | null
+          delivery_address?: string | null
+          delivery_status?: string | null
+          id?: string
+          order_id?: string
+          proof_url?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -731,6 +767,7 @@ export type Database = {
           customer_id: string | null
           customer_name: string | null
           description: string
+          document_url: string | null
           estimated_completion: string | null
           id: string
           product_id: string
@@ -749,6 +786,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           description: string
+          document_url?: string | null
           estimated_completion?: string | null
           id?: string
           product_id: string
@@ -767,6 +805,7 @@ export type Database = {
           customer_id?: string | null
           customer_name?: string | null
           description?: string
+          document_url?: string | null
           estimated_completion?: string | null
           id?: string
           product_id?: string
@@ -1239,6 +1278,7 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          photo_urls: string[] | null
           scrap_no: string
           status: string
           store_id: string
@@ -1251,6 +1291,7 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
+          photo_urls?: string[] | null
           scrap_no: string
           status?: string
           store_id: string
@@ -1263,6 +1304,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          photo_urls?: string[] | null
           scrap_no?: string
           status?: string
           store_id?: string
@@ -1359,6 +1401,36 @@ export type Database = {
           store_code?: string
           store_name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value_en: string | null
+          value_zh: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value_en?: string | null
+          value_zh?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value_en?: string | null
+          value_zh?: string | null
         }
         Relationships: []
       }

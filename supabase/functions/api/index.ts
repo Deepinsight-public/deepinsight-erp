@@ -1007,6 +1007,249 @@ async function handleHistory(req: Request, pathname: string, searchParams: URLSe
   return null;
 }
 
+async function handleScrap(req: Request, pathname: string, searchParams: URLSearchParams) {
+  const supabase = getSupabaseClient(req);
+  const userContext = await getUserContext(req);
+  if (!userContext) return json({ error: "Unauthorized" }, 401);
+  
+  const { profile, user } = userContext;
+  
+  // POST /api/store/scrap - Create scrap with photo uploads
+  if (req.method === "POST" && (pathname === "/api/store/scrap" || pathname === "/api/store/after-sales/scrap")) {
+    try {
+      const formData = await req.formData();
+      const dataStr = formData.get('data') as string;
+      const files = formData.getAll('photos') as File[];
+      
+      if (!dataStr) {
+        return json({ error: "Missing scrap data" }, 400);
+      }
+      
+      const scrapData = JSON.parse(dataStr);
+      
+      // Create scrap header
+      const { data: scrapHeader, error: headerError } = await supabase
+        .from('scrap_headers')
+        .insert({
+          scrap_no: `SCR-${Date.now()}`,
+          store_id: profile?.store_id,
+          warehouse_id: profile?.store_id, // Use store as warehouse for now
+          status: 'draft',
+          total_qty: scrapData.total_qty || 0,
+          total_value: scrapData.total_value || 0,
+          created_by: user.id
+        })
+        .select()
+        .single();
+      
+      if (headerError) {
+        return json({ error: headerError.message }, 400);
+      }
+      
+      // Upload photos if provided
+      let photoUrls: string[] = [];
+      if (files.length > 0) {
+        for (const file of files) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const filePath = `${scrapHeader.id}/${fileName}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('scrap-photos')
+            .upload(filePath, file);
+          
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            continue;
+          }
+          
+          // Get signed URL
+          const { data: signedData } = await supabase.storage
+            .from('scrap-photos')
+            .createSignedUrl(uploadData.path, 7 * 24 * 60 * 60); // 7 days
+          
+          if (signedData?.signedUrl) {
+            photoUrls.push(signedData.signedUrl);
+          }
+        }
+        
+        // Update scrap header with photo URLs
+        await supabase
+          .from('scrap_headers')
+          .update({ photo_urls: photoUrls })
+          .eq('id', scrapHeader.id);
+      }
+      
+      return json({ ...scrapHeader, photo_urls: photoUrls }, 201);
+    } catch (error) {
+      console.error('Scrap creation error:', error);
+      return json({ error: 'Failed to create scrap record' }, 500);
+    }
+  }
+  
+  return null;
+}
+
+async function handleRepairs(req: Request, pathname: string, searchParams: URLSearchParams) {
+  const supabase = getSupabaseClient(req);
+  const userContext = await getUserContext(req);
+  if (!userContext) return json({ error: "Unauthorized" }, 401);
+  
+  const { profile, user } = userContext;
+  
+  // POST /api/store/repairs - Create repair with document upload
+  if (req.method === "POST" && pathname === "/api/store/repairs") {
+    try {
+      const formData = await req.formData();
+      const dataStr = formData.get('data') as string;
+      const documentFile = formData.get('document') as File;
+      
+      if (!dataStr) {
+        return json({ error: "Missing repair data" }, 400);
+      }
+      
+      const repairData = JSON.parse(dataStr);
+      
+      // Create repair record
+      const { data: repair, error: repairError } = await supabase
+        .from('repairs')
+        .insert({
+          repair_id: `R-${Date.now()}`,
+          store_id: profile?.store_id,
+          customer_id: repairData.customer_id,
+          product_id: repairData.product_id,
+          customer_name: repairData.customer_name,
+          type: repairData.type,
+          description: repairData.description,
+          status: 'pending',
+          cost: repairData.cost,
+          estimated_completion: repairData.estimated_completion
+        })
+        .select()
+        .single();
+      
+      if (repairError) {
+        return json({ error: repairError.message }, 400);
+      }
+      
+      // Upload document if provided
+      let documentUrl: string | null = null;
+      if (documentFile) {
+        const fileExt = documentFile.name.split('.').pop();
+        const fileName = `repair-doc-${Date.now()}.${fileExt}`;
+        const filePath = `${repair.id}/${fileName}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('repair-docs')
+          .upload(filePath, documentFile);
+        
+        if (!uploadError && uploadData) {
+          // Get signed URL
+          const { data: signedData } = await supabase.storage
+            .from('repair-docs')
+            .createSignedUrl(uploadData.path, 7 * 24 * 60 * 60); // 7 days
+          
+          if (signedData?.signedUrl) {
+            documentUrl = signedData.signedUrl;
+            
+            // Update repair with document URL
+            await supabase
+              .from('repairs')
+              .update({ document_url: documentUrl })
+              .eq('id', repair.id);
+          }
+        }
+      }
+      
+      return json({ ...repair, document_url: documentUrl }, 201);
+    } catch (error) {
+      console.error('Repair creation error:', error);
+      return json({ error: 'Failed to create repair record' }, 500);
+    }
+  }
+  
+  return null;
+}
+
+async function handleLogistics(req: Request, pathname: string, searchParams: URLSearchParams) {
+  const supabase = getSupabaseClient(req);
+  const userContext = await getUserContext(req);
+  if (!userContext) return json({ error: "Unauthorized" }, 401);
+  
+  const { profile, user } = userContext;
+  
+  // PUT /api/store/logistics/lines/:id - Update logistics line with proof upload
+  if (req.method === "PUT" && pathname.match(/^\/api\/store\/logistics\/lines\/[^\/]+$/)) {
+    try {
+      const lineId = pathname.split('/').pop();
+      const formData = await req.formData();
+      const proofFile = formData.get('proof') as File;
+      const status = formData.get('status') as string;
+      
+      if (!proofFile) {
+        return json({ error: "Missing proof file" }, 400);
+      }
+      
+      // Get logistics line
+      const { data: logisticsLine, error: lineError } = await supabase
+        .from('logistics_lines')
+        .select('*, sales_orders!inner(store_id)')
+        .eq('id', lineId)
+        .single();
+      
+      if (lineError || !logisticsLine) {
+        return json({ error: "Logistics line not found" }, 404);
+      }
+      
+      // Upload proof file
+      const fileExt = proofFile.name.split('.').pop();
+      const fileName = `delivery-proof-${Date.now()}.${fileExt}`;
+      const filePath = `${logisticsLine.order_id}/${fileName}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('delivery-proofs')
+        .upload(filePath, proofFile);
+      
+      if (uploadError) {
+        return json({ error: 'Failed to upload proof file' }, 500);
+      }
+      
+      // Get signed URL
+      const { data: signedData } = await supabase.storage
+        .from('delivery-proofs')
+        .createSignedUrl(uploadData.path, 7 * 24 * 60 * 60); // 7 days
+      
+      if (!signedData?.signedUrl) {
+        return json({ error: 'Failed to generate signed URL' }, 500);
+      }
+      
+      // Update logistics line
+      const { data: updatedLine, error: updateError } = await supabase
+        .from('logistics_lines')
+        .update({
+          proof_url: signedData.signedUrl,
+          delivery_status: status || 'delivered',
+          delivered_at: new Date().toISOString(),
+          delivered_by: user.id
+        })
+        .eq('id', lineId)
+        .select()
+        .single();
+      
+      if (updateError) {
+        return json({ error: updateError.message }, 400);
+      }
+      
+      return json(updatedLine);
+    } catch (error) {
+      console.error('Logistics update error:', error);
+      return json({ error: 'Failed to update logistics line' }, 500);
+    }
+  }
+  
+  return null;
+}
+
 // Main request handler
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
@@ -1103,6 +1346,15 @@ Deno.serve(async (req: Request) => {
 
     const historyResponse = await handleHistory(req, pathname, searchParams);
     if (historyResponse) return historyResponse;
+
+    const scrapResponse = await handleScrap(req, pathname, searchParams);
+    if (scrapResponse) return scrapResponse;
+
+    const repairsResponse = await handleRepairs(req, pathname, searchParams);
+    if (repairsResponse) return repairsResponse;
+
+    const logisticsResponse = await handleLogistics(req, pathname, searchParams);
+    if (logisticsResponse) return logisticsResponse;
 
     // Not found
     return json({ error: "Endpoint not found", path: pathname }, 404);
