@@ -812,6 +812,201 @@ async function handleReturns(req: Request, pathname: string, searchParams: URLSe
   return null;
 }
 
+async function handleDashboard(req: Request, pathname: string, searchParams: URLSearchParams) {
+  const supabase = getSupabaseClient(req);
+  const userContext = await getUserContext(req);
+  if (!userContext) return json({ error: "Unauthorized" }, 401);
+  
+  const { profile } = userContext;
+  
+  // GET /api/store/dashboard
+  if (req.method === "GET" && pathname === "/api/store/dashboard") {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+
+      // Today's sales data
+      const { data: todaySales } = await supabase
+        .from('vw_sales_summary')
+        .select('transaction_amount, total_quantity')
+        .eq('store_id', profile?.store_id)
+        .eq('order_date', today);
+
+      const todaysSalesAmount = todaySales?.reduce((sum, order) => sum + (order.transaction_amount || 0), 0) || 0;
+      const todaysOrderCount = todaySales?.length || 0;
+
+      // Inventory warnings (items below reorder point)
+      const { data: inventoryWarnings } = await supabase
+        .from('inventory')
+        .select('product_id, quantity, reorder_point, products(product_name)')
+        .eq('store_id', profile?.store_id)
+        .filter('quantity', 'lt', 'reorder_point');
+
+      // Pending transfers to receive
+      const { data: pendingTransfers } = await supabase
+        .from('TransferOrder')
+        .select('*')
+        .eq('toStoreId', profile?.store_id?.toString())
+        .eq('status', 'SHIPPED');
+
+      // Pending returns to restock
+      const { data: pendingReturns } = await supabase
+        .from('ReturnLine')
+        .select('*')
+        .eq('restockStatus', 'PENDING')
+        .neq('receivedById', null);
+
+      // Pending scrap approvals
+      const { data: pendingScrap } = await supabase
+        .from('scrap_headers')
+        .select('*')
+        .eq('store_id', profile?.store_id)
+        .eq('status', 'draft');
+
+      const dashboardData = {
+        todaysSales: {
+          amount: todaysSalesAmount,
+          orderCount: todaysOrderCount
+        },
+        inventoryWarnings: {
+          count: inventoryWarnings?.length || 0,
+          items: inventoryWarnings || []
+        },
+        pendingTasks: {
+          transfersToReceive: pendingTransfers?.length || 0,
+          returnsToRestock: pendingReturns?.length || 0,
+          scrapToApprove: pendingScrap?.length || 0
+        }
+      };
+
+      return json(dashboardData);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      return json({ error: error.message }, 500);
+    }
+  }
+  
+  return null;
+}
+
+async function handlePivot(req: Request, pathname: string, searchParams: URLSearchParams) {
+  const supabase = getSupabaseClient(req);
+  const userContext = await getUserContext(req);
+  if (!userContext) return json({ error: "Unauthorized" }, 401);
+  
+  const { profile } = userContext;
+  
+  // GET /api/store/sales-orders/pivot
+  if (req.method === "GET" && pathname === "/api/store/sales-orders/pivot") {
+    try {
+      const source = searchParams.get('source');
+      const dateFrom = searchParams.get('dateFrom');
+      const dateTo = searchParams.get('dateTo');
+      const groupBy = searchParams.get('groupBy') || 'order_date';
+
+      let query = supabase
+        .from('vw_sales_summary')
+        .select('*')
+        .eq('store_id', profile?.store_id);
+
+      // Apply filters
+      if (source) {
+        query = query.eq('source', source);
+      }
+      if (dateFrom) {
+        query = query.gte('order_date', dateFrom);
+      }
+      if (dateTo) {
+        query = query.lte('order_date', dateTo);
+      }
+
+      const { data, error } = await query.order('order_date', { ascending: false });
+
+      if (error) throw error;
+
+      return json({ data: data || [] });
+    } catch (error) {
+      console.error('Error fetching pivot data:', error);
+      return json({ error: error.message }, 500);
+    }
+  }
+  
+  return null;
+}
+
+async function handleHistory(req: Request, pathname: string, searchParams: URLSearchParams) {
+  const supabase = getSupabaseClient(req);
+  const userContext = await getUserContext(req);
+  if (!userContext) return json({ error: "Unauthorized" }, 401);
+  
+  const { profile } = userContext;
+  
+  // GET /api/store/sales-orders/history
+  if (req.method === "GET" && pathname === "/api/store/sales-orders/history") {
+    try {
+      const orderId = searchParams.get('orderId');
+      const dateFrom = searchParams.get('dateFrom');
+      const dateTo = searchParams.get('dateTo');
+
+      // Get item events related to sales orders
+      let itemEventsQuery = supabase
+        .from('ItemEvent')
+        .select('*')
+        .eq('storeId', profile?.store_id?.toString())
+        .eq('docType', 'SALES_ORDER');
+
+      if (orderId) {
+        itemEventsQuery = itemEventsQuery.eq('docId', orderId);
+      }
+      if (dateFrom) {
+        itemEventsQuery = itemEventsQuery.gte('createdAt', dateFrom);
+      }
+      if (dateTo) {
+        itemEventsQuery = itemEventsQuery.lte('createdAt', dateTo);
+      }
+
+      const { data: itemEvents, error: itemEventsError } = await itemEventsQuery
+        .order('createdAt', { ascending: false });
+
+      if (itemEventsError) throw itemEventsError;
+
+      // Get sales order changes
+      let ordersQuery = supabase
+        .from('sales_orders')
+        .select('*')
+        .eq('store_id', profile?.store_id);
+
+      if (orderId) {
+        ordersQuery = ordersQuery.eq('id', orderId);
+      }
+      if (dateFrom) {
+        ordersQuery = ordersQuery.gte('created_at', dateFrom);
+      }
+      if (dateTo) {
+        ordersQuery = ordersQuery.lte('created_at', dateTo);
+      }
+
+      const { data: orders, error: ordersError } = await ordersQuery
+        .order('created_at', { ascending: false });
+
+      if (ordersError) throw ordersError;
+
+      const historyData = {
+        orders: orders || [],
+        itemEvents: itemEvents || [],
+        // TODO: Add audit logs when audit table is implemented
+        auditLogs: []
+      };
+
+      return json(historyData);
+    } catch (error) {
+      console.error('Error fetching history data:', error);
+      return json({ error: error.message }, 500);
+    }
+  }
+  
+  return null;
+}
+
 // Main request handler
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
@@ -899,6 +1094,15 @@ Deno.serve(async (req: Request) => {
 
     const returnsResponse = await handleReturns(req, pathname, searchParams);
     if (returnsResponse) return returnsResponse;
+
+    const dashboardResponse = await handleDashboard(req, pathname, searchParams);
+    if (dashboardResponse) return dashboardResponse;
+
+    const pivotResponse = await handlePivot(req, pathname, searchParams);
+    if (pivotResponse) return pivotResponse;
+
+    const historyResponse = await handleHistory(req, pathname, searchParams);
+    if (historyResponse) return historyResponse;
 
     // Not found
     return json({ error: "Endpoint not found", path: pathname }, 404);

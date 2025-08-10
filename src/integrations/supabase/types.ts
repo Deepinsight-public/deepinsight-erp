@@ -794,6 +794,13 @@ export type Database = {
             referencedRelation: "vw_sales_orders_list"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "repairs_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "vw_sales_summary"
+            referencedColumns: ["order_id"]
+          },
         ]
       }
       ReturnLine: {
@@ -1027,6 +1034,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_sales_orders_list"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_order_items_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "vw_sales_summary"
+            referencedColumns: ["order_id"]
           },
         ]
       }
@@ -1899,16 +1913,28 @@ export type Database = {
       }
       vw_sales_summary: {
         Row: {
-          avg_price_map_rate: number | null
-          customer_source: string | null
-          order_count: number | null
-          sale_date: string | null
+          accessory_fee: number | null
+          cashier_id: string | null
+          cashier_name: string | null
+          created_at: string | null
+          delivery_fee: number | null
+          items_total_amount: number | null
+          order_date: string | null
+          order_id: string | null
+          order_number: string | null
+          other_fee: number | null
+          price_map_ratio: number | null
+          product_type: string | null
+          source: string | null
           store_id: string | null
           store_name: string | null
+          total_cost: number | null
+          total_gross_profit: number | null
           total_map: number | null
-          total_profit: number | null
-          total_sales: number | null
-          total_warranty: number | null
+          total_quantity: number | null
+          transaction_amount: number | null
+          updated_at: string | null
+          warranty_amount: number | null
         }
         Relationships: [
           {
