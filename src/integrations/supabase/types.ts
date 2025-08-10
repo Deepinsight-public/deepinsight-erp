@@ -967,31 +967,43 @@ export type Database = {
         Row: {
           created_at: string
           discount_amount: number | null
+          gross_profit: number | null
           id: string
+          map_at_sale: number | null
+          price_map_rate: number | null
           product_id: string
           quantity: number
           sales_order_id: string
           total_amount: number
+          unit_cost_at_sale: number | null
           unit_price: number
         }
         Insert: {
           created_at?: string
           discount_amount?: number | null
+          gross_profit?: number | null
           id?: string
+          map_at_sale?: number | null
+          price_map_rate?: number | null
           product_id: string
           quantity: number
           sales_order_id: string
           total_amount: number
+          unit_cost_at_sale?: number | null
           unit_price: number
         }
         Update: {
           created_at?: string
           discount_amount?: number | null
+          gross_profit?: number | null
           id?: string
+          map_at_sale?: number | null
+          price_map_rate?: number | null
           product_id?: string
           quantity?: number
           sales_order_id?: string
           total_amount?: number
+          unit_cost_at_sale?: number | null
           unit_price?: number
         }
         Relationships: [

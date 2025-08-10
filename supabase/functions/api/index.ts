@@ -106,6 +106,31 @@ const purchaseRequestSchema = z.object({
   })).min(1)
 });
 
+const transferOrderSchema = z.object({
+  toStoreId: z.string().uuid(),
+  reason: z.string().optional(),
+  items: z.array(z.object({
+    itemId: z.string().uuid(),
+    epc: z.string()
+  })).min(1)
+});
+
+const returnOrderSchema = z.object({
+  originalOrderId: z.string().uuid(),
+  isCustomerReturn: z.boolean().optional().default(false),
+  returnWHId: z.string().uuid().optional(),
+  lines: z.array(z.object({
+    originalLineId: z.string().uuid(),
+    itemId: z.string().uuid(),
+    reason: z.string()
+  })).min(1)
+});
+
+const scanEpcSchema = z.object({
+  epc: z.string(),
+  action: z.string()
+});
+
 // Route handlers
 async function handleAuth(req: Request, pathname: string) {
   const supabase = getSupabaseClient(req);
@@ -426,12 +451,194 @@ async function handlePurchaseRequests(req: Request, pathname: string, searchPara
   return null;
 }
 
+async function handleTransfers(req: Request, pathname: string, searchParams: URLSearchParams) {
+  const supabase = getSupabaseClient(req);
+  const userContext = await getUserContext(req);
+  if (!userContext) return json({ error: "Unauthorized" }, 401);
+  
+  const { profile, user } = userContext;
+  
+  // GET /api/store/inventory/transfer-in
+  if (req.method === "GET" && pathname === "/api/store/inventory/transfer-in") {
+    let query = supabase.from("TransferOrder").select("*, TransferLine(*)").eq("toStoreId", profile?.store_id || '');
+    
+    const { data, error } = await query.order("createdAt", { ascending: false });
+    if (error) return json({ error: error.message }, 500);
+    
+    return json(data ?? []);
+  }
+  
+  // GET /api/store/inventory/transfer-out  
+  if (req.method === "GET" && pathname === "/api/store/inventory/transfer-out") {
+    let query = supabase.from("TransferOrder").select("*, TransferLine(*)").eq("fromStoreId", profile?.store_id || '');
+    
+    const { data, error } = await query.order("createdAt", { ascending: false });
+    if (error) return json({ error: error.message }, 500);
+    
+    return json(data ?? []);
+  }
+  
+  // POST /api/store/inventory/transfer-out
+  if (req.method === "POST" && pathname === "/api/store/inventory/transfer-out") {
+    const payload = await req.json().catch(() => null);
+    const parsed = transferOrderSchema.safeParse(payload);
+    if (!parsed.success) return json({ error: "Validation failed", details: parsed.error.flatten() }, 400);
+    
+    const input = parsed.data;
+    
+    // Determine transfer kind
+    const toStoreType = await supabase.from("stores").select("store_code").eq("id", input.toStoreId).single();
+    let kind = 'STORE_TO_STORE';
+    if (toStoreType.data?.store_code?.startsWith('HQ')) {
+      kind = 'STORE_TO_HQ';
+    }
+    
+    const transferData = {
+      docNo: `TF-${Date.now()}`,
+      kind,
+      fromStoreId: profile?.store_id || '',
+      toStoreId: input.toStoreId,
+      reason: input.reason || null,
+      status: 'DRAFT',
+      createdById: user.id
+    };
+    
+    const { data: transfer, error } = await supabase.from("TransferOrder").insert(transferData).select("*").single();
+    if (error) return json({ error: error.message }, 400);
+    
+    // Add transfer lines
+    const lines = input.items.map(item => ({
+      orderId: (transfer as any).id,
+      itemId: item.itemId
+    }));
+    
+    const { error: linesError } = await supabase.from("TransferLine").insert(lines);
+    if (linesError) return json({ error: linesError.message }, 400);
+    
+    return json(transfer, 201);
+  }
+  
+  // POST /api/store/transfers/:id/ship
+  if (req.method === "POST" && pathname.match(/^\/api\/store\/transfers\/[^\/]+\/ship$/)) {
+    const transferId = pathname.split('/')[4];
+    
+    // Update transfer status
+    const { error: updateError } = await supabase
+      .from("TransferOrder")
+      .update({ status: 'SHIPPED' })
+      .eq("id", transferId);
+    
+    if (updateError) return json({ error: updateError.message }, 400);
+    
+    // Update item statuses and create scan logs
+    const { data: lines } = await supabase
+      .from("TransferLine")
+      .select("itemId, Item(*)")
+      .eq("orderId", transferId);
+    
+    for (const line of lines || []) {
+      // Update item status
+      await supabase
+        .from("Item")
+        .update({ status: 'in_transit' })
+        .eq("id", line.itemId);
+      
+      // Create scan log
+      await supabase.from("ScanLog").insert({
+        itemId: line.itemId,
+        epc: (line as any).Item.epc,
+        action: 'TRANSFER_SHIP',
+        storeId: profile?.store_id,
+        docType: 'TRANSFER',
+        docId: transferId,
+        createdById: user.id
+      });
+      
+      // Create item event
+      await supabase.from("ItemEvent").insert({
+        itemId: line.itemId,
+        type: 'TRANSFER_SHIPPED',
+        docType: 'TRANSFER',
+        docId: transferId,
+        storeId: profile?.store_id,
+        payload: { transferId, action: 'shipped' },
+        createdById: user.id
+      });
+    }
+    
+    return json({ success: true });
+  }
+  
+  // POST /api/store/transfers/:id/receive
+  if (req.method === "POST" && pathname.match(/^\/api\/store\/transfers\/[^\/]+\/receive$/)) {
+    const transferId = pathname.split('/')[4];
+    
+    // Get transfer info
+    const { data: transfer } = await supabase
+      .from("TransferOrder")
+      .select("*")
+      .eq("id", transferId)
+      .single();
+    
+    if (!transfer) return json({ error: "Transfer not found" }, 404);
+    
+    // Update transfer status
+    await supabase
+      .from("TransferOrder")
+      .update({ status: 'RECEIVED' })
+      .eq("id", transferId);
+    
+    // Update items and create tracking
+    const { data: lines } = await supabase
+      .from("TransferLine")
+      .select("itemId, Item(*)")
+      .eq("orderId", transferId);
+    
+    for (const line of lines || []) {
+      // Update item location and status
+      await supabase
+        .from("Item")
+        .update({ 
+          status: 'in_stock',
+          currentStoreId: (transfer as any).toStoreId
+        })
+        .eq("id", line.itemId);
+      
+      // Create scan log
+      await supabase.from("ScanLog").insert({
+        itemId: line.itemId,
+        epc: (line as any).Item.epc,
+        action: 'TRANSFER_RECEIVE',
+        storeId: (transfer as any).toStoreId,
+        docType: 'TRANSFER',
+        docId: transferId,
+        createdById: user.id
+      });
+      
+      // Create item event
+      await supabase.from("ItemEvent").insert({
+        itemId: line.itemId,
+        type: 'TRANSFER_RECEIVED',
+        docType: 'TRANSFER',
+        docId: transferId,
+        storeId: (transfer as any).toStoreId,
+        payload: { transferId, action: 'received' },
+        createdById: user.id
+      });
+    }
+    
+    return json({ success: true });
+  }
+  
+  return null;
+}
+
 async function handleReturns(req: Request, pathname: string, searchParams: URLSearchParams) {
   const supabase = getSupabaseClient(req);
   const userContext = await getUserContext(req);
   if (!userContext) return json({ error: "Unauthorized" }, 401);
   
-  const { profile } = userContext;
+  const { profile, user } = userContext;
   
   // GET /api/store/after-sales/returns
   if (req.method === "GET" && pathname === "/api/store/after-sales/returns") {
@@ -464,6 +671,142 @@ async function handleReturns(req: Request, pathname: string, searchParams: URLSe
     if (error) return json({ error: error.message }, 500);
     
     return json(data ?? []);
+  }
+  
+  // GET /api/store/after-sales/returns/:id
+  if (req.method === "GET" && pathname.match(/^\/api\/store\/after-sales\/returns\/[^\/]+$/)) {
+    const returnId = pathname.split('/').pop();
+    
+    const { data: returnOrder, error } = await supabase
+      .from("ReturnOrder")
+      .select(`
+        *,
+        ReturnLine (
+          *,
+          Item (*)
+        )
+      `)
+      .eq("id", returnId)
+      .single();
+      
+    if (error) return json({ error: "Return not found" }, 404);
+    
+    return json(returnOrder);
+  }
+  
+  // POST /api/store/after-sales/returns
+  if (req.method === "POST" && pathname === "/api/store/after-sales/returns") {
+    const payload = await req.json().catch(() => null);
+    const parsed = returnOrderSchema.safeParse(payload);
+    if (!parsed.success) return json({ error: "Validation failed", details: parsed.error.flatten() }, 400);
+    
+    const input = parsed.data;
+    
+    const returnData = {
+      docNo: `RET-${Date.now()}`,
+      storeId: profile?.store_id || '',
+      originalOrderId: input.originalOrderId,
+      isCustomerReturn: input.isCustomerReturn,
+      returnWHId: input.returnWHId || null,
+      status: 'DRAFT',
+      refundMode: 'ADJUSTED_PRICE',
+      createdById: user.id
+    };
+    
+    const { data: returnOrder, error } = await supabase.from("ReturnOrder").insert(returnData).select("*").single();
+    if (error) return json({ error: error.message }, 400);
+    
+    // Add return lines
+    const lines = input.lines.map(line => ({
+      orderId: (returnOrder as any).id,
+      originalLineId: line.originalLineId,
+      itemId: line.itemId,
+      reason: line.reason,
+      restockStatus: 'PENDING'
+    }));
+    
+    const { error: linesError } = await supabase.from("ReturnLine").insert(lines);
+    if (linesError) return json({ error: linesError.message }, 400);
+    
+    return json(returnOrder, 201);
+  }
+  
+  // POST /api/store/after-sales/returns/:id/receive
+  if (req.method === "POST" && pathname.match(/^\/api\/store\/after-sales\/returns\/[^\/]+\/receive$/)) {
+    const returnId = pathname.split('/')[5];
+    
+    const { error } = await supabase
+      .from("ReturnOrder")
+      .update({ 
+        status: 'RECEIVED',
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", returnId);
+    
+    if (error) return json({ error: error.message }, 400);
+    
+    // Update return lines to received status but keep PENDING restock status
+    await supabase
+      .from("ReturnLine")
+      .update({ 
+        receivedById: user.id,
+        receivedOn: new Date().toISOString()
+      })
+      .eq("orderId", returnId);
+    
+    return json({ success: true });
+  }
+  
+  // POST /api/store/after-sales/returns/:id/restock-line/:lineId
+  if (req.method === "POST" && pathname.match(/^\/api\/store\/after-sales\/returns\/[^\/]+\/restock-line\/[^\/]+$/)) {
+    const pathParts = pathname.split('/');
+    const returnId = pathParts[5];
+    const lineId = pathParts[7];
+    
+    const payload = await req.json().catch(() => null);
+    const parsed = scanEpcSchema.safeParse(payload);
+    if (!parsed.success) return json({ error: "Invalid EPC scan data" }, 400);
+    
+    const { epc } = parsed.data;
+    
+    // Verify EPC matches the item in the return line
+    const { data: returnLine } = await supabase
+      .from("ReturnLine")
+      .select("*, Item(*)")
+      .eq("id", lineId)
+      .eq("orderId", returnId)
+      .single();
+    
+    if (!returnLine) return json({ error: "Return line not found" }, 404);
+    
+    if ((returnLine as any).Item.epc !== epc) {
+      return json({ error: "EPC does not match item in return" }, 400);
+    }
+    
+    // Update return line to IN_STOCK (trigger will handle item update)
+    const { error } = await supabase
+      .from("ReturnLine")
+      .update({
+        restockStatus: 'IN_STOCK',
+        restockedOn: new Date().toISOString(),
+        restockedById: user.id
+      })
+      .eq("id", lineId);
+    
+    if (error) return json({ error: error.message }, 400);
+    
+    // Create scan log
+    await supabase.from("ScanLog").insert({
+      itemId: (returnLine as any).itemId,
+      epc,
+      action: 'RETURN_RESTOCK',
+      storeId: profile?.store_id,
+      docType: 'RETURN',
+      docId: returnId,
+      createdById: user.id
+    });
+    
+    return json({ success: true, message: "Item restocked successfully" });
   }
   
   return null;
@@ -550,6 +893,9 @@ Deno.serve(async (req: Request) => {
 
     const purchaseRequestsResponse = await handlePurchaseRequests(req, pathname, searchParams);
     if (purchaseRequestsResponse) return purchaseRequestsResponse;
+
+    const transfersResponse = await handleTransfers(req, pathname, searchParams);
+    if (transfersResponse) return transfersResponse;
 
     const returnsResponse = await handleReturns(req, pathname, searchParams);
     if (returnsResponse) return returnsResponse;
