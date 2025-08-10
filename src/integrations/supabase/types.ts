@@ -833,13 +833,6 @@ export type Database = {
             referencedRelation: "vw_sales_orders_list"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "repairs_sales_order_id_fkey"
-            columns: ["sales_order_id"]
-            isOneToOne: false
-            referencedRelation: "vw_sales_summary"
-            referencedColumns: ["order_id"]
-          },
         ]
       }
       ReturnLine: {
@@ -1073,13 +1066,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_sales_orders_list"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "sales_order_items_sales_order_id_fkey"
-            columns: ["sales_order_id"]
-            isOneToOne: false
-            referencedRelation: "vw_sales_summary"
-            referencedColumns: ["order_id"]
           },
         ]
       }
@@ -1888,22 +1874,39 @@ export type Database = {
     Views: {
       vw_inventory: {
         Row: {
+          barcode: string | null
           brand: string | null
+          category: string | null
+          cost: number | null
           created_at: string | null
-          epc: string | null
-          grade_label: string | null
+          description: string | null
           id: string | null
+          is_active: boolean | null
           kw_code: string | null
-          load_date: string | null
+          last_counted_at: string | null
           map_price: number | null
+          max_stock: number | null
           model: string | null
-          serial_no: string | null
+          price: number | null
+          product_id: string | null
+          product_name: string | null
+          quantity: number | null
+          reorder_point: number | null
+          reserved_quantity: number | null
           sku: string | null
-          status: string | null
+          store_code: string | null
           store_id: string | null
+          store_name: string | null
           updated_at: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "inventory_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "inventory_store_id_fkey"
             columns: ["store_id"]
@@ -1916,62 +1919,65 @@ export type Database = {
       vw_returns_unified: {
         Row: {
           created_at: string | null
-          customer_first_name: string | null
-          customer_last_name: string | null
+          customer_id: string | null
+          customer_name: string | null
           id: string | null
           is_customer_return: boolean | null
-          original_order_id: string | null
-          return_category: string | null
+          items: Json | null
+          number_of_items: number | null
+          order_id: string | null
+          reason: string | null
+          refund_amount: number | null
           return_number: string | null
           return_type: string | null
-          return_wh_id: string | null
           status: string | null
           store_id: string | null
-          store_name: string | null
+          total_map: number | null
           updated_at: string | null
+          warehouse_id: string | null
         }
         Relationships: []
       }
       vw_sales_orders_list: {
         Row: {
-          accessory_fee: number | null
+          accessory: string | null
+          addr_city: string | null
+          addr_country: string | null
+          addr_state: string | null
+          addr_street: string | null
+          addr_zipcode: string | null
           avg_price_map_rate: number | null
-          cashier_first_name: string | null
-          cashier_last_name: string | null
+          cashier_id: string | null
           created_at: string | null
+          created_by: string | null
+          customer_address: string | null
+          customer_company: string | null
           customer_email: string | null
           customer_first: string | null
-          customer_first_name: string | null
-          customer_id: string | null
           customer_last: string | null
-          customer_last_name: string | null
+          customer_name: string | null
           customer_phone: string | null
           customer_source: string | null
-          delivery_date: string | null
-          delivery_fee: number | null
-          deposit: number | null
-          has_extended_warranty: number | null
+          discount_amount: number | null
+          has_extended_warranty: boolean | null
           id: string | null
           order_date: string | null
           order_number: string | null
-          order_type: string | null
           other_fee: number | null
-          payment_amount1: number | null
-          payment_amount2: number | null
-          payment_amount3: number | null
-          payment_method1: string | null
-          payment_method2: string | null
-          payment_method3: string | null
+          other_services: string | null
+          payment_method: string | null
+          payment_note: string | null
           status: string | null
+          store_code: string | null
           store_id: string | null
           store_name: string | null
-          tax_rate: number | null
+          tax_amount: number | null
           total_amount: number | null
           total_gross_profit: number | null
-          total_map: number | null
           updated_at: string | null
           walk_in_delivery: string | null
           warranty_amount: number | null
+          warranty_years: number | null
         }
         Relationships: [
           {
@@ -1985,28 +1991,20 @@ export type Database = {
       }
       vw_sales_summary: {
         Row: {
-          accessory_fee: number | null
-          cashier_id: string | null
-          cashier_name: string | null
-          created_at: string | null
-          delivery_fee: number | null
-          items_total_amount: number | null
-          order_date: string | null
-          order_id: string | null
-          order_number: string | null
-          other_fee: number | null
-          price_map_ratio: number | null
-          product_type: string | null
-          source: string | null
+          avg_order_value: number | null
+          customer_source: string | null
+          extended_warranty_count: number | null
+          order_count: number | null
+          sales_date: string | null
+          status: string | null
+          store_code: string | null
           store_id: string | null
           store_name: string | null
-          total_cost: number | null
+          total_discount: number | null
           total_gross_profit: number | null
-          total_map: number | null
-          total_quantity: number | null
-          transaction_amount: number | null
-          updated_at: string | null
-          warranty_amount: number | null
+          total_sales: number | null
+          total_tax: number | null
+          total_warranty_amount: number | null
         }
         Relationships: [
           {

@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+// Deno compatible imports will be injected at runtime
 import { 
   Customer, 
   CustomerCreate, 
@@ -8,15 +8,24 @@ import {
   PaginationOptions,
   ApiError,
   ErrorCodes 
-} from '@erp/shared';
+} from '/packages/shared/src/index.ts';
 
 export class CustomersService {
-  private supabase: SupabaseClient;
+  private supabaseUrl: string;
+  private supabaseKey: string;
+  private authToken?: string;
 
   constructor(supabaseUrl: string, supabaseKey: string, authToken?: string) {
-    this.supabase = createClient(supabaseUrl, supabaseKey, {
+    this.supabaseUrl = supabaseUrl;
+    this.supabaseKey = supabaseKey;
+    this.authToken = authToken;
+  }
+
+  private getClient() {
+    const createClient = (globalThis as any).createClient;
+    return createClient(this.supabaseUrl, this.supabaseKey, {
       global: {
-        headers: authToken ? { Authorization: authToken } : {}
+        headers: this.authToken ? { Authorization: this.authToken } : {}
       }
     });
   }
@@ -29,7 +38,9 @@ export class CustomersService {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    let query = this.supabase
+    const supabase = this.getClient();
+    
+    let query = supabase
       .from("customers")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false });
@@ -59,7 +70,9 @@ export class CustomersService {
   }
 
   async getCustomer(customerId: string, userContext: UserContext): Promise<Customer> {
-    const { data, error } = await this.supabase
+    const supabase = this.getClient();
+    
+    const { data, error } = await supabase
       .from("customers")
       .select("*")
       .eq("id", customerId)
@@ -84,7 +97,9 @@ export class CustomersService {
       created_by: userContext.userId,
     };
 
-    const { data, error } = await this.supabase
+    const supabase = this.getClient();
+    
+    const { data, error } = await supabase
       .from("customers")
       .insert(dbCustomerData)
       .select("*")
@@ -104,17 +119,19 @@ export class CustomersService {
     // Verify customer belongs to user's store
     await this.getCustomer(customerId, userContext);
 
+    const supabase = this.getClient();
+    
     // Get customer's sales orders, returns, and repairs
     const [ordersRes, returnsRes, repairsRes] = await Promise.all([
-      this.supabase
+      supabase
         .from("sales_orders")
         .select("id, order_number, order_date, total_amount, status")
         .eq("customer_id", customerId),
-      this.supabase
+      supabase
         .from("returns")
         .select("id, return_number, return_date, total_amount, status")
         .eq("customer_id", customerId),
-      this.supabase
+      supabase
         .from("repairs")
         .select("id, repair_number, created_at, status, estimated_cost")
         .eq("customer_id", customerId)
@@ -148,18 +165,18 @@ export class CustomersService {
   private mapDatabaseToResponse(dbCustomer: any): Customer {
     return {
       id: dbCustomer.id,
-      customerCode: dbCustomer.customer_code,
+      customerCode: dbCustomer.customer_code || `CUST-${dbCustomer.id}`,
       name: dbCustomer.name,
-      email: dbCustomer.email,
-      phone: dbCustomer.phone,
-      address: dbCustomer.address,
-      city: dbCustomer.city,
-      state: dbCustomer.state,
-      zipcode: dbCustomer.zipcode,
-      country: dbCustomer.country,
-      status: dbCustomer.status,
-      totalOrders: dbCustomer.total_orders || 0,
-      totalSpent: dbCustomer.total_spent || 0,
+      email: dbCustomer.email || '',
+      phone: dbCustomer.phone || '',
+      address: dbCustomer.address || '',
+      city: '', // Not in DB schema, computed or left empty
+      state: '', // Not in DB schema, computed or left empty  
+      zipcode: '', // Not in DB schema, computed or left empty
+      country: '', // Not in DB schema, computed or left empty
+      status: dbCustomer.status || 'active',
+      totalOrders: 0, // Computed field
+      totalSpent: 0, // Computed field
       storeId: dbCustomer.store_id,
       createdAt: dbCustomer.created_at,
       updatedAt: dbCustomer.updated_at,

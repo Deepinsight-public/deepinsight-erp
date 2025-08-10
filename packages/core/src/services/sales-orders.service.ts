@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+// Deno compatible imports will be injected at runtime
 import { 
   SalesOrderCreate, 
   SalesOrderResponse, 
@@ -7,15 +7,24 @@ import {
   PaginationOptions,
   ApiError,
   ErrorCodes 
-} from '@erp/shared';
+} from '/packages/shared/src/index.ts';
 
 export class SalesOrdersService {
-  private supabase: SupabaseClient;
+  private supabaseUrl: string;
+  private supabaseKey: string;
+  private authToken?: string;
 
   constructor(supabaseUrl: string, supabaseKey: string, authToken?: string) {
-    this.supabase = createClient(supabaseUrl, supabaseKey, {
+    this.supabaseUrl = supabaseUrl;
+    this.supabaseKey = supabaseKey;
+    this.authToken = authToken;
+  }
+
+  private getClient() {
+    const createClient = (globalThis as any).createClient;
+    return createClient(this.supabaseUrl, this.supabaseKey, {
       global: {
-        headers: authToken ? { Authorization: authToken } : {}
+        headers: this.authToken ? { Authorization: this.authToken } : {}
       }
     });
   }
@@ -29,7 +38,9 @@ export class SalesOrdersService {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    let query = this.supabase
+    const supabase = this.getClient();
+    
+    let query = supabase
       .from("vw_sales_orders_list")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false });
@@ -67,7 +78,9 @@ export class SalesOrdersService {
     userContext: UserContext,
     canSeeCosts: boolean
   ): Promise<SalesOrderResponse> {
-    const { data: order, error } = await this.supabase
+    const supabase = this.getClient();
+    
+    const { data: order, error } = await supabase
       .from("vw_sales_orders_list")
       .select("*")
       .eq("id", orderId)
@@ -78,7 +91,7 @@ export class SalesOrdersService {
     }
 
     // Get order lines
-    const { data: lines } = await this.supabase
+    const { data: lines } = await supabase
       .from("sales_order_items")
       .select(`
         *,
@@ -166,9 +179,11 @@ export class SalesOrdersService {
       };
     });
 
+    const supabase = this.getClient();
+    
     // Use stock deduction function for submitted orders
     if (orderData.status === "submitted") {
-      const { data, error } = await this.supabase.rpc(
+      const { data, error } = await supabase.rpc(
         "create_sales_order_with_stock_deduction",
         { 
           order_data: dbOrderData, 
@@ -184,7 +199,7 @@ export class SalesOrdersService {
     }
 
     // Simple insert for draft orders
-    const { data: order, error } = await this.supabase
+    const { data: order, error } = await supabase
       .from("sales_orders")
       .insert(dbOrderData)
       .select("*")
@@ -199,7 +214,7 @@ export class SalesOrdersService {
       sales_order_id: (order as any).id
     }));
 
-    const { error: itemErr } = await this.supabase
+    const { error: itemErr } = await supabase
       .from("sales_order_items")
       .insert(items);
 

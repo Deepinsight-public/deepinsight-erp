@@ -1,11 +1,12 @@
 import { Hono } from "https://deno.land/x/hono@v4.0.10/mod.ts";
 import { cors } from "https://deno.land/x/hono@v4.0.10/middleware.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { 
   AuthService, 
   SalesOrdersService, 
   CustomersService 
-} from "/packages/core/src/index.ts";
+} from "../../../packages/core/src/index.ts";
 import {
   loginSchema,
   salesOrderCreateSchema,
@@ -16,7 +17,7 @@ import {
   createValidationError,
   createUnauthorizedError,
   createInternalError
-} from "/packages/shared/src/index.ts";
+} from "../../../packages/shared/src/index.ts";
 
 const app = new Hono();
 
@@ -30,6 +31,10 @@ app.use("*", cors({
 // Environment variables
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+// Inject Supabase client for the services
+globalThis.createClient = createClient;
+globalThis.SupabaseClient = Object;
 
 // Initialize services
 const getAuthToken = (c: any) => c.req.header("Authorization") || "";

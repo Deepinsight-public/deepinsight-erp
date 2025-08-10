@@ -27,3 +27,13 @@ export interface ErrorDetails {
 }
 
 export type UserRole = 'store_employee' | 'store_manager' | 'hq_admin';
+
+export interface HealthCheck {
+  status: string;
+  timestamp: string;
+  version: string;
+  services: {
+    database: string;
+    auth: string;
+  };
+}

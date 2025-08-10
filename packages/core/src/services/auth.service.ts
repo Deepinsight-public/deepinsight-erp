@@ -1,21 +1,31 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { LoginRequest, LoginResponse, UserContext, ApiError, ErrorCodes } from '@erp/shared';
+// Deno compatible imports will be injected at runtime
+import { LoginRequest, LoginResponse, UserContext, ApiError, ErrorCodes } from '/packages/shared/src/index.ts';
 
 export class AuthService {
-  private supabase: SupabaseClient;
+  private supabaseUrl: string;
+  private supabaseKey: string;
+  private authToken?: string;
 
   constructor(supabaseUrl: string, supabaseKey: string, authToken?: string) {
-    this.supabase = createClient(supabaseUrl, supabaseKey, {
+    this.supabaseUrl = supabaseUrl;
+    this.supabaseKey = supabaseKey;
+    this.authToken = authToken;
+  }
+
+  private getClient() {
+    const createClient = (globalThis as any).createClient;
+    return createClient(this.supabaseUrl, this.supabaseKey, {
       global: {
-        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
+        headers: this.authToken ? { Authorization: `Bearer ${this.authToken}` } : {}
       }
     });
   }
 
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     const { email, password } = credentials;
+    const supabase = this.getClient();
     
-    const { data, error } = await this.supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
@@ -25,7 +35,7 @@ export class AuthService {
     }
 
     // Get user profile
-    const { data: profile, error: profileError } = await this.supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role, store_id, full_name')
       .eq('user_id', data.user.id)
@@ -58,28 +68,26 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
-    const { error } = await this.supabase.auth.signOut();
+    const supabase = this.getClient();
+    const { error } = await supabase.auth.signOut();
     if (error) {
       throw new ApiError(ErrorCodes.DATABASE_ERROR, 500, error.message);
     }
   }
 
   async getUserContext(authToken: string): Promise<UserContext | null> {
-    // Update client with auth token
-    this.supabase = createClient(
-      this.supabase.supabaseUrl,
-      this.supabase.supabaseKey,
-      {
-        global: {
-          headers: { Authorization: authToken }
-        }
+    // Create client with auth token
+    const createClient = (globalThis as any).createClient;
+    const supabase = createClient(this.supabaseUrl, this.supabaseKey, {
+      global: {
+        headers: { Authorization: authToken }
       }
-    );
+    });
 
-    const { data: { user }, error } = await this.supabase.auth.getUser();
+    const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) return null;
 
-    const { data: profile } = await this.supabase
+    const { data: profile } = await supabase
       .from('profiles')
       .select('role, store_id, full_name')
       .eq('user_id', user.id)
