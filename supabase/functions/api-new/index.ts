@@ -579,7 +579,6 @@ app.get("/api/docs", (c) => {
           responses: {
             "200": { description: "List of customers" }
           }
-          }
         }
       },
       "/store/dashboard": {
