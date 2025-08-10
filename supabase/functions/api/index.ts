@@ -1,5 +1,5 @@
-import { Hono } from "https://deno.land/x/hono@v3.12.12/mod.ts";
-import { cors } from "https://deno.land/x/hono@v3.12.12/middleware/cors/index.ts";
+import { Hono } from "https://deno.land/x/hono@v4.4.8/mod.ts";
+import { cors } from "https://deno.land/x/hono@v4.4.8/middleware/cors/index.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.53.0";
 import { z } from "https://esm.sh/zod@3.23.8";
 
