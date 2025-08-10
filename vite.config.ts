@@ -12,7 +12,12 @@ export default defineConfig(({ mode }) => ({
       "/api/store": {
         target: "http://127.0.0.1:54321/functions/v1",
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api\/store/, "/api"),
+        rewrite: (p) => p.replace(/^\/api\/store/, "/api-new"),
+      },
+      "/api/docs": {
+        target: "http://127.0.0.1:54321/functions/v1",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api\/docs/, "/api-new/docs"),
       },
     },
   },

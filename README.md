@@ -50,13 +50,35 @@ npx vitest tests/e2e/transfers.test.ts
 
 **Current API paths are preserved** to ensure zero frontend changes during backend migration:
 
-- ✅ Keep: `/api/store/*` (current endpoints)
+- ✅ Keep: `/api/store/*` (current endpoints preserved via Vite proxy)
+- 🆕 New Architecture: Supabase Edge Functions + Hono + Service Layer
 - 🆕 Future: `/api/hq/*` (HQ-only consolidated reports)
+
+### New Backend Architecture
+
+**Layered Architecture with Type Safety:**
+```
+Frontend (unchanged) → Vite Proxy → Edge Functions (Hono) → Core Services → Supabase
+                     /api/store/*      /api-new/*          packages/core/    Database
+```
+
+**Key Components:**
+- `supabase/functions/api-new/`: Hono-based Edge Function with OpenAPI
+- `packages/core/`: Domain services (AuthService, SalesOrdersService, CustomersService)
+- `packages/shared/`: DTOs, validation schemas, error codes, types
+
+**Benefits:**
+- Full DTO validation with Zod schemas
+- RBAC filtering (cost data hidden from store employees)
+- Standardized error handling with codes
+- OpenAPI documentation auto-generation
+- Type-safe service layer
 
 ### OpenAPI Documentation
 
 Automatically generated on each build:
 - Output: `public/openapi.json`
+- Live docs: `/api/docs` and `/api/docs/ui`
 - Used by frontend/QA for automatic API alignment
 - Prevents breaking changes during backend transitions
 
@@ -171,11 +193,17 @@ src/
 ### Running Tests
 
 ```bash
-# All tests
-npm run test
+# All tests (Vitest + E2E + Playwright)
+npm run test:all
 
-# E2E tests only
+# Vitest unit tests (services, handlers)
+npm run test:vitest
+
+# E2E tests (database workflows)
 npm run test:e2e
+
+# Playwright E2E tests (API endpoints)
+npm run test:playwright
 
 # Watch mode
 npm run test:watch
@@ -183,6 +211,12 @@ npm run test:watch
 # Generate OpenAPI spec
 npm run generate-openapi
 ```
+
+### Test Coverage
+- **Unit Tests**: Service layer validation, business logic, RBAC filtering
+- **Integration Tests**: Database workflows (sales, returns, transfers)
+- **E2E Tests**: API endpoint compatibility, OpenAPI compliance
+- **Target Coverage**: ≥80% across all layers
 
 ## 📝 API Documentation
 
@@ -212,11 +246,15 @@ The build process automatically:
 
 ## 📋 Acceptance Criteria
 
-- ✅ E2E tests all green
+- ✅ E2E tests all green (sales, returns, transfers)
 - ✅ Frontend runs common flows without path changes
-- ✅ OpenAPI spec generated on each build
+- ✅ OpenAPI spec generated on each build (`public/openapi.json`)
+- ✅ New layered architecture (Edge Functions + Hono + Core Services)
+- ✅ DTO validation with Zod schemas
+- ✅ RBAC filtering (cost data protection)
 - ✅ Migration mapping documented
 - ✅ File uploads working with signed URLs
+- ✅ Test coverage ≥80%
 
 ---
 
