@@ -277,6 +277,105 @@ export type Database = {
           },
         ]
       }
+      Item: {
+        Row: {
+          a4lCode: string
+          createdAt: string | null
+          currentStoreId: string | null
+          delete: boolean | null
+          delete_by: string | null
+          delete_on: string | null
+          epc: string
+          gradeLabel: string | null
+          id: string
+          loadDate: string | null
+          productId: string
+          serialNo: string | null
+          status: string | null
+          updatedAt: string | null
+        }
+        Insert: {
+          a4lCode: string
+          createdAt?: string | null
+          currentStoreId?: string | null
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          epc: string
+          gradeLabel?: string | null
+          id?: string
+          loadDate?: string | null
+          productId: string
+          serialNo?: string | null
+          status?: string | null
+          updatedAt?: string | null
+        }
+        Update: {
+          a4lCode?: string
+          createdAt?: string | null
+          currentStoreId?: string | null
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          epc?: string
+          gradeLabel?: string | null
+          id?: string
+          loadDate?: string | null
+          productId?: string
+          serialNo?: string | null
+          status?: string | null
+          updatedAt?: string | null
+        }
+        Relationships: []
+      }
+      ItemEvent: {
+        Row: {
+          createdAt: string | null
+          createdById: string | null
+          delete: boolean | null
+          delete_by: string | null
+          delete_on: string | null
+          docId: string | null
+          docNo: string | null
+          docType: string | null
+          id: string
+          itemId: string
+          payload: Json | null
+          storeId: string | null
+          type: string
+        }
+        Insert: {
+          createdAt?: string | null
+          createdById?: string | null
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          docId?: string | null
+          docNo?: string | null
+          docType?: string | null
+          id?: string
+          itemId: string
+          payload?: Json | null
+          storeId?: string | null
+          type: string
+        }
+        Update: {
+          createdAt?: string | null
+          createdById?: string | null
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          docId?: string | null
+          docNo?: string | null
+          docType?: string | null
+          id?: string
+          itemId?: string
+          payload?: Json | null
+          storeId?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -545,6 +644,86 @@ export type Database = {
         }
         Relationships: []
       }
+      PurchaseRequest: {
+        Row: {
+          createdAt: string | null
+          delete: boolean | null
+          delete_by: string | null
+          delete_on: string | null
+          id: string
+          remarks: string | null
+          requesterId: string
+          status: string | null
+          storeId: string
+          updatedAt: string | null
+        }
+        Insert: {
+          createdAt?: string | null
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          id?: string
+          remarks?: string | null
+          requesterId: string
+          status?: string | null
+          storeId: string
+          updatedAt?: string | null
+        }
+        Update: {
+          createdAt?: string | null
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          id?: string
+          remarks?: string | null
+          requesterId?: string
+          status?: string | null
+          storeId?: string
+          updatedAt?: string | null
+        }
+        Relationships: []
+      }
+      PurchaseRequestLine: {
+        Row: {
+          createdAt: string | null
+          delete: boolean | null
+          delete_by: string | null
+          delete_on: string | null
+          id: string
+          productId: string
+          qty: number
+          requestId: string
+        }
+        Insert: {
+          createdAt?: string | null
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          id?: string
+          productId: string
+          qty: number
+          requestId: string
+        }
+        Update: {
+          createdAt?: string | null
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          id?: string
+          productId?: string
+          qty?: number
+          requestId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "PurchaseRequestLine_requestId_fkey"
+            columns: ["requestId"]
+            isOneToOne: false
+            referencedRelation: "PurchaseRequest"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       repairs: {
         Row: {
           cost: number | null
@@ -616,6 +795,122 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ReturnLine: {
+        Row: {
+          delete: boolean | null
+          delete_by: string | null
+          delete_on: string | null
+          hqApprovedById: string | null
+          hqApprovedOn: string | null
+          id: string
+          itemId: string
+          orderId: string
+          originalLineId: string
+          productBarcode: string | null
+          reason: string | null
+          receivedById: string | null
+          receivedOn: string | null
+          restockedById: string | null
+          restockedOn: string | null
+          restockStatus: string | null
+        }
+        Insert: {
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          hqApprovedById?: string | null
+          hqApprovedOn?: string | null
+          id?: string
+          itemId: string
+          orderId: string
+          originalLineId: string
+          productBarcode?: string | null
+          reason?: string | null
+          receivedById?: string | null
+          receivedOn?: string | null
+          restockedById?: string | null
+          restockedOn?: string | null
+          restockStatus?: string | null
+        }
+        Update: {
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          hqApprovedById?: string | null
+          hqApprovedOn?: string | null
+          id?: string
+          itemId?: string
+          orderId?: string
+          originalLineId?: string
+          productBarcode?: string | null
+          reason?: string | null
+          receivedById?: string | null
+          receivedOn?: string | null
+          restockedById?: string | null
+          restockedOn?: string | null
+          restockStatus?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ReturnLine_orderId_fkey"
+            columns: ["orderId"]
+            isOneToOne: false
+            referencedRelation: "ReturnOrder"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ReturnOrder: {
+        Row: {
+          createdAt: string | null
+          createdById: string | null
+          delete: boolean | null
+          delete_by: string | null
+          delete_on: string | null
+          docNo: string
+          id: string
+          isCustomerReturn: boolean | null
+          originalOrderId: string
+          refundMode: string | null
+          returnWHId: string | null
+          status: string | null
+          storeId: string
+          updatedAt: string | null
+        }
+        Insert: {
+          createdAt?: string | null
+          createdById?: string | null
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          docNo: string
+          id?: string
+          isCustomerReturn?: boolean | null
+          originalOrderId: string
+          refundMode?: string | null
+          returnWHId?: string | null
+          status?: string | null
+          storeId: string
+          updatedAt?: string | null
+        }
+        Update: {
+          createdAt?: string | null
+          createdById?: string | null
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          docNo?: string
+          id?: string
+          isCustomerReturn?: boolean | null
+          originalOrderId?: string
+          refundMode?: string | null
+          returnWHId?: string | null
+          status?: string | null
+          storeId?: string
+          updatedAt?: string | null
+        }
+        Relationships: []
       }
       returns: {
         Row: {
@@ -832,6 +1127,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ScanLog: {
+        Row: {
+          action: string
+          createdAt: string | null
+          createdById: string | null
+          delete: boolean | null
+          delete_by: string | null
+          delete_on: string | null
+          docId: string | null
+          docType: string | null
+          epc: string
+          id: string
+          itemId: string
+          storeId: string | null
+        }
+        Insert: {
+          action: string
+          createdAt?: string | null
+          createdById?: string | null
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          docId?: string | null
+          docType?: string | null
+          epc: string
+          id?: string
+          itemId: string
+          storeId?: string | null
+        }
+        Update: {
+          action?: string
+          createdAt?: string | null
+          createdById?: string | null
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          docId?: string | null
+          docType?: string | null
+          epc?: string
+          id?: string
+          itemId?: string
+          storeId?: string | null
+        }
+        Relationships: []
       }
       scrap_audit: {
         Row: {
@@ -1051,6 +1391,89 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      TransferLine: {
+        Row: {
+          delete: boolean | null
+          delete_by: string | null
+          delete_on: string | null
+          id: string
+          itemId: string
+          orderId: string
+        }
+        Insert: {
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          id?: string
+          itemId: string
+          orderId: string
+        }
+        Update: {
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          id?: string
+          itemId?: string
+          orderId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "TransferLine_orderId_fkey"
+            columns: ["orderId"]
+            isOneToOne: false
+            referencedRelation: "TransferOrder"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      TransferOrder: {
+        Row: {
+          createdAt: string | null
+          createdById: string | null
+          delete: boolean | null
+          delete_by: string | null
+          delete_on: string | null
+          docNo: string
+          fromStoreId: string
+          id: string
+          kind: string | null
+          reason: string | null
+          status: string | null
+          toStoreId: string
+          updatedAt: string | null
+        }
+        Insert: {
+          createdAt?: string | null
+          createdById?: string | null
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          docNo: string
+          fromStoreId: string
+          id?: string
+          kind?: string | null
+          reason?: string | null
+          status?: string | null
+          toStoreId: string
+          updatedAt?: string | null
+        }
+        Update: {
+          createdAt?: string | null
+          createdById?: string | null
+          delete?: boolean | null
+          delete_by?: string | null
+          delete_on?: string | null
+          docNo?: string
+          fromStoreId?: string
+          id?: string
+          kind?: string | null
+          reason?: string | null
+          status?: string | null
+          toStoreId?: string
+          updatedAt?: string | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
