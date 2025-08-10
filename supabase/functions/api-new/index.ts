@@ -659,6 +659,401 @@ app.post("/api/store/repairs", async (c) => {
   return c.json({ ...data, disclaimer }, 201);
 });
 
+// Transfer endpoints
+app.post("/api/store/inventory/transfer-out", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const body = await c.req.json();
+  const { kind, toStoreId, fromStoreId, reason, items } = body;
+
+  // Determine transfer kind based on store IDs
+  const transferKind = kind || (toStoreId === userContext.storeId ? 'HQ_TO_STORE' : 
+                               fromStoreId === userContext.storeId ? 'STORE_TO_HQ' : 
+                               'STORE_TO_STORE');
+
+  // Create transfer order
+  const docNo = `TXN-${Date.now()}`;
+  const { data: transfer, error } = await supabase
+    .from('TransferOrder')
+    .insert({
+      docNo,
+      kind: transferKind,
+      fromStoreId: fromStoreId || userContext.storeId,
+      toStoreId,
+      reason,
+      status: 'DRAFT',
+      createdById: userContext.userId
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Create transfer lines
+  if (items && items.length > 0) {
+    const transferLines = items.map((item: any) => ({
+      orderId: transfer.id,
+      itemId: item.itemId
+    }));
+
+    const { error: linesError } = await supabase
+      .from('TransferLine')
+      .insert(transferLines);
+
+    if (linesError) throw linesError;
+  }
+
+  return c.json({ ...transfer, lines: items }, 201);
+});
+
+app.get("/api/store/inventory/transfer-out", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const { data, error } = await supabase
+    .from('TransferOrder')
+    .select('*')
+    .eq('fromStoreId', userContext.storeId)
+    .order('createdAt', { ascending: false });
+
+  if (error) throw error;
+
+  return c.json(data);
+});
+
+app.get("/api/store/inventory/transfer-in", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const { data, error } = await supabase
+    .from('TransferOrder')
+    .select('*')
+    .eq('toStoreId', userContext.storeId)
+    .order('createdAt', { ascending: false });
+
+  if (error) throw error;
+
+  return c.json(data);
+});
+
+app.put("/api/store/transfers/:id/ship", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const transferId = c.req.param("id");
+  const body = await c.req.json();
+
+  // Update transfer status to SHIPPED
+  const { error } = await supabase
+    .from('TransferOrder')
+    .update({ status: 'SHIPPED' })
+    .eq('id', transferId);
+
+  if (error) throw error;
+
+  // Update item statuses to in_transit
+  const { data: transferLines } = await supabase
+    .from('TransferLine')
+    .select('itemId')
+    .eq('orderId', transferId);
+
+  if (transferLines) {
+    for (const line of transferLines) {
+      await supabase
+        .from('Item')
+        .update({ status: 'in_transit' })
+        .eq('id', line.itemId);
+
+      // Create ScanLog entry
+      await supabase
+        .from('ScanLog')
+        .insert({
+          itemId: line.itemId,
+          epc: `EPC-${line.itemId}`,
+          action: 'TRANSFER_SHIPPED',
+          docType: 'TRANSFER',
+          docId: transferId,
+          storeId: userContext.storeId,
+          createdById: userContext.userId
+        });
+    }
+  }
+
+  return c.json({ success: true, message: 'Transfer shipped successfully' });
+});
+
+app.put("/api/store/transfers/:id/receive", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const transferId = c.req.param("id");
+  const body = await c.req.json();
+  const { items } = body;
+
+  // Get transfer details
+  const { data: transfer } = await supabase
+    .from('TransferOrder')
+    .select('*')
+    .eq('id', transferId)
+    .single();
+
+  if (!transfer) throw createValidationError({ message: 'Transfer not found' });
+
+  // Update transfer status to RECEIVED
+  await supabase
+    .from('TransferOrder')
+    .update({ status: 'RECEIVED' })
+    .eq('id', transferId);
+
+  // Update items and create events
+  if (items) {
+    for (const item of items) {
+      // Update item location and status
+      await supabase
+        .from('Item')
+        .update({ 
+          currentStoreId: transfer.toStoreId,
+          status: 'in_stock'
+        })
+        .eq('id', item.itemId);
+
+      // Create ItemEvent
+      await supabase
+        .from('ItemEvent')
+        .insert({
+          itemId: item.itemId,
+          type: 'TRANSFER_RECEIVED',
+          docType: 'TRANSFER',
+          docId: transferId,
+          docNo: transfer.docNo,
+          storeId: transfer.toStoreId,
+          payload: {
+            condition: item.condition,
+            receivedOn: new Date().toISOString()
+          },
+          createdById: userContext.userId
+        });
+    }
+  }
+
+  return c.json({ success: true, message: 'Transfer received successfully' });
+});
+
+// After-sales returns endpoints
+app.post("/api/store/after-sales/returns", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const body = await c.req.json();
+  const { originalOrderId, isCustomerReturn, refundMode, returnWHId, lines } = body;
+
+  // Create return order
+  const docNo = `RET-${Date.now()}`;
+  const { data: returnOrder, error } = await supabase
+    .from('ReturnOrder')
+    .insert({
+      docNo,
+      originalOrderId,
+      isCustomerReturn: isCustomerReturn || false,
+      refundMode: refundMode || 'ADJUSTED_PRICE',
+      returnWHId,
+      storeId: userContext.storeId,
+      status: 'DRAFT',
+      createdById: userContext.userId
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Create return lines
+  const returnLines = [];
+  if (lines && lines.length > 0) {
+    for (const line of lines) {
+      const { data: returnLine, error: lineError } = await supabase
+        .from('ReturnLine')
+        .insert({
+          orderId: returnOrder.id,
+          originalLineId: line.originalLineId,
+          itemId: line.itemId,
+          productBarcode: line.productBarcode,
+          reason: line.reason,
+          restockStatus: 'PENDING'
+        })
+        .select()
+        .single();
+
+      if (lineError) throw lineError;
+      returnLines.push(returnLine);
+    }
+  }
+
+  return c.json({ ...returnOrder, lines: returnLines }, 201);
+});
+
+app.get("/api/store/after-sales/returns/:id", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const returnId = c.req.param("id");
+
+  const { data: returnOrder, error } = await supabase
+    .from('ReturnOrder')
+    .select(`
+      *,
+      lines:ReturnLine(*)
+    `)
+    .eq('id', returnId)
+    .single();
+
+  if (error) throw error;
+
+  return c.json(returnOrder);
+});
+
+app.put("/api/store/after-sales/returns/:id/receive", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const returnId = c.req.param("id");
+  const body = await c.req.json();
+
+  // Update all return lines to received status
+  const { error } = await supabase
+    .from('ReturnLine')
+    .update({
+      receivedById: userContext.userId,
+      receivedOn: new Date().toISOString()
+    })
+    .eq('orderId', returnId);
+
+  if (error) throw error;
+
+  return c.json({ success: true, message: 'Return received successfully' });
+});
+
+app.put("/api/store/after-sales/returns/:id/restock-line/:lineId", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const returnId = c.req.param("id");
+  const lineId = c.req.param("lineId");
+  const body = await c.req.json();
+  const { epc } = body;
+
+  // Get return line details
+  const { data: returnLine } = await supabase
+    .from('ReturnLine')
+    .select('*')
+    .eq('id', lineId)
+    .single();
+
+  if (!returnLine) throw createValidationError({ message: 'Return line not found' });
+
+  // Update return line to IN_STOCK
+  await supabase
+    .from('ReturnLine')
+    .update({
+      restockStatus: 'IN_STOCK',
+      restockedById: userContext.userId,
+      restockedOn: new Date().toISOString()
+    })
+    .eq('id', lineId);
+
+  // Update item status
+  await supabase
+    .from('Item')
+    .update({
+      status: 'in_stock',
+      currentStoreId: userContext.storeId
+    })
+    .eq('id', returnLine.itemId);
+
+  // Create ScanLog
+  await supabase
+    .from('ScanLog')
+    .insert({
+      itemId: returnLine.itemId,
+      epc: epc,
+      action: 'RETURN_RESTOCK',
+      docType: 'RETURN',
+      docId: returnId,
+      storeId: userContext.storeId,
+      createdById: userContext.userId
+    });
+
+  return c.json({ success: true, message: 'Item restocked successfully' });
+});
+
+// Inventory item endpoints
+app.get("/api/store/inventory/items/:id", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const itemId = c.req.param("id");
+
+  const { data, error } = await supabase
+    .from('Item')
+    .select('*')
+    .eq('id', itemId)
+    .single();
+
+  if (error) throw error;
+
+  return c.json(data);
+});
+
+app.get("/api/store/inventory/items/:id/events", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const itemId = c.req.param("id");
+
+  const { data, error } = await supabase
+    .from('ItemEvent')
+    .select('*')
+    .eq('itemId', itemId)
+    .order('createdAt', { ascending: false });
+
+  if (error) throw error;
+
+  return c.json(data);
+});
+
 // Storage utility endpoints
 app.post("/api/store/storage/upload", async (c) => {
   const userContext = await getUserContext(c);

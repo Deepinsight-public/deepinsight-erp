@@ -48,6 +48,45 @@ npx vitest tests/e2e/transfers.test.ts
 
 ### API Path Preservation
 
+**All existing API paths remain unchanged** to ensure zero-disruption migrations:
+
+- ✅ `/api/store/*` - All current store-level endpoints preserved
+- ✅ Field names and types unchanged in responses
+- ✅ Legacy frontend apps can continue without modifications
+
+### Future API Architecture
+
+For HQ-level consolidated reports and analytics:
+- 🔮 `/api/hq/*` - Future HQ-only endpoints (role-restricted)
+- 🔮 Advanced reporting and cross-store analytics
+- 🔮 System administration functions
+
+### OpenAPI Specification
+
+The API specification is automatically generated and saved on each build:
+
+```bash
+# Generate OpenAPI spec
+npm run generate-openapi
+
+# Outputs:
+# - public/openapi.json      # Full OpenAPI 3.0 specification
+# - public/api-summary.json  # Summary for frontend/QA teams
+```
+
+**For Frontend/QA Teams:**
+- OpenAPI spec available at `/openapi.json` in production
+- Use for API documentation, client generation, and contract testing
+- Summary endpoint lists all available endpoints and methods
+
+### Backward Compatibility Promise
+
+1. **No Breaking Changes**: Existing endpoints maintain identical signatures
+2. **Additive Only**: New fields are optional, old clients unaffected  
+3. **Graceful Evolution**: New features via optional parameters or new endpoints
+4. **Migration Period**: 6-month overlap for any future deprecations
+
+
 **Current API paths are preserved** to ensure zero frontend changes during backend migration:
 
 - ✅ Keep: `/api/store/*` (current endpoints preserved via Vite proxy)
