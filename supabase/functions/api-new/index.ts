@@ -31,6 +31,35 @@ app.use("*", cors({
 // Environment variables
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// Storage utilities
+const getSupabaseAdmin = () => createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+async function uploadToStorage(bucket: string, path: string, file: File | Uint8Array, contentType?: string) {
+  const supabaseAdmin = getSupabaseAdmin();
+  
+  const { data, error } = await supabaseAdmin.storage
+    .from(bucket)
+    .upload(path, file, {
+      contentType: contentType || 'application/octet-stream',
+      upsert: true
+    });
+
+  if (error) throw error;
+  return data;
+}
+
+async function getSignedUrl(bucket: string, path: string, expiresIn: number = 604800) { // 7 days default
+  const supabaseAdmin = getSupabaseAdmin();
+  
+  const { data, error } = await supabaseAdmin.storage
+    .from(bucket)
+    .createSignedUrl(path, expiresIn);
+
+  if (error) throw error;
+  return data.signedUrl;
+}
 
 // Inject Supabase client for the services
 globalThis.createClient = createClient;
@@ -451,6 +480,236 @@ app.get("/api/store/sales-orders/history", async (c) => {
     history,
     filters: { orderId, fromDate, toDate },
     total: history.length
+  });
+});
+
+// Scrap endpoints
+app.post("/api/store/scrap", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const body = await c.req.json();
+  const { items, photoFiles, ...headerData } = body;
+
+  // Upload photos if provided
+  let photoUrls: string[] = [];
+  if (photoFiles && photoFiles.length > 0) {
+    for (let i = 0; i < photoFiles.length; i++) {
+      const file = photoFiles[i];
+      const fileName = `${userContext.storeId}/${Date.now()}_${i}.jpg`;
+      
+      // Convert base64 to Uint8Array if needed
+      const fileData = typeof file === 'string' 
+        ? new Uint8Array(atob(file).split('').map(c => c.charCodeAt(0)))
+        : file;
+      
+      await uploadToStorage('scrap-photos', fileName, fileData, 'image/jpeg');
+      const signedUrl = await getSignedUrl('scrap-photos', fileName);
+      photoUrls.push(signedUrl);
+    }
+  }
+
+  // Create scrap header
+  const { data: scrapHeader, error } = await supabase
+    .from('scrap_headers')
+    .insert({
+      store_id: userContext.storeId,
+      warehouse_id: headerData.warehouseId,
+      scrap_no: `SCR-${Date.now()}`,
+      created_by: userContext.userId,
+      photo_urls: photoUrls,
+      status: 'draft'
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Create scrap lines
+  if (items && items.length > 0) {
+    const scrapLines = items.map((item: any) => ({
+      header_id: scrapHeader.id,
+      product_id: item.productId,
+      qty: item.quantity,
+      unit_cost: item.unitCost,
+      reason: item.reason,
+      batch_no: item.batchNo
+    }));
+
+    const { error: linesError } = await supabase
+      .from('scrap_lines')
+      .insert(scrapLines);
+
+    if (linesError) throw linesError;
+  }
+
+  return c.json(scrapHeader, 201);
+});
+
+// Logistics endpoints
+app.put("/api/store/logistics/lines/:id", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const lineId = c.req.param("id");
+  const body = await c.req.json();
+  const { proofFile, ...updateData } = body;
+
+  let proofUrl: string | null = null;
+
+  // Upload proof file if provided
+  if (proofFile) {
+    const fileName = `${userContext.storeId}/${lineId}_${Date.now()}.jpg`;
+    
+    // Convert base64 to Uint8Array if needed
+    const fileData = typeof proofFile === 'string' 
+      ? new Uint8Array(atob(proofFile).split('').map(c => c.charCodeAt(0)))
+      : proofFile;
+    
+    await uploadToStorage('delivery-proofs', fileName, fileData, 'image/jpeg');
+    proofUrl = await getSignedUrl('delivery-proofs', fileName);
+  }
+
+  // Update logistics line
+  const { data, error } = await supabase
+    .from('logistics_lines')
+    .update({
+      ...updateData,
+      proof_url: proofUrl || updateData.proofUrl,
+      delivered_by: userContext.userId,
+      delivered_at: new Date().toISOString()
+    })
+    .eq('id', lineId)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return c.json(data);
+});
+
+// Repairs endpoints
+app.post("/api/store/repairs", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const body = await c.req.json();
+  const { documentFile, ...repairData } = body;
+
+  let documentUrl: string | null = null;
+
+  // Upload document if provided
+  if (documentFile) {
+    const fileName = `${userContext.storeId}/${Date.now()}_repair_doc.pdf`;
+    
+    // Convert base64 to Uint8Array if needed
+    const fileData = typeof documentFile === 'string' 
+      ? new Uint8Array(atob(documentFile).split('').map(c => c.charCodeAt(0)))
+      : documentFile;
+    
+    await uploadToStorage('repair-docs', fileName, fileData, 'application/pdf');
+    documentUrl = await getSignedUrl('repair-docs', fileName);
+  }
+
+  // Get disclaimer from system settings
+  const { data: systemSetting } = await supabase
+    .from('system_settings')
+    .select('value')
+    .eq('key', 'repair_disclaimer')
+    .single();
+
+  const disclaimer = systemSetting?.value || "Standard repair disclaimer text";
+
+  // Generate repair ID
+  const repairId = `${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+
+  // Create repair record
+  const { data, error } = await supabase
+    .from('repairs')
+    .insert({
+      repair_id: repairId,
+      store_id: userContext.storeId,
+      product_id: repairData.productId,
+      customer_id: repairData.customerId,
+      customer_name: repairData.customerName,
+      sales_order_id: repairData.salesOrderId,
+      type: repairData.type,
+      description: repairData.description,
+      warranty_status: repairData.warrantyStatus,
+      warranty_expires_at: repairData.warrantyExpiresAt,
+      estimated_completion: repairData.estimatedCompletion,
+      cost: repairData.cost,
+      document_url: documentUrl,
+      status: 'pending'
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return c.json({ ...data, disclaimer }, 201);
+});
+
+// Storage utility endpoints
+app.post("/api/store/storage/upload", async (c) => {
+  const userContext = await getUserContext(c);
+  const formData = await c.req.formData();
+  
+  const file = formData.get('file') as File;
+  const bucket = formData.get('bucket') as string;
+  const path = formData.get('path') as string;
+
+  if (!file || !bucket || !path) {
+    throw createValidationError({ message: 'Missing required fields: file, bucket, path' });
+  }
+
+  // Validate bucket access
+  const allowedBuckets = ['scrap-photos', 'delivery-proofs', 'repair-docs'];
+  if (!allowedBuckets.includes(bucket)) {
+    throw createValidationError({ message: 'Invalid bucket name' });
+  }
+
+  const fileName = `${userContext.storeId}/${path}`;
+  const uploadResult = await uploadToStorage(bucket, fileName, file);
+  const signedUrl = await getSignedUrl(bucket, fileName);
+
+  return c.json({
+    path: uploadResult.path,
+    signedUrl,
+    expiresIn: 604800 // 7 days
+  });
+});
+
+app.get("/api/store/storage/signed-url", async (c) => {
+  const userContext = await getUserContext(c);
+  const bucket = c.req.query("bucket");
+  const path = c.req.query("path");
+
+  if (!bucket || !path) {
+    throw createValidationError({ message: 'Missing required query parameters: bucket, path' });
+  }
+
+  // Validate bucket access
+  const allowedBuckets = ['scrap-photos', 'delivery-proofs', 'repair-docs'];
+  if (!allowedBuckets.includes(bucket)) {
+    throw createValidationError({ message: 'Invalid bucket name' });
+  }
+
+  const fullPath = `${userContext.storeId}/${path}`;
+  const signedUrl = await getSignedUrl(bucket, fullPath);
+
+  return c.json({
+    signedUrl,
+    expiresIn: 604800 // 7 days
   });
 });
 
