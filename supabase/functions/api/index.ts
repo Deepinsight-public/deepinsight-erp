@@ -1,74 +1,95 @@
-import { Hono } from "https://deno.land/x/hono@v4.4.8/mod.ts";
-import { cors } from "https://deno.land/x/hono@v4.4.8/middleware/cors/index.ts";
+// Edge Function: api - Plain Deno router (no external router) to avoid import issues
+// Provides:
+// - GET  /api/store/healthz
+// - GET  /api/store/customers
+// - GET  /api/store/sales-orders
+// - POST /api/store/sales-orders
+// - GET  /api/docs and /api/docs.json
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.53.0";
 import { z } from "https://esm.sh/zod@3.23.8";
 
-const corsHeaders = {
+const corsHeaders: HeadersInit = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
 };
 
-function getSupabaseClient(req: Request) {
-  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-  const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error("Supabase environment not configured");
-  }
-  const authHeader = req.headers.get("Authorization") || "";
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    global: { headers: { Authorization: authHeader } },
+function json(body: unknown, status = 200, extraHeaders: HeadersInit = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...corsHeaders, ...extraHeaders },
   });
 }
 
-const app = new Hono();
+function html(body: string, status = 200) {
+  return new Response(body, { status, headers: { "Content-Type": "text/html; charset=utf-8", ...corsHeaders } });
+}
 
-// Global CORS
-app.use("*", cors());
+function getSupabaseClient(req: Request) {
+  const url = Deno.env.get("SUPABASE_URL");
+  const anon = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!url || !anon) throw new Error("Supabase env not configured");
+  const authHeader = req.headers.get("Authorization") || "";
+  return createClient(url, anon, { global: { headers: { Authorization: authHeader } } });
+}
 
-// Health check
-app.get("/api/store/healthz", (c) => {
-  return c.json({ ok: true }, 200, corsHeaders);
+function requireAuth(req: Request) {
+  const auth = req.headers.get("Authorization");
+  if (!auth || !auth.startsWith("Bearer ")) return false;
+  return true;
+}
+
+// Schemas for POST /sales-orders
+const lineSchema = z.object({
+  productId: z.string().uuid(),
+  sku: z.string(),
+  productName: z.string().optional(),
+  quantity: z.number().int().positive(),
+  unitPrice: z.number().nonnegative(),
+  discountPercent: z.number().min(0).max(100).optional().default(0),
+  subTotal: z.number().nonnegative(),
 });
 
-// Swagger UI and OpenAPI JSON
-app.get("/api/docs", (c) => {
-  const html = `<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Store API Docs</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css" />
-    <style>body { margin:0; }</style>
-  </head>
-  <body>
-    <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
-    <script>
-      window.ui = SwaggerUIBundle({
-        url: '/api/docs.json',
-        dom_id: '#swagger-ui',
-        presets: [SwaggerUIBundle.presets.apis],
-        layout: 'BaseLayout'
-      });
-    </script>
-  </body>
-</html>`;
-  return c.html(html, 200, corsHeaders);
+const orderSchema = z.object({
+  orderDate: z.string(),
+  orderType: z.enum(["retail", "wholesale"]).optional().default("retail"),
+  status: z.enum(["draft", "submitted", "pending", "confirmed", "shipped", "completed", "cancelled"]),
+  subTotal: z.number(),
+  discountAmount: z.number(),
+  taxAmount: z.number(),
+  totalAmount: z.number(),
+  lines: z.array(lineSchema).min(1),
+  customerId: z.string().uuid().optional(),
+  customerName: z.string().optional(),
+  customerEmail: z.string().optional(),
+  customerPhone: z.string().optional(),
+  customerFirst: z.string().optional(),
+  customerLast: z.string().optional(),
+  addrCountry: z.string().optional(),
+  addrState: z.string().optional(),
+  addrCity: z.string().optional(),
+  addrStreet: z.string().optional(),
+  addrZipcode: z.string().optional(),
+  warrantyYears: z.number().int().optional(),
+  warrantyAmount: z.number().optional(),
+  walkInDelivery: z.string().optional(),
+  accessory: z.string().optional(),
+  otherServices: z.string().optional(),
+  otherFee: z.number().optional(),
+  paymentMethod: z.string().optional(),
+  paymentNote: z.string().optional(),
+  customerSource: z.string().optional(),
+  cashierId: z.string().uuid().optional(),
 });
 
-app.get("/api/docs.json", (c) => {
-  const spec = {
+function openApiSpec() {
+  return {
     openapi: "3.0.3",
     info: { title: "Store API Compatibility Layer", version: "1.0.0" },
     servers: [{ url: "/api" }],
     paths: {
-      "/store/healthz": {
-        get: {
-          summary: "Health check",
-          responses: { "200": { description: "OK" } },
-        },
-      },
+      "/store/healthz": { get: { summary: "Health check", responses: { "200": { description: "OK" } } } },
       "/store/customers": {
         get: {
           summary: "List customers",
@@ -80,11 +101,7 @@ app.get("/api/docs.json", (c) => {
           responses: {
             "200": {
               description: "Array of customers",
-              content: {
-                "application/json": {
-                  schema: { type: "array", items: { $ref: "#/components/schemas/Customer" } },
-                },
-              },
+              content: { "application/json": { schema: { type: "array", items: { $ref: "#/components/schemas/Customer" } } } },
             },
           },
         },
@@ -100,25 +117,14 @@ app.get("/api/docs.json", (c) => {
           responses: {
             "200": {
               description: "Array of sales orders",
-              content: {
-                "application/json": {
-                  schema: { type: "array", items: { $ref: "#/components/schemas/SalesOrder" } },
-                },
-              },
+              content: { "application/json": { schema: { type: "array", items: { $ref: "#/components/schemas/SalesOrder" } } } },
             },
           },
         },
         post: {
           summary: "Create sales order",
-          requestBody: {
-            required: true,
-            content: {
-              "application/json": { schema: { $ref: "#/components/schemas/SalesOrderCreate" } },
-            },
-          },
-          responses: {
-            "201": { description: "Created", content: { "application/json": { schema: { $ref: "#/components/schemas/SalesOrder" } } } },
-          },
+          requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/SalesOrderCreate" } } } },
+          responses: { "201": { description: "Created", content: { "application/json": { schema: { $ref: "#/components/schemas/SalesOrder" } } } } },
         },
       },
     },
@@ -215,248 +221,219 @@ app.get("/api/docs.json", (c) => {
       },
     },
   } as const;
-  return c.json(spec, 200, { ...corsHeaders, "Content-Type": "application/json" });
-});
-
-// Auth guard (require Authorization header)
-function requireAuth(c: any) {
-  const auth = c.req.header("Authorization");
-  if (!auth || !auth.startsWith("Bearer ")) {
-    return c.json({ error: "Unauthorized" }, 401, corsHeaders);
-  }
 }
 
-// GET /customers
-app.get("/api/store/customers", async (c) => {
-  const unauthorized = requireAuth(c);
-  if (unauthorized) return unauthorized;
+Deno.serve(async (req: Request) => {
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const page = Number(c.req.query("page") ?? "1");
-  const limit = Number(c.req.query("limit") ?? "20");
-  const search = c.req.query("search") ?? "";
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
+  const url = new URL(req.url);
+  const { pathname, searchParams } = url;
 
-  const supabase = getSupabaseClient(c.req.raw);
-  let query = supabase.from("customers").select("*", { count: "exact" }).order("created_at", { ascending: false });
-  if (search) {
-    query = query.or(
-      `name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%,customer_code.ilike.%${search}%`,
-    );
-  }
-  const { data, error, count } = await query.range(from, to);
-  if (error) return c.json({ error: error.message }, 500, corsHeaders);
+  try {
+    // /api/docs and /api/docs.json
+    if (req.method === "GET" && pathname === "/api/docs") {
+      const htmlBody = `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Store API Docs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css" />
+    <style>body { margin:0; }</style>
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
+    <script>
+      window.ui = SwaggerUIBundle({ url: '/api/docs.json', dom_id: '#swagger-ui', presets: [SwaggerUIBundle.presets.apis], layout: 'BaseLayout' });
+    </script>
+  </body>
+</html>`;
+      return html(htmlBody, 200);
+    }
+    if (req.method === "GET" && pathname === "/api/docs.json") {
+      return json(openApiSpec(), 200);
+    }
 
-  // Return array for compatibility, with total via header
-  c.header("X-Total-Count", String(count ?? 0));
-  return c.json(data ?? [], 200, corsHeaders);
-});
+    // Healthz
+    if (req.method === "GET" && pathname === "/api/store/healthz") {
+      return json({ ok: true }, 200);
+    }
 
-// Schemas for POST /sales-orders
-const lineSchema = z.object({
-  productId: z.string().uuid(),
-  sku: z.string(),
-  productName: z.string().optional(),
-  quantity: z.number().int().positive(),
-  unitPrice: z.number().nonnegative(),
-  discountPercent: z.number().min(0).max(100).optional().default(0),
-  subTotal: z.number().nonnegative(),
-});
+    // Auth required below
+    const authed = requireAuth(req);
+    if (!authed && pathname.startsWith("/api/store/")) {
+      return json({ error: "Unauthorized" }, 401);
+    }
 
-const orderSchema = z.object({
-  orderDate: z.string(),
-  orderType: z.enum(["retail", "wholesale"]).optional().default("retail"),
-  status: z.enum(["draft", "submitted", "pending", "confirmed", "shipped", "completed", "cancelled"]),
-  subTotal: z.number(),
-  discountAmount: z.number(),
-  taxAmount: z.number(),
-  totalAmount: z.number(),
-  lines: z.array(lineSchema).min(1),
-  customerId: z.string().uuid().optional(),
-  customerName: z.string().optional(),
-  customerEmail: z.string().optional(),
-  customerPhone: z.string().optional(),
-  customerFirst: z.string().optional(),
-  customerLast: z.string().optional(),
-  addrCountry: z.string().optional(),
-  addrState: z.string().optional(),
-  addrCity: z.string().optional(),
-  addrStreet: z.string().optional(),
-  addrZipcode: z.string().optional(),
-  warrantyYears: z.number().int().optional(),
-  warrantyAmount: z.number().optional(),
-  walkInDelivery: z.string().optional(),
-  accessory: z.string().optional(),
-  otherServices: z.string().optional(),
-  otherFee: z.number().optional(),
-  paymentMethod: z.string().optional(),
-  paymentNote: z.string().optional(),
-  customerSource: z.string().optional(),
-  cashierId: z.string().uuid().optional(),
-});
+    // GET /api/store/customers
+    if (req.method === "GET" && pathname === "/api/store/customers") {
+      const page = Number(searchParams.get("page") ?? "1");
+      const limit = Number(searchParams.get("limit") ?? "20");
+      const search = searchParams.get("search") ?? "";
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
 
-// GET /sales-orders
-app.get("/api/store/sales-orders", async (c) => {
-  const unauthorized = requireAuth(c);
-  if (unauthorized) return unauthorized;
+      const supabase = getSupabaseClient(req);
+      let query = supabase.from("customers").select("*", { count: "exact" }).order("created_at", { ascending: false });
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%,customer_code.ilike.%${search}%`);
+      }
+      const { data, error, count } = await query.range(from, to);
+      if (error) return json({ error: error.message }, 500);
 
-  const page = Number(c.req.query("page") ?? "1");
-  const limit = Number(c.req.query("limit") ?? "20");
-  const status = c.req.query("status") ?? "";
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
+      const headers = { "X-Total-Count": String(count ?? 0) };
+      return json(data ?? [], 200, headers);
+    }
 
-  const supabase = getSupabaseClient(c.req.raw);
-  let query = supabase.from("sales_orders").select("*", { count: "exact" }).order("created_at", { ascending: false });
-  if (status) query = query.eq("status", status);
+    // GET /api/store/sales-orders
+    if (req.method === "GET" && pathname === "/api/store/sales-orders") {
+      const page = Number(searchParams.get("page") ?? "1");
+      const limit = Number(searchParams.get("limit") ?? "20");
+      const status = searchParams.get("status") ?? "";
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
 
-  const { data, error, count } = await query.range(from, to);
-  if (error) return c.json({ error: error.message }, 500, corsHeaders);
+      const supabase = getSupabaseClient(req);
+      let query = supabase.from("sales_orders").select("*", { count: "exact" }).order("created_at", { ascending: false });
+      if (status) query = query.eq("status", status);
 
-  c.header("X-Total-Count", String(count ?? 0));
-  return c.json(data ?? [], 200, corsHeaders);
-});
+      const { data, error, count } = await query.range(from, to);
+      if (error) return json({ error: error.message }, 500);
 
-// POST /sales-orders
-app.post("/api/store/sales-orders", async (c) => {
-  const unauthorized = requireAuth(c);
-  if (unauthorized) return unauthorized;
+      const headers = { "X-Total-Count": String(count ?? 0) };
+      return json(data ?? [], 200, headers);
+    }
 
-  const payload = await c.req.json().catch(() => null);
-  const parsed = orderSchema.safeParse(payload);
-  if (!parsed.success) {
-    return c.json({ error: "Validation failed", details: parsed.error.flatten() }, 400, corsHeaders);
-  }
-  const input = parsed.data;
+    // POST /api/store/sales-orders
+    if (req.method === "POST" && pathname === "/api/store/sales-orders") {
+      const supabase = getSupabaseClient(req);
+      const payload = await req.json().catch(() => null);
+      const parsed = orderSchema.safeParse(payload);
+      if (!parsed.success) return json({ error: "Validation failed", details: parsed.error.flatten() }, 400);
+      const input = parsed.data;
 
-  const supabase = getSupabaseClient(c.req.raw);
-  const { data: userRes } = await supabase.auth.getUser();
-  const user = userRes?.user;
-  if (!user) return c.json({ error: "Unauthorized" }, 401, corsHeaders);
+      const { data: userRes } = await supabase.auth.getUser();
+      const user = userRes?.user;
+      if (!user) return json({ error: "Unauthorized" }, 401);
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("store_id, role")
-    .eq("user_id", user.id)
-    .single();
-  if (profileError || !profile?.store_id) {
-    return c.json({ error: "Profile not found or store unassigned" }, 403, corsHeaders);
-  }
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("store_id, role")
+        .eq("user_id", user.id)
+        .single();
+      if (profileError || !profile?.store_id) return json({ error: "Profile not found or store unassigned" }, 403);
 
-  // If status is submitted, prefer the RPC that also deducts stock
-  if (input.status === "submitted") {
-    const order_data = {
-      order_number: null,
-      customer_name: input.customerName ?? null,
-      customer_email: input.customerEmail ?? null,
-      customer_phone: input.customerPhone ?? null,
-      customer_first: input.customerFirst ?? null,
-      customer_last: input.customerLast ?? null,
-      addr_country: input.addrCountry ?? null,
-      addr_state: input.addrState ?? null,
-      addr_city: input.addrCity ?? null,
-      addr_street: input.addrStreet ?? null,
-      addr_zipcode: input.addrZipcode ?? null,
-      order_date: input.orderDate,
-      status: input.status,
-      total_amount: input.totalAmount,
-      discount_amount: input.discountAmount,
-      tax_amount: input.taxAmount,
-      warranty_years: input.warrantyYears ?? null,
-      warranty_amount: input.warrantyAmount ?? null,
-      walk_in_delivery: input.walkInDelivery ?? null,
-      accessory: input.accessory ?? null,
-      other_services: input.otherServices ?? null,
-      other_fee: input.otherFee ?? null,
-      payment_method: input.paymentMethod ?? null,
-      payment_note: input.paymentNote ?? null,
-      customer_source: input.customerSource ?? null,
-      cashier_id: input.cashierId ?? null,
-      store_id: profile.store_id,
-      created_by: user.id,
-    } as const;
+      if (input.status === "submitted") {
+        const order_data = {
+          order_number: null,
+          customer_name: input.customerName ?? null,
+          customer_email: input.customerEmail ?? null,
+          customer_phone: input.customerPhone ?? null,
+          customer_first: input.customerFirst ?? null,
+          customer_last: input.customerLast ?? null,
+          addr_country: input.addrCountry ?? null,
+          addr_state: input.addrState ?? null,
+          addr_city: input.addrCity ?? null,
+          addr_street: input.addrStreet ?? null,
+          addr_zipcode: input.addrZipcode ?? null,
+          order_date: input.orderDate,
+          status: input.status,
+          total_amount: input.totalAmount,
+          discount_amount: input.discountAmount,
+          tax_amount: input.taxAmount,
+          warranty_years: input.warrantyYears ?? null,
+          warranty_amount: input.warrantyAmount ?? null,
+          walk_in_delivery: input.walkInDelivery ?? null,
+          accessory: input.accessory ?? null,
+          other_services: input.otherServices ?? null,
+          other_fee: input.otherFee ?? null,
+          payment_method: input.paymentMethod ?? null,
+          payment_note: input.paymentNote ?? null,
+          customer_source: input.customerSource ?? null,
+          cashier_id: input.cashierId ?? null,
+          store_id: profile.store_id,
+          created_by: user.id,
+        } as const;
 
-    const line_items = input.lines.map((l) => {
-      const lineTotal = l.subTotal;
-      const full = l.unitPrice * l.quantity;
-      const discount_amount = Math.max(0, full - lineTotal);
-      return {
-        product_id: l.productId,
-        quantity: l.quantity,
-        unit_price: l.unitPrice,
-        discount_amount,
-        total_amount: lineTotal,
-        sku: l.sku,
+        const line_items = input.lines.map((l) => {
+          const lineTotal = l.subTotal;
+          const full = l.unitPrice * l.quantity;
+          const discount_amount = Math.max(0, full - lineTotal);
+          return {
+            product_id: l.productId,
+            quantity: l.quantity,
+            unit_price: l.unitPrice,
+            discount_amount,
+            total_amount: lineTotal,
+            sku: l.sku,
+          } as const;
+        });
+
+        const { data, error } = await supabase.rpc("create_sales_order_with_stock_deduction", { order_data, line_items });
+        if (error) return json({ error: error.message }, 400);
+        return json((data as any)?.[0] ?? data, 201);
+      }
+
+      // Simple insert when not submitted
+      const orderInsert = {
+        order_number: null,
+        customer_name: input.customerName ?? null,
+        customer_email: input.customerEmail ?? null,
+        customer_phone: input.customerPhone ?? null,
+        customer_first: input.customerFirst ?? null,
+        customer_last: input.customerLast ?? null,
+        addr_country: input.addrCountry ?? null,
+        addr_state: input.addrState ?? null,
+        addr_city: input.addrCity ?? null,
+        addr_street: input.addrStreet ?? null,
+        addr_zipcode: input.addrZipcode ?? null,
+        order_date: input.orderDate,
+        status: input.status,
+        total_amount: input.totalAmount,
+        discount_amount: input.discountAmount,
+        tax_amount: input.taxAmount,
+        warranty_years: input.warrantyYears ?? null,
+        warranty_amount: input.warrantyAmount ?? null,
+        walk_in_delivery: input.walkInDelivery ?? null,
+        accessory: input.accessory ?? null,
+        other_services: input.otherServices ?? null,
+        other_fee: input.otherFee ?? null,
+        payment_method: input.paymentMethod ?? null,
+        payment_note: input.paymentNote ?? null,
+        customer_source: input.customerSource ?? null,
+        cashier_id: input.cashierId ?? null,
+        store_id: profile.store_id,
+        created_by: user.id,
       } as const;
-    });
 
-    const { data, error } = await supabase.rpc("create_sales_order_with_stock_deduction", {
-      order_data,
-      line_items,
-    });
-    if (error) return c.json({ error: error.message }, 400, corsHeaders);
-    // RPC returns a single row
-    return c.json(data?.[0] ?? data, 201, corsHeaders);
+      const { data: order, error: insertErr } = await supabase.from("sales_orders").insert(orderInsert).select("*").single();
+      if (insertErr) return json({ error: insertErr.message }, 400);
+
+      const items = input.lines.map((l) => {
+        const lineTotal = l.subTotal;
+        const full = l.unitPrice * l.quantity;
+        const discount_amount = Math.max(0, full - lineTotal);
+        return {
+          sales_order_id: (order as any).id,
+          product_id: l.productId,
+          quantity: l.quantity,
+          unit_price: l.unitPrice,
+          discount_amount,
+          total_amount: lineTotal,
+        };
+      });
+      const { error: itemErr } = await supabase.from("sales_order_items").insert(items);
+      if (itemErr) return json({ error: itemErr.message }, 400);
+
+      return json(order, 201);
+    }
+
+    // Not found
+    return json({ error: "Not found" }, 404);
+  } catch (e) {
+    console.error("api edge error", e);
+    return json({ error: String(e?.message || e) }, 500);
   }
-
-  // Otherwise, do simple insert
-  const orderInsert = {
-    order_number: null,
-    customer_name: input.customerName ?? null,
-    customer_email: input.customerEmail ?? null,
-    customer_phone: input.customerPhone ?? null,
-    customer_first: input.customerFirst ?? null,
-    customer_last: input.customerLast ?? null,
-    addr_country: input.addrCountry ?? null,
-    addr_state: input.addrState ?? null,
-    addr_city: input.addrCity ?? null,
-    addr_street: input.addrStreet ?? null,
-    addr_zipcode: input.addrZipcode ?? null,
-    order_date: input.orderDate,
-    status: input.status,
-    total_amount: input.totalAmount,
-    discount_amount: input.discountAmount,
-    tax_amount: input.taxAmount,
-    warranty_years: input.warrantyYears ?? null,
-    warranty_amount: input.warrantyAmount ?? null,
-    walk_in_delivery: input.walkInDelivery ?? null,
-    accessory: input.accessory ?? null,
-    other_services: input.otherServices ?? null,
-    other_fee: input.otherFee ?? null,
-    payment_method: input.paymentMethod ?? null,
-    payment_note: input.paymentNote ?? null,
-    customer_source: input.customerSource ?? null,
-    cashier_id: input.cashierId ?? null,
-    store_id: profile.store_id,
-    created_by: user.id,
-  } as const;
-
-  const { data: order, error: insertErr } = await supabase.from("sales_orders").insert(orderInsert).select("*").single();
-  if (insertErr) return c.json({ error: insertErr.message }, 400, corsHeaders);
-
-  const items = input.lines.map((l) => {
-    const lineTotal = l.subTotal;
-    const full = l.unitPrice * l.quantity;
-    const discount_amount = Math.max(0, full - lineTotal);
-    return {
-      sales_order_id: order.id,
-      product_id: l.productId,
-      quantity: l.quantity,
-      unit_price: l.unitPrice,
-      discount_amount,
-      total_amount: lineTotal,
-    };
-  });
-  const { error: itemErr } = await supabase.from("sales_order_items").insert(items);
-  if (itemErr) return c.json({ error: itemErr.message }, 400, corsHeaders);
-
-  return c.json(order, 201, corsHeaders);
-});
-
-// Default handler
-Deno.serve((req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-  return app.fetch(req);
 });
