@@ -214,6 +214,246 @@ app.post("/api/store/customers", async (c) => {
   return c.json(result, 201);
 });
 
+// Dashboard endpoint
+app.get("/api/store/dashboard", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  // Today's sales metrics
+  const today = new Date().toISOString().split('T')[0];
+  const { data: todaySales } = await supabase
+    .from('vw_sales_summary')
+    .select('order_count, total_sales')
+    .eq('store_id', userContext.storeId)
+    .eq('order_date', today)
+    .single();
+
+  // Inventory warnings (low stock)
+  const { data: lowStock } = await supabase
+    .from('vw_inventory')
+    .select('id, sku, product_name, quantity, reorder_point')
+    .eq('store_id', userContext.storeId)
+    .filter('quantity', 'lt', 'reorder_point')
+    .limit(10);
+
+  // Pending tasks
+  const [transfersResult, returnsResult, scrapResult] = await Promise.all([
+    // Pending transfer receipts
+    supabase
+      .from('TransferOrder')
+      .select('id')
+      .eq('toStoreId', userContext.storeId)
+      .eq('status', 'SHIPPED'),
+    // Pending return restocks
+    supabase
+      .from('ReturnLine')
+      .select('id')
+      .eq('restockStatus', 'PENDING'),
+    // Pending scrap approvals
+    supabase
+      .from('scrap_headers')
+      .select('id')
+      .eq('store_id', userContext.storeId)
+      .eq('status', 'pending')
+  ]);
+
+  const dashboard = {
+    todayMetrics: {
+      salesAmount: todaySales?.total_sales || 0,
+      orderCount: todaySales?.order_count || 0
+    },
+    inventoryWarnings: {
+      lowStockCount: lowStock?.length || 0,
+      items: lowStock || []
+    },
+    pendingTasks: {
+      transferReceipts: transfersResult.data?.length || 0,
+      returnRestocks: returnsResult.data?.length || 0,
+      scrapApprovals: scrapResult.data?.length || 0
+    }
+  };
+
+  return c.json(dashboard);
+});
+
+// Sales orders pivot endpoint
+app.get("/api/store/sales-orders/pivot", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const source = c.req.query("source");
+  const fromDate = c.req.query("fromDate");
+  const toDate = c.req.query("toDate");
+  const groupBy = c.req.query("groupBy") || "sales_date"; // sales_date, customer_source, store_id
+
+  let query = supabase
+    .from('vw_sales_summary')
+    .select('*')
+    .eq('store_id', userContext.storeId)
+    .order('sales_date', { ascending: false });
+
+  if (source) {
+    query = query.eq('customer_source', source);
+  }
+
+  if (fromDate) {
+    query = query.gte('sales_date', fromDate);
+  }
+
+  if (toDate) {
+    query = query.lte('sales_date', toDate);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+
+  // Filter cost data based on user role
+  const canSeeCosts = authService.canSeeCostData(userContext.role);
+  const filteredData = data?.map(row => {
+    if (!canSeeCosts) {
+      const { total_gross_profit, ...rest } = row;
+      return rest;
+    }
+    return row;
+  });
+
+  // Group and aggregate data based on groupBy parameter
+  const aggregated = filteredData?.reduce((acc: any, row: any) => {
+    const key = row[groupBy] || 'unknown';
+    if (!acc[key]) {
+      acc[key] = {
+        groupKey: key,
+        orderCount: 0,
+        totalSales: 0,
+        totalDiscount: 0,
+        totalTax: 0,
+        avgOrderValue: 0,
+        extendedWarrantyCount: 0,
+        totalWarrantyAmount: 0,
+        totalGrossProfit: canSeeCosts ? 0 : undefined
+      };
+    }
+    
+    acc[key].orderCount += row.order_count || 0;
+    acc[key].totalSales += row.total_sales || 0;
+    acc[key].totalDiscount += row.total_discount || 0;
+    acc[key].totalTax += row.total_tax || 0;
+    acc[key].extendedWarrantyCount += row.extended_warranty_count || 0;
+    acc[key].totalWarrantyAmount += row.total_warranty_amount || 0;
+    
+    if (canSeeCosts) {
+      acc[key].totalGrossProfit += row.total_gross_profit || 0;
+    }
+    
+    return acc;
+  }, {});
+
+  // Calculate averages
+  Object.values(aggregated || {}).forEach((group: any) => {
+    if (group.orderCount > 0) {
+      group.avgOrderValue = group.totalSales / group.orderCount;
+    }
+  });
+
+  return c.json({
+    data: Object.values(aggregated || {}),
+    filters: { source, fromDate, toDate, groupBy },
+    summary: {
+      totalOrders: filteredData?.reduce((sum, row) => sum + (row.order_count || 0), 0) || 0,
+      totalSales: filteredData?.reduce((sum, row) => sum + (row.total_sales || 0), 0) || 0,
+      totalGrossProfit: canSeeCosts ? 
+        filteredData?.reduce((sum, row) => sum + (row.total_gross_profit || 0), 0) || 0 
+        : undefined
+    }
+  });
+});
+
+// Sales orders history endpoint  
+app.get("/api/store/sales-orders/history", async (c) => {
+  const userContext = await getUserContext(c);
+  const authToken = getAuthToken(c);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authToken } }
+  });
+
+  const orderId = c.req.query("orderId");
+  const fromDate = c.req.query("fromDate");
+  const toDate = c.req.query("toDate");
+
+  // Get audit logs from notifications (where we store audit events)
+  let auditQuery = supabase
+    .from('notifications')
+    .select('*')
+    .eq('type', 'audit_log')
+    .order('created_at', { ascending: false });
+
+  if (userContext.storeId) {
+    auditQuery = auditQuery.eq('user_id', userContext.userId);
+  }
+
+  if (fromDate) {
+    auditQuery = auditQuery.gte('created_at', fromDate);
+  }
+
+  if (toDate) {
+    auditQuery = auditQuery.lte('created_at', toDate);
+  }
+
+  const { data: auditLogs } = await auditQuery.limit(100);
+
+  // Get item events if orderId specified
+  let itemEvents: any[] = [];
+  if (orderId) {
+    const { data: events } = await supabase
+      .from('ItemEvent')
+      .select('*')
+      .eq('docId', orderId)
+      .eq('docType', 'SALES_ORDER')
+      .order('createdAt', { ascending: false });
+    
+    itemEvents = events || [];
+  }
+
+  // Combine and format history
+  const history = [
+    ...(auditLogs?.map(log => ({
+      id: log.id,
+      type: 'audit',
+      action: log.metadata?.audit_event?.action || 'unknown',
+      entityType: log.metadata?.audit_event?.entity_type || 'unknown',
+      entityId: log.metadata?.audit_event?.entity_id,
+      actorName: log.metadata?.audit_event?.actor_name,
+      timestamp: log.created_at,
+      details: log.message,
+      metadata: log.metadata?.audit_event?.metadata
+    })) || []),
+    ...itemEvents.map(event => ({
+      id: event.id,
+      type: 'item_event',
+      action: event.type,
+      entityType: 'item',
+      entityId: event.itemId,
+      actorName: event.createdById,
+      timestamp: event.createdAt,
+      details: `Item ${event.type} for document ${event.docNo}`,
+      metadata: event.payload
+    }))
+  ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+  return c.json({
+    history,
+    filters: { orderId, fromDate, toDate },
+    total: history.length
+  });
+});
+
 // OpenAPI documentation
 app.get("/api/docs", (c) => {
   const openApiSpec = {
@@ -338,6 +578,75 @@ app.get("/api/docs", (c) => {
           ],
           responses: {
             "200": { description: "List of customers" }
+          }
+          }
+        }
+      },
+      "/store/dashboard": {
+        get: {
+          summary: "Get dashboard data",
+          responses: {
+            "200": {
+              description: "Dashboard metrics",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      todayMetrics: {
+                        type: "object",
+                        properties: {
+                          salesAmount: { type: "number" },
+                          orderCount: { type: "integer" }
+                        }
+                      },
+                      inventoryWarnings: {
+                        type: "object",
+                        properties: {
+                          lowStockCount: { type: "integer" },
+                          items: { type: "array" }
+                        }
+                      },
+                      pendingTasks: {
+                        type: "object",
+                        properties: {
+                          transferReceipts: { type: "integer" },
+                          returnRestocks: { type: "integer" },
+                          scrapApprovals: { type: "integer" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/store/sales-orders/pivot": {
+        get: {
+          summary: "Get sales pivot data",
+          parameters: [
+            { name: "source", in: "query", schema: { type: "string" } },
+            { name: "fromDate", in: "query", schema: { type: "string" } },
+            { name: "toDate", in: "query", schema: { type: "string" } },
+            { name: "groupBy", in: "query", schema: { type: "string" } }
+          ],
+          responses: {
+            "200": { description: "Pivot analysis data" }
+          }
+        }
+      },
+      "/store/sales-orders/history": {
+        get: {
+          summary: "Get sales order history",
+          parameters: [
+            { name: "orderId", in: "query", schema: { type: "string" } },
+            { name: "fromDate", in: "query", schema: { type: "string" } },
+            { name: "toDate", in: "query", schema: { type: "string" } }
+          ],
+          responses: {
+            "200": { description: "Order history and audit trail" }
           }
         }
       }
