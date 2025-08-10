@@ -1,27 +1,34 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export interface UploadOptions {
-  bucket: string;
-  folder: string;
-  file: File;
-  fileName?: string;
+export interface UploadResult {
+  success: boolean;
+  url?: string;
+  signedUrl?: string;
+  path?: string;
+  error?: string;
 }
 
-export interface SignedUrlResult {
-  url: string;
-  path: string;
-  expiresIn: number;
+export interface UploadOptions {
+  bucket: 'scrap-photos' | 'delivery-proofs' | 'repair-docs';
+  folder: string; // e.g., scrap ID, repair ID, etc.
+  fileName: string;
+  file: File;
 }
 
 /**
- * Upload file to Supabase Storage with server-side upload
+ * Upload file to Supabase storage with 7-day signed URL
  */
-export async function uploadFile({ bucket, folder, file, fileName }: UploadOptions): Promise<string> {
+export async function uploadFile(options: UploadOptions): Promise<UploadResult> {
   try {
-    const fileExt = file.name.split('.').pop();
-    const finalFileName = fileName || `${Date.now()}.${fileExt}`;
-    const filePath = `${folder}/${finalFileName}`;
+    const { bucket, folder, fileName, file } = options;
+    
+    // Create unique filename with timestamp
+    const timestamp = Date.now();
+    const fileExt = fileName.split('.').pop();
+    const uniqueFileName = `${timestamp}_${fileName}`;
+    const filePath = `${folder}/${uniqueFileName}`;
 
+    // Upload file
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(filePath, file, {
@@ -31,73 +38,67 @@ export async function uploadFile({ bucket, folder, file, fileName }: UploadOptio
 
     if (error) {
       console.error('Upload error:', error);
-      throw error;
+      return { success: false, error: error.message };
     }
 
-    return data.path;
-  } catch (error) {
-    console.error('Error uploading file:', error);
-    throw error;
-  }
-}
-
-/**
- * Get signed URL for file access (7 days expiration)
- */
-export async function getSignedUrl(bucket: string, path: string): Promise<SignedUrlResult> {
-  try {
-    const expiresIn = 7 * 24 * 60 * 60; // 7 days in seconds
-
-    const { data, error } = await supabase.storage
+    // Generate 7-day signed URL
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
       .from(bucket)
-      .createSignedUrl(path, expiresIn);
+      .createSignedUrl(filePath, 7 * 24 * 60 * 60); // 7 days in seconds
 
-    if (error) {
-      console.error('Signed URL error:', error);
-      throw error;
+    if (signedUrlError) {
+      console.error('Signed URL error:', signedUrlError);
+      return { success: false, error: signedUrlError.message };
     }
 
     return {
-      url: data.signedUrl,
-      path,
-      expiresIn
+      success: true,
+      url: data.path,
+      signedUrl: signedUrlData.signedUrl,
+      path: filePath
     };
   } catch (error) {
-    console.error('Error creating signed URL:', error);
-    throw error;
+    console.error('Upload error:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Upload failed' 
+    };
   }
 }
 
 /**
- * Upload multiple files and return signed URLs
+ * Upload multiple files and return array of results
  */
-export async function uploadMultipleFiles(
-  files: File[],
-  bucket: string,
-  folder: string
-): Promise<SignedUrlResult[]> {
+export async function uploadMultipleFiles(files: UploadOptions[]): Promise<UploadResult[]> {
+  const results = await Promise.all(files.map(uploadFile));
+  return results;
+}
+
+/**
+ * Get signed URL for existing file (7-day expiry)
+ */
+export async function getSignedUrl(bucket: string, path: string): Promise<string | null> {
   try {
-    const uploadPromises = files.map(file => 
-      uploadFile({ bucket, folder, file })
-    );
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, 7 * 24 * 60 * 60); // 7 days
 
-    const paths = await Promise.all(uploadPromises);
+    if (error) {
+      console.error('Error creating signed URL:', error);
+      return null;
+    }
 
-    const signedUrlPromises = paths.map(path => 
-      getSignedUrl(bucket, path)
-    );
-
-    return await Promise.all(signedUrlPromises);
+    return data.signedUrl;
   } catch (error) {
-    console.error('Error uploading multiple files:', error);
-    throw error;
+    console.error('Error creating signed URL:', error);
+    return null;
   }
 }
 
 /**
  * Delete file from storage
  */
-export async function deleteFile(bucket: string, path: string): Promise<void> {
+export async function deleteFile(bucket: string, path: string): Promise<boolean> {
   try {
     const { error } = await supabase.storage
       .from(bucket)
@@ -105,55 +106,56 @@ export async function deleteFile(bucket: string, path: string): Promise<void> {
 
     if (error) {
       console.error('Delete error:', error);
-      throw error;
+      return false;
     }
+
+    return true;
   } catch (error) {
-    console.error('Error deleting file:', error);
-    throw error;
+    console.error('Delete error:', error);
+    return false;
   }
 }
 
 /**
- * Storage bucket constants
+ * Helper function to extract file path from signed URL
  */
-export const STORAGE_BUCKETS = {
-  SCRAP_PHOTOS: 'scrap-photos',
-  DELIVERY_PROOFS: 'delivery-proofs',
-  REPAIR_DOCS: 'repair-docs'
-} as const;
-
-/**
- * Upload scrap photos
- */
-export async function uploadScrapPhotos(files: File[], scrapId: string): Promise<string[]> {
-  const results = await uploadMultipleFiles(files, STORAGE_BUCKETS.SCRAP_PHOTOS, scrapId);
-  return results.map(result => result.url);
+export function extractFilePathFromUrl(signedUrl: string): string | null {
+  try {
+    const url = new URL(signedUrl);
+    const pathParts = url.pathname.split('/');
+    // Remove '/storage/v1/object/sign/' and bucket name
+    const bucketIndex = pathParts.findIndex(part => part === 'sign');
+    if (bucketIndex >= 0 && bucketIndex + 2 < pathParts.length) {
+      return pathParts.slice(bucketIndex + 2).join('/');
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 /**
- * Upload delivery proof
+ * Validate file type and size
  */
-export async function uploadDeliveryProof(file: File, orderId: string): Promise<string> {
-  const path = await uploadFile({
-    bucket: STORAGE_BUCKETS.DELIVERY_PROOFS,
-    folder: orderId,
-    file
-  });
-  
-  const result = await getSignedUrl(STORAGE_BUCKETS.DELIVERY_PROOFS, path);
-  return result.url;
+export function validateFile(file: File, maxSizeMB: number = 10, allowedTypes: string[] = []): { valid: boolean; error?: string } {
+  // Check file size
+  if (file.size > maxSizeMB * 1024 * 1024) {
+    return { valid: false, error: `File size must be less than ${maxSizeMB}MB` };
+  }
+
+  // Check file type if specified
+  if (allowedTypes.length > 0 && !allowedTypes.includes(file.type)) {
+    return { valid: false, error: `File type not allowed. Allowed types: ${allowedTypes.join(', ')}` };
+  }
+
+  return { valid: true };
 }
 
 /**
- * Upload repair document
+ * Common file type presets
  */
-export async function uploadRepairDocument(file: File, repairId: string): Promise<string> {
-  const path = await uploadFile({
-    bucket: STORAGE_BUCKETS.REPAIR_DOCS,
-    folder: repairId,
-    file
-  });
-  
-  const result = await getSignedUrl(STORAGE_BUCKETS.REPAIR_DOCS, path);
-  return result.url;
-}
+export const FILE_TYPES = {
+  IMAGES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+  DOCUMENTS: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+  ALL: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+};
