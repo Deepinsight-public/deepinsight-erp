@@ -54,49 +54,53 @@ export function DataTable<T extends Record<string, any>>({
   return (
     <Card>
       <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {columns.map((column) => (
-                <TableHead 
-                  key={String(column.key)} 
-                  style={{ width: column.width }}
-                >
-                  {column.title}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.length === 0 ? (
+        {/* Wrap table to enable horizontal scrolling while keeping the rest of the layout responsive */}
+        <div className="w-full overflow-x-auto">
+          {/* min-w-full ensures the table keeps its natural width so the scrollbar appears only for the table */}
+          <Table className="min-w-full">
+            <TableHeader>
               <TableRow>
-                <TableCell 
-                  colSpan={columns.length} 
-                  className="text-center py-8 text-muted-foreground"
-                >
-                  {t('message.noData')}
-                </TableCell>
+                {columns.map((column) => (
+                  <TableHead 
+                    key={String(column.key)} 
+                    style={{ width: column.width }}
+                  >
+                    {column.title}
+                  </TableHead>
+                ))}
               </TableRow>
-            ) : (
-              data.map((record, index) => (
-                <TableRow 
-                  key={index}
-                  className={onRowClick ? 'cursor-pointer hover:bg-muted/50' : ''}
-                  onClick={() => onRowClick?.(record)}
-                >
-                  {columns.map((column) => {
-                    const value = record[column.key as keyof T];
-                    return (
-                      <TableCell key={String(column.key)}>
-                        {column.render ? column.render(value, record) : value}
-                      </TableCell>
-                    );
-                  })}
+            </TableHeader>
+            <TableBody>
+              {data.length === 0 ? (
+                <TableRow>
+                  <TableCell 
+                    colSpan={columns.length} 
+                    className="text-center py-8 text-muted-foreground"
+                  >
+                    {t('message.noData')}
+                  </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                data.map((record, index) => (
+                  <TableRow 
+                    key={index}
+                    className={onRowClick ? 'cursor-pointer hover:bg-muted/50' : ''}
+                    onClick={() => onRowClick?.(record)}
+                  >
+                    {columns.map((column) => {
+                      const value = record[column.key as keyof T];
+                      return (
+                        <TableCell key={String(column.key)}>
+                          {column.render ? column.render(value, record) : value}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
         {pagination && (
           <div className="p-4 border-t">
             {pagination}
