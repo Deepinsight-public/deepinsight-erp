@@ -63,10 +63,14 @@ export async function fetchSalesOrdersSummary(
 
     // Apply filters
     if (dateFrom) {
-      query = query.gte('order_date', dateFrom);
+      // include from start of day
+      query = query.gte('order_date', `${dateFrom}T00:00:00.000Z`);
     }
     if (dateTo) {
-      query = query.lte('order_date', dateTo);
+      // include entire end day by comparing to next day's 00:00 (half-open interval)
+      const nextDay = new Date(`${dateTo}T00:00:00.000Z`);
+      nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+      query = query.lt('order_date', nextDay.toISOString());
     }
     if (status && status.length > 0) {
       query = query.in('status', status);
@@ -83,7 +87,10 @@ export async function fetchSalesOrdersSummary(
     const { count } = await supabase
       .from('sales_orders')
       .select('*', { count: 'exact', head: true })
-      .eq('store_id', storeId || profile.store_id);
+      .eq('store_id', storeId || profile.store_id)
+      .gte('order_date', dateFrom ? `${dateFrom}T00:00:00.000Z` : '0001-01-01T00:00:00.000Z')
+      .lt('order_date', (() => { if (!dateTo) return '9999-12-31T23:59:59.999Z'; const d = new Date(`${dateTo}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString(); })());
+    ;
 
     // Apply pagination
     const from = (page - 1) * limit;
