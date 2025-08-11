@@ -491,73 +491,7 @@ export function SalesOrdersSummary() {
         </div>
       </section>
 
-      {/* Table section - the ONLY horizontal scroller */}
-      <section className="w-full max-w-full mt-4" aria-label="Sales Order Table">
-        <div
-          className="relative max-w-full"
-          data-testid="so-table-scroller"
-          style={{ overflowX: 'auto', overscrollBehaviorX: 'contain', scrollbarGutter: 'stable' as any }}
-        >
-          <div className="inline-block align-top">
-            <Table className="min-w-full">
-              <TableHeader>
-                <TableRow>
-                  {visibleColumns.map((column) => (
-                    <TableHead key={column.key} className="sticky top-0 z-10 bg-background">
-                      {column.title}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  Array.from({ length: 10 }).map((_, index) => (
-                    <TableRow key={index}>
-                      {visibleColumns.map((column) => (
-                        <TableCell key={column.key}>
-                          <div className="h-4 bg-muted animate-pulse rounded" />
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : orders.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
-                      {t('message.noData')}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  orders.map((order, index) => (
-                    <TableRow 
-                      key={index}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => navigate(`/store/sales-orders/${order.orderId}`)}
-                    >
-                      {tableColumns.map((column) => {
-                        const value = order[column.key as keyof typeof order];
-                        return (
-                          <TableCell key={column.key}>
-                            {column.render ? column.render(value, order) : value}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      </section>
-
-      {/* Pagination footer */}
-      {total > 50 && (
-        <div className="flex-shrink-0 flex justify-center p-4 border-t">
-          <p className="text-muted-foreground">
-            Showing {orders.length} of {total} orders
-          </p>
-        </div>
-      )}
+      {/* Table temporarily removed as requested; toolbar and filters remain on a single page */}
     </div>
   );
 }
