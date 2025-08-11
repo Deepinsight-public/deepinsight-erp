@@ -90,34 +90,34 @@ export function SalesOrdersSummary() {
     { key: 'orderNumber', title: t('sales.summary.columns.orderNo'), visible: true },
     { key: 'customerName', title: t('sales.summary.columns.customer'), visible: true },
     { key: 'status', title: t('sales.summary.columns.status'), visible: true },
-    { key: 'itemsCount', title: t('sales.summary.columns.items'), visible: false },
+    { key: 'itemsCount', title: t('sales.summary.columns.items'), visible: true },
     { key: 'extendedWarranty', title: t('sales.summary.columns.extendedWarranty'), visible: false },
     { key: 'warrantyAmount', title: t('sales.summary.columns.warrantyAmount'), visible: false },
-    { key: 'mapTotal', title: t('sales.summary.columns.map'), visible: false },
+    { key: 'mapTotal', title: t('sales.summary.columns.map'), visible: true },
     { key: 'productMapRate', title: t('sales.summary.columns.productMapRate'), visible: false },
     { key: 'walkInDelivery', title: t('sales.summary.columns.deliveryType'), visible: false },
     { key: 'deliveryDate', title: t('sales.summary.columns.deliveryDate'), visible: false },
-    { key: 'deliveryFee', title: t('sales.summary.columns.deliveryFee'), visible: false },
+    { key: 'deliveryFee', title: t('sales.summary.columns.deliveryFee'), visible: true },
     { key: 'accessoryFee', title: t('sales.summary.columns.accessoryFee'), visible: false },
     { key: 'otherFee', title: t('sales.summary.columns.otherFee'), visible: false },
     { key: 'cogsTotal', title: t('sales.summary.columns.productCost'), visible: false },
     { key: 'grossProfit', title: t('sales.summary.columns.grossProfit'), visible: false },
-    { key: 'cashierName', title: t('sales.summary.columns.cashier'), visible: false },
+    { key: 'cashierName', title: t('sales.summary.columns.cashier'), visible: true },
     { key: 'customerSource', title: t('sales.summary.columns.source'), visible: false },
-    { key: 'paymentMethod1', title: t('sales.summary.columns.payment1'), visible: false },
+    { key: 'paymentMethod1', title: t('sales.summary.columns.payment1'), visible: true },
     { key: 'paymentAmount1', title: t('sales.summary.columns.payment1Amount'), visible: false },
     { key: 'paymentMethod2', title: t('sales.summary.columns.payment2'), visible: false },
     { key: 'paymentAmount2', title: t('sales.summary.columns.payment2Amount'), visible: false },
     { key: 'paymentMethod3', title: t('sales.summary.columns.payment3'), visible: false },
     { key: 'paymentAmount3', title: t('sales.summary.columns.payment3Amount'), visible: false },
-    { key: 'discountAmount', title: t('sales.summary.columns.discount'), visible: false },
-    { key: 'taxTotal', title: t('sales.summary.columns.tax'), visible: false },
+    { key: 'discountAmount', title: t('sales.summary.columns.discount'), visible: true },
+    { key: 'taxTotal', title: t('sales.summary.columns.tax'), visible: true },
     { key: 'totalAmount', title: t('sales.summary.columns.total'), visible: true },
     { key: 'actions', title: t('sales.summary.columns.actions'), visible: true },
     
     // Advanced columns
-    { key: 'paidTotal', title: t('sales.summary.columns.paid'), visible: false, advanced: true },
-    { key: 'balanceAmount', title: t('sales.summary.columns.balance'), visible: false, advanced: true },
+    { key: 'paidTotal', title: t('sales.summary.columns.paid'), visible: true, advanced: true },
+    { key: 'balanceAmount', title: t('sales.summary.columns.balance'), visible: true, advanced: true },
     { key: 'paymentStatus', title: t('sales.summary.columns.paymentStatus'), visible: false, advanced: true },
     { key: 'avgItemPrice', title: t('sales.summary.columns.avgItemPrice'), visible: false, advanced: true },
     { key: 'effectiveTaxRate', title: t('sales.summary.columns.effectiveTaxRate'), visible: false, advanced: true },
@@ -125,28 +125,7 @@ export function SalesOrdersSummary() {
     { key: 'orderType', title: t('sales.summary.columns.orderType'), visible: false, advanced: true },
   ]);
 
-  // On narrow screens, hide non-essential columns by default so the page doesn't overflow
-  useEffect(() => {
-    const applyResponsiveColumns = () => {
-      const isNarrow = window.innerWidth < 1280; // below xl
-      if (!isNarrow) return;
-      const essentialKeys = new Set([
-        'orderDate',
-        'orderNumber',
-        'customerName',
-        'status',
-        'totalAmount',
-        'actions',
-      ]);
-      setColumns(prev => prev.map(col => ({
-        ...col,
-        visible: essentialKeys.has(col.key) ? true : false,
-      })));
-    };
-    applyResponsiveColumns();
-    window.addEventListener('resize', applyResponsiveColumns);
-    return () => window.removeEventListener('resize', applyResponsiveColumns);
-  }, []);
+  // Removed auto-hiding on narrow screens to allow testing horizontal scroll
 
   const loadData = async (page = 1) => {
     setLoading(true);
@@ -495,7 +474,23 @@ export function SalesOrdersSummary() {
         <div className="w-full">
           <DataTable
             data={orders as any}
-            columns={tableColumns.filter(col => ['orderDate','orderNumber','customerName','status','totalAmount','actions'].includes(col.key as string)) as any}
+            columns={tableColumns.filter(col => [
+              'orderDate',
+              'orderNumber',
+              'customerName',
+              'status',
+              'itemsCount',
+              'mapTotal',
+              'deliveryFee',
+              'paymentMethod1',
+              'discountAmount',
+              'taxTotal',
+              'totalAmount',
+              'paidTotal',
+              'balanceAmount',
+              'cashierName',
+              'actions'
+            ].includes(col.key as string)) as any}
             loading={loading}
           />
         </div>
