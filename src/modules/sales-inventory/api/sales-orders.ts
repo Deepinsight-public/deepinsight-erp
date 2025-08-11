@@ -400,6 +400,8 @@ export const fetchSalesOrder = async (id: string): Promise<SalesOrderDTO> => {
 };
 
 export const fetchProductLookup = async (search: string): Promise<ProductLookupItem[]> => {
+  // Ensure we scope inventory check to the current store
+  const profile = await getUserProfile();
   const { data, error } = await supabase
     .from('products')
     .select(`
@@ -409,11 +411,14 @@ export const fetchProductLookup = async (search: string): Promise<ProductLookupI
       price,
       inventory (
         quantity,
-        reserved_quantity
+        reserved_quantity,
+        store_id
       )
     `)
     .or(`sku.ilike.%${search}%,product_name.ilike.%${search}%`)
     .eq('is_active', true)
+    // Filter nested relation rows to the current store so we don't pick another store's inventory
+    .eq('inventory.store_id', profile.store_id)
     .limit(20);
 
   if (error) throw error;
@@ -475,6 +480,7 @@ export const fetchStockLevel = async (sku: string): Promise<StockLevel> => {
     };
   }
 
+  const profile = await getUserProfile();
   const { data, error } = await supabase
     .from('inventory')
     .select('quantity, reserved_quantity')
@@ -485,6 +491,7 @@ export const fetchStockLevel = async (sku: string): Promise<StockLevel> => {
         .eq('sku', sku)
         .single()
     ).data?.id)
+    .eq('store_id', profile.store_id)
     .single();
 
   if (error) throw error;
