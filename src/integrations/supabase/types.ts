@@ -119,7 +119,6 @@ export type Database = {
           id: string
           import_batch_id: string | null
           last_name: string | null
-          name: string
           notes: string | null
           phone: string | null
           status: string | null
@@ -138,7 +137,6 @@ export type Database = {
           id?: string
           import_batch_id?: string | null
           last_name?: string | null
-          name: string
           notes?: string | null
           phone?: string | null
           status?: string | null
@@ -157,7 +155,6 @@ export type Database = {
           id?: string
           import_batch_id?: string | null
           last_name?: string | null
-          name?: string
           notes?: string | null
           phone?: string | null
           status?: string | null
@@ -584,7 +581,6 @@ export type Database = {
           created_at: string
           email: string | null
           first_name: string | null
-          full_name: string | null
           id: string
           is_active: boolean | null
           last_name: string | null
@@ -598,7 +594,6 @@ export type Database = {
           created_at?: string
           email?: string | null
           first_name?: string | null
-          full_name?: string | null
           id?: string
           is_active?: boolean | null
           last_name?: string | null
@@ -612,7 +607,6 @@ export type Database = {
           created_at?: string
           email?: string | null
           first_name?: string | null
-          full_name?: string | null
           id?: string
           is_active?: boolean | null
           last_name?: string | null
@@ -1958,12 +1952,9 @@ export type Database = {
           addr_state: string | null
           addr_street: string | null
           addr_zipcode: string | null
-          avg_price_map_rate: number | null
           cashier_id: string | null
           created_at: string | null
           created_by: string | null
-          customer_address: string | null
-          customer_company: string | null
           customer_email: string | null
           customer_first: string | null
           customer_last: string | null
@@ -1973,6 +1964,7 @@ export type Database = {
           discount_amount: number | null
           has_extended_warranty: boolean | null
           id: string | null
+          line_count: number | null
           order_date: string | null
           order_number: string | null
           other_fee: number | null
@@ -1980,16 +1972,86 @@ export type Database = {
           payment_method: string | null
           payment_note: string | null
           status: string | null
-          store_code: string | null
           store_id: string | null
-          store_name: string | null
           tax_amount: number | null
           total_amount: number | null
-          total_gross_profit: number | null
+          total_quantity: number | null
           updated_at: string | null
           walk_in_delivery: string | null
           warranty_amount: number | null
           warranty_years: number | null
+        }
+        Insert: {
+          accessory?: string | null
+          addr_city?: string | null
+          addr_country?: string | null
+          addr_state?: string | null
+          addr_street?: string | null
+          addr_zipcode?: string | null
+          cashier_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_email?: string | null
+          customer_first?: string | null
+          customer_last?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          customer_source?: string | null
+          discount_amount?: number | null
+          has_extended_warranty?: never
+          id?: string | null
+          line_count?: never
+          order_date?: string | null
+          order_number?: string | null
+          other_fee?: number | null
+          other_services?: string | null
+          payment_method?: string | null
+          payment_note?: string | null
+          status?: string | null
+          store_id?: string | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          total_quantity?: never
+          updated_at?: string | null
+          walk_in_delivery?: string | null
+          warranty_amount?: number | null
+          warranty_years?: number | null
+        }
+        Update: {
+          accessory?: string | null
+          addr_city?: string | null
+          addr_country?: string | null
+          addr_state?: string | null
+          addr_street?: string | null
+          addr_zipcode?: string | null
+          cashier_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          customer_email?: string | null
+          customer_first?: string | null
+          customer_last?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          customer_source?: string | null
+          discount_amount?: number | null
+          has_extended_warranty?: never
+          id?: string | null
+          line_count?: never
+          order_date?: string | null
+          order_number?: string | null
+          other_fee?: number | null
+          other_services?: string | null
+          payment_method?: string | null
+          payment_note?: string | null
+          status?: string | null
+          store_id?: string | null
+          tax_amount?: number | null
+          total_amount?: number | null
+          total_quantity?: never
+          updated_at?: string | null
+          walk_in_delivery?: string | null
+          warranty_amount?: number | null
+          warranty_years?: number | null
         }
         Relationships: [
           {
