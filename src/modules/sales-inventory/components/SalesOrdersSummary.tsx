@@ -200,6 +200,17 @@ export function SalesOrdersSummary() {
   const tableColumns = visibleColumns.map(col => ({
     key: col.key,
     title: col.title,
+    width: (
+      [
+        'orderDate','orderNumber','customerName','status','cashierName','customerSource',
+        'walkInDelivery','deliveryDate','paymentMethod1','paymentMethod2','paymentMethod3'
+      ].includes(col.key)
+    ) ? '160px' : (
+      [
+        'itemsCount','discountAmount','taxTotal','totalAmount','paidTotal','balanceAmount',
+        'mapTotal','deliveryFee','accessoryFee','otherFee','cogsTotal','grossProfit','productMapRate'
+      ].includes(col.key)
+    ) ? '140px' : undefined,
     render: col.render || ((value: any, record: any) => {
       switch (col.key) {
         case 'orderDate':
@@ -482,7 +493,20 @@ export function SalesOrdersSummary() {
               'itemsCount',
               'mapTotal',
               'deliveryFee',
+              'accessoryFee',
+              'otherFee',
+              'cogsTotal',
+              'grossProfit',
+              'productMapRate',
+              'walkInDelivery',
+              'deliveryDate',
               'paymentMethod1',
+              'paymentAmount1',
+              'paymentMethod2',
+              'paymentAmount2',
+              'paymentMethod3',
+              'paymentAmount3',
+              'customerSource',
               'discountAmount',
               'taxTotal',
               'totalAmount',
