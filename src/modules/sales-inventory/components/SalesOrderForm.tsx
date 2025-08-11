@@ -272,7 +272,8 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
 
           const customerData = {
             store_id: profile.store_id,
-            name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim(),
+            first_name: formData.firstName || null,
+            last_name: formData.lastName || null,
             email: formData.customerEmail,
             phone: formData.customerPhone || null,
             address: [
@@ -356,13 +357,11 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         const customer = customers[0];
         setCustomerFound(true);
         
-        // Parse customer name from name field
-        const nameParts = customer.name ? customer.name.split(' ') : [];
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
+        // Use separate name fields from customer record
+        const firstName = customer.first_name || '';
+        const lastName = customer.last_name || '';
 
         console.log("Found customer:", customer);
-        console.log("Name parts:", nameParts);
         
         // Auto-fill form fields with customer data
         setValue('firstName', firstName);
@@ -416,16 +415,15 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         // Use Supabase to get staff from profiles table
         const { data: staff, error } = await supabase
           .from('profiles')
-          .select('user_id, full_name')
-          .not('full_name', 'is', null);
+          .select('user_id, first_name, last_name');
 
         if (error) {
           throw error;
         }
 
-        const staffOptions = staff?.map(s => ({
+        const staffOptions = staff?.map((s: any) => ({
           id: s.user_id,
-          name: s.full_name || 'Unknown'
+          name: `${s.first_name || ''} ${s.last_name || ''}`.trim() || 'Unknown'
         })) || [];
 
         setStaffOptions(staffOptions);

@@ -103,7 +103,8 @@ export const updateCustomer = async (
   const { data, error } = await supabase
     .from('customers')
     .update({
-      name: customerData.name,
+      first_name: customerData.name?.split(' ')[0] || customerData.name,
+      last_name: customerData.name?.split(' ').slice(1).join(' ') || null,
       email: customerData.email,
       phone: customerData.phone,
       address: customerData.address,
@@ -113,5 +114,5 @@ export const updateCustomer = async (
     .single();
 
   if (error) throw error;
-  return data;
+  return { ...(data as any), name: [data.first_name, data.last_name].filter(Boolean).join(' ').trim() } as Customer;
 };
