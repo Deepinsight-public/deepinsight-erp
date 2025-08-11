@@ -90,28 +90,28 @@ export function SalesOrdersSummary() {
     { key: 'orderNumber', title: t('sales.summary.columns.orderNo'), visible: true },
     { key: 'customerName', title: t('sales.summary.columns.customer'), visible: true },
     { key: 'status', title: t('sales.summary.columns.status'), visible: true },
-    { key: 'itemsCount', title: t('sales.summary.columns.items'), visible: true },
-    { key: 'extendedWarranty', title: t('sales.summary.columns.extendedWarranty'), visible: true },
-    { key: 'warrantyAmount', title: t('sales.summary.columns.warrantyAmount'), visible: true },
-    { key: 'mapTotal', title: t('sales.summary.columns.map'), visible: true },
-    { key: 'productMapRate', title: t('sales.summary.columns.productMapRate'), visible: true },
-    { key: 'walkInDelivery', title: t('sales.summary.columns.deliveryType'), visible: true },
-    { key: 'deliveryDate', title: t('sales.summary.columns.deliveryDate'), visible: true },
-    { key: 'deliveryFee', title: t('sales.summary.columns.deliveryFee'), visible: true },
-    { key: 'accessoryFee', title: t('sales.summary.columns.accessoryFee'), visible: true },
-    { key: 'otherFee', title: t('sales.summary.columns.otherFee'), visible: true },
-    { key: 'cogsTotal', title: t('sales.summary.columns.productCost'), visible: true },
-    { key: 'grossProfit', title: t('sales.summary.columns.grossProfit'), visible: true },
-    { key: 'cashierName', title: t('sales.summary.columns.cashier'), visible: true },
-    { key: 'customerSource', title: t('sales.summary.columns.source'), visible: true },
-    { key: 'paymentMethod1', title: t('sales.summary.columns.payment1'), visible: true },
-    { key: 'paymentAmount1', title: t('sales.summary.columns.payment1Amount'), visible: true },
-    { key: 'paymentMethod2', title: t('sales.summary.columns.payment2'), visible: true },
-    { key: 'paymentAmount2', title: t('sales.summary.columns.payment2Amount'), visible: true },
-    { key: 'paymentMethod3', title: t('sales.summary.columns.payment3'), visible: true },
-    { key: 'paymentAmount3', title: t('sales.summary.columns.payment3Amount'), visible: true },
-    { key: 'discountAmount', title: t('sales.summary.columns.discount'), visible: true },
-    { key: 'taxTotal', title: t('sales.summary.columns.tax'), visible: true },
+    { key: 'itemsCount', title: t('sales.summary.columns.items'), visible: false },
+    { key: 'extendedWarranty', title: t('sales.summary.columns.extendedWarranty'), visible: false },
+    { key: 'warrantyAmount', title: t('sales.summary.columns.warrantyAmount'), visible: false },
+    { key: 'mapTotal', title: t('sales.summary.columns.map'), visible: false },
+    { key: 'productMapRate', title: t('sales.summary.columns.productMapRate'), visible: false },
+    { key: 'walkInDelivery', title: t('sales.summary.columns.deliveryType'), visible: false },
+    { key: 'deliveryDate', title: t('sales.summary.columns.deliveryDate'), visible: false },
+    { key: 'deliveryFee', title: t('sales.summary.columns.deliveryFee'), visible: false },
+    { key: 'accessoryFee', title: t('sales.summary.columns.accessoryFee'), visible: false },
+    { key: 'otherFee', title: t('sales.summary.columns.otherFee'), visible: false },
+    { key: 'cogsTotal', title: t('sales.summary.columns.productCost'), visible: false },
+    { key: 'grossProfit', title: t('sales.summary.columns.grossProfit'), visible: false },
+    { key: 'cashierName', title: t('sales.summary.columns.cashier'), visible: false },
+    { key: 'customerSource', title: t('sales.summary.columns.source'), visible: false },
+    { key: 'paymentMethod1', title: t('sales.summary.columns.payment1'), visible: false },
+    { key: 'paymentAmount1', title: t('sales.summary.columns.payment1Amount'), visible: false },
+    { key: 'paymentMethod2', title: t('sales.summary.columns.payment2'), visible: false },
+    { key: 'paymentAmount2', title: t('sales.summary.columns.payment2Amount'), visible: false },
+    { key: 'paymentMethod3', title: t('sales.summary.columns.payment3'), visible: false },
+    { key: 'paymentAmount3', title: t('sales.summary.columns.payment3Amount'), visible: false },
+    { key: 'discountAmount', title: t('sales.summary.columns.discount'), visible: false },
+    { key: 'taxTotal', title: t('sales.summary.columns.tax'), visible: false },
     { key: 'totalAmount', title: t('sales.summary.columns.total'), visible: true },
     { key: 'actions', title: t('sales.summary.columns.actions'), visible: true },
     
@@ -135,7 +135,6 @@ export function SalesOrdersSummary() {
         'orderNumber',
         'customerName',
         'status',
-        'itemsCount',
         'totalAmount',
         'actions',
       ]);
@@ -357,7 +356,7 @@ export function SalesOrdersSummary() {
       >
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="min-w-[220px]">
-            <h1 className="text-2xl font-semibold">Hello World</h1>
+            <h1 className="text-2xl font-semibold">{t('sales.summary.title')}</h1>
             <p className="text-muted-foreground text-sm">{t('sales.summary.description')}</p>
             {/* Always-visible primary action */}
             <div className="mt-3 flex gap-2">
@@ -491,7 +490,16 @@ export function SalesOrdersSummary() {
         </div>
       </section>
 
-      {/* Table temporarily removed as requested; toolbar and filters remain on a single page */}
+      {/* Compact table with its own horizontal scrollbar */}
+      <section className="w-full max-w-full mt-4" aria-label="Sales Order Table">
+        <div className="w-full">
+          <DataTable
+            data={orders as any}
+            columns={tableColumns.filter(col => ['orderDate','orderNumber','customerName','status','totalAmount','actions'].includes(col.key as string)) as any}
+            loading={loading}
+          />
+        </div>
+      </section>
     </div>
   );
 }
