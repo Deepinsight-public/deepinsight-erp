@@ -22,7 +22,11 @@ export const getCustomers = async (): Promise<Customer[]> => {
 
   if (customersError) throw customersError;
 
-  return customersData || [];
+  // Backward-compatible mapping: synthesize `name` from first/last
+  return (customersData || []).map((c: any) => ({
+    ...c,
+    name: [c.first_name, c.last_name].filter(Boolean).join(' ').trim(),
+  }));
 };
 
 export const getCustomerById = async (id: string): Promise<Customer | null> => {
@@ -33,18 +37,22 @@ export const getCustomerById = async (id: string): Promise<Customer | null> => {
     .maybeSingle();
 
   if (error) throw error;
-  return data;
+  if (!data) return null;
+  return { ...(data as any), name: [data.first_name, data.last_name].filter(Boolean).join(' ').trim() } as Customer;
 };
 
 export const searchCustomers = async (query: string): Promise<Customer[]> => {
   const { data, error } = await supabase
     .from('customers')
     .select('*')
-    .or(`name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%,customer_code.ilike.%${query}%`)
+    .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%,customer_code.ilike.%${query}%`)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map((c: any) => ({
+    ...c,
+    name: [c.first_name, c.last_name].filter(Boolean).join(' ').trim(),
+  }));
 };
 
 export const addCustomer = async (customerData: {
@@ -68,7 +76,8 @@ export const addCustomer = async (customerData: {
     .from('customers')
     .insert([
       {
-        name: customerData.name,
+        first_name: customerData.name?.split(' ')[0] || customerData.name,
+        last_name: customerData.name?.split(' ').slice(1).join(' ') || null,
         email: customerData.email,
         phone: customerData.phone,
         address: customerData.address,
@@ -79,7 +88,7 @@ export const addCustomer = async (customerData: {
     .single();
 
   if (error) throw error;
-  return data;
+  return { ...(data as any), name: [data.first_name, data.last_name].filter(Boolean).join(' ').trim() } as Customer;
 };
 
 export const updateCustomer = async (

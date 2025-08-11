@@ -7,7 +7,7 @@ export const searchCustomersByEmail = async (email: string): Promise<CustomerLoo
   
   const { data, error } = await supabase
     .from('customers')
-    .select('id, name, email')
+    .select('id, first_name, last_name, email')
     .ilike('email', `%${email}%`)
     .limit(10);
 
@@ -16,13 +16,16 @@ export const searchCustomersByEmail = async (email: string): Promise<CustomerLoo
     throw error;
   }
 
-  return (data || []).map(customer => ({
-    id: customer.id,
-    name: customer.name,
-    email: customer.email,
-    customerFirst: customer.name.split(' ')[0] || '',
-    customerLast: customer.name.split(' ').slice(1).join(' ') || '',
-  }));
+  return (data || []).map(customer => {
+    const fullName = [customer.first_name, customer.last_name].filter(Boolean).join(' ').trim();
+    return {
+      id: customer.id,
+      name: fullName,
+      email: customer.email,
+      customerFirst: customer.first_name || '',
+      customerLast: customer.last_name || '',
+    };
+  });
 };
 
 export const getWarehouses = async (): Promise<WarehouseOption[]> => {
