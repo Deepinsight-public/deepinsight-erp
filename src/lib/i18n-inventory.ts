@@ -4,8 +4,18 @@ export const inventoryI18nKeys = {
     // General
     'inventory.title': 'Inventory Management',
     'inventory.description': 'Manage store inventory, transfers, purchases, and stock counts',
-    'inventory.noStoreAccess': 'No store access configured',
+    'inventory.loading': 'Loading inventory...',
     'inventory.settings': 'Settings',
+    
+    // Store Selection
+    'inventory.storeSelection.title': 'Select Store',
+    'inventory.storeSelection.description': 'Please select a store to access inventory management',
+    'inventory.storeSelection.placeholder': 'Choose a store...',
+    'inventory.storeSelection.confirm': 'Continue',
+    'inventory.storeSelection.required': 'Please select a store to continue',
+    
+    // Errors
+    'inventory.error.storeAccess': 'Store access error',
     
     // Tabs
     'inventory.tabs.search': 'Inventory Search',
@@ -232,8 +242,18 @@ export const inventoryI18nKeys = {
     // General
     'inventory.title': '库存管理',
     'inventory.description': '管理门店库存、调拨、采购和盘点',
-    'inventory.noStoreAccess': '未配置门店访问权限',
+    'inventory.loading': '加载库存中...',
     'inventory.settings': '设置',
+    
+    // Store Selection
+    'inventory.storeSelection.title': '选择门店',
+    'inventory.storeSelection.description': '请选择门店以访问库存管理',
+    'inventory.storeSelection.placeholder': '选择门店...',
+    'inventory.storeSelection.confirm': '继续',
+    'inventory.storeSelection.required': '请选择门店以继续',
+    
+    // Errors
+    'inventory.error.storeAccess': '门店访问错误',
     
     // Tabs
     'inventory.tabs.search': '库存查询',
