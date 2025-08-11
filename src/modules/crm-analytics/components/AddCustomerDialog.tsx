@@ -54,46 +54,46 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{t('customers.form.addTitle')}</DialogTitle>
+          <DialogTitle>{t('New Customer')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">{t('customers.form.name')} *</Label>
+            <Label htmlFor="name">{t('Full Name')} *</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder={t('customers.form.namePlaceholder')}
+              placeholder={t('John Doe')}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">{t('customers.form.email')} *</Label>
+            <Label htmlFor="email">{t('Email')} *</Label>
             <Input
               id="email"
               type="email"
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
-              placeholder={t('customers.form.emailPlaceholder')}
+              placeholder={t('name@gmail.com')}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone">{t('customers.form.phone')}</Label>
+            <Label htmlFor="phone">{t('Phone Number')}</Label>
             <Input
               id="phone"
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
-              placeholder={t('customers.form.phonePlaceholder')}
+              placeholder={t('(xxx) xxx-xxxx)')}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="address">{t('customers.form.address')}</Label>
+            <Label htmlFor="address">{t('Address')}</Label>
             <Textarea
               id="address"
               value={formData.address}
               onChange={(e) => handleInputChange('address', e.target.value)}
-              placeholder={t('customers.form.addressPlaceholder')}
+              placeholder={t('123 Main Street')}
               rows={3}
             />
           </div>
