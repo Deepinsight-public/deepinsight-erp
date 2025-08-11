@@ -325,207 +325,203 @@ export function SalesOrdersSummary() {
   ];
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between p-6 border-b">
-        <div>
-          <h1 className="text-3xl font-bold">{t('sales.summary.title')}</h1>
-          <p className="text-muted-foreground mt-2">
-            {t('sales.summary.description')}
-          </p>
+    <div className="w-full max-w-full flex flex-col">
+      {/* Toolbar */}
+      <section
+        className="w-full max-w-full px-4 md:px-6 pt-6"
+        data-testid="so-toolbar"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-[220px]">
+            <h1 className="text-2xl font-semibold">{t('sales.summary.title')}</h1>
+            <p className="text-muted-foreground text-sm">{t('sales.summary.description')}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/store/sales-orders/pivot')}
+            >
+              <BarChart2 className="mr-2 h-4 w-4" />
+              {t('sales.summary.customPivot')}
+            </Button>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline">
+                  <Columns3 className="mr-2 h-4 w-4" />
+                  {t('sales.summary.columnChooser')}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-4">
+                  <h4 className="font-medium">{t('sales.summary.columnChooser')}</h4>
+                  <div className="grid gap-2 max-h-64 overflow-auto">
+                    {columns.map(col => (
+                      <div key={col.key} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={col.key}
+                          checked={col.visible}
+                          onCheckedChange={(checked) => 
+                            handleColumnVisibility(col.key, !!checked)
+                          }
+                        />
+                        <Label 
+                          htmlFor={col.key}
+                          className={col.advanced ? 'text-sm text-muted-foreground' : ''}
+                        >
+                          {col.title} {col.advanced && '(Advanced)'}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Download className="mr-2 h-4 w-4" />
+                  {t('sales.summary.export')}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => exportData('csv')}>
+                  {t('sales.summary.exportCsv')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportData('excel')}>
+                  {t('sales.summary.exportExcel')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button data-testid="btn-new" onClick={() => navigate('/store/sales-orders/new')}>
+              <Plus className="h-4 w-4 mr-2" />
+              {t('sales.summary.newOrder')}
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/store/sales-orders/pivot')}
-          >
-            <BarChart2 className="mr-2 h-4 w-4" />
-            {t('sales.summary.customPivot')}
-          </Button>
-          
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline">
-                <Columns3 className="mr-2 h-4 w-4" />
-                {t('sales.summary.columnChooser')}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <div className="space-y-4">
-                <h4 className="font-medium">{t('sales.summary.columnChooser')}</h4>
-                <div className="grid gap-2 max-h-64 overflow-auto">
-                  {columns.map(col => (
-                    <div key={col.key} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={col.key}
-                        checked={col.visible}
-                        onCheckedChange={(checked) => 
-                          handleColumnVisibility(col.key, !!checked)
-                        }
-                      />
-                      <Label 
-                        htmlFor={col.key}
-                        className={col.advanced ? 'text-sm text-muted-foreground' : ''}
-                      >
-                        {col.title} {col.advanced && '(Advanced)'}
-                      </Label>
-                    </div>
-                  ))}
+
+        {/* Filters under toolbar */}
+        <div className="mt-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <Label>{t('sales.summary.filters.dateRange')}</Label>
+                  <DateRangePicker
+                    value={dateRange}
+                    onChange={setDateRange}
+                    placeholder={t('sales.summary.filters.dateRangePlaceholder')}
+                  />
+                </div>
+                <div>
+                  <Label>{t('sales.summary.filters.status')}</Label>
+                  <Select value={statusFilter.join(',')} onValueChange={(value) => 
+                    setStatusFilter(value ? value.split(',') : [])
+                  }>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('sales.summary.filters.statusPlaceholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>{t('sales.summary.filters.paymentStatus')}</Label>
+                  <Select value={paymentStatusFilter} onValueChange={(value) => setPaymentStatusFilter(value === 'all' ? '' as any : (value as any))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('sales.summary.filters.paymentStatusPlaceholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t('sales.summary.filters.all')}</SelectItem>
+                      {paymentStatusOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>{t('sales.summary.filters.search')}</Label>
+                  <StandardSearchBar
+                    title=""
+                    searchValue={searchQuery}
+                    searchPlaceholder={t('sales.summary.filters.searchPlaceholder')}
+                    onSearchChange={setSearchQuery}
+                    onSearch={() => loadData()}
+                  />
                 </div>
               </div>
-            </PopoverContent>
-          </Popover>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <Download className="mr-2 h-4 w-4" />
-                {t('sales.summary.export')}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => exportData('csv')}>
-                {t('sales.summary.exportCsv')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => exportData('excel')}>
-                {t('sales.summary.exportExcel')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button onClick={() => navigate('/store/sales-orders/new')}>
-            <Plus className="h-4 w-4 mr-2" />
-            {t('sales.summary.newOrder')}
-          </Button>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      </section>
 
-      {/* Filters */}
-      <div className="flex-shrink-0 p-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <Label>{t('sales.summary.filters.dateRange')}</Label>
-                <DateRangePicker
-                  value={dateRange}
-                  onChange={setDateRange}
-                  placeholder={t('sales.summary.filters.dateRangePlaceholder')}
-                />
-              </div>
-              
-              <div>
-                <Label>{t('sales.summary.filters.status')}</Label>
-                <Select value={statusFilter.join(',')} onValueChange={(value) => 
-                  setStatusFilter(value ? value.split(',') : [])
-                }>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('sales.summary.filters.statusPlaceholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>{t('sales.summary.filters.paymentStatus')}</Label>
-                <Select value={paymentStatusFilter} onValueChange={(value) => setPaymentStatusFilter(value === 'all' ? '' as any : (value as any))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('sales.summary.filters.paymentStatusPlaceholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t('sales.summary.filters.all')}</SelectItem>
-                    {paymentStatusOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>{t('sales.summary.filters.search')}</Label>
-                <StandardSearchBar
-                  title=""
-                  searchValue={searchQuery}
-                  searchPlaceholder={t('sales.summary.filters.searchPlaceholder')}
-                  onSearchChange={setSearchQuery}
-                  onSearch={() => loadData()}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Data Table - Scrollable */}
-      <div className="flex-1 min-h-0">
-        <Card className="h-full">
-          <CardContent className="p-0 h-full">
-            <div className="h-full overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table className="min-w-full">
-                  <TableHeader className="sticky top-0 z-10 bg-background border-b">
-                    <TableRow>
+      {/* Table section - the ONLY horizontal scroller */}
+      <section className="w-full max-w-full mt-4" aria-label="Sales Order Table">
+        <div
+          className="relative max-w-full"
+          data-testid="so-table-scroller"
+          style={{ overflowX: 'auto', overscrollBehaviorX: 'contain', scrollbarGutter: 'stable' as any }}
+        >
+          <div className="inline-block align-top min-w-[1600px]">
+            <Table className="min-w-full">
+              <TableHeader>
+                <TableRow>
+                  {visibleColumns.map((column) => (
+                    <TableHead key={column.key} className="sticky top-0 z-10 bg-background">
+                      {column.title}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  Array.from({ length: 10 }).map((_, index) => (
+                    <TableRow key={index}>
                       {visibleColumns.map((column) => (
-                        <TableHead key={column.key} className="bg-background">
-                          {column.title}
-                        </TableHead>
+                        <TableCell key={column.key}>
+                          <div className="h-4 bg-muted animate-pulse rounded" />
+                        </TableCell>
                       ))}
                     </TableRow>
-                  </TableHeader>
-                </Table>
-              </div>
-              <div className="h-full overflow-x-auto overflow-y-auto">
-                <Table className="min-w-full">
-                  <TableBody>
-                    {loading ? (
-                      Array.from({ length: 10 }).map((_, index) => (
-                        <TableRow key={index}>
-                          {visibleColumns.map((column) => (
-                            <TableCell key={column.key}>
-                              <div className="h-4 bg-muted animate-pulse rounded" />
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))
-                    ) : orders.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
-                          {t('message.noData')}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      orders.map((order, index) => (
-                        <TableRow 
-                          key={index}
-                          className="cursor-pointer hover:bg-muted/50"
-                          onClick={() => navigate(`/store/sales-orders/${order.orderId}`)}
-                        >
-                          {tableColumns.map((column) => {
-                            const value = order[column.key as keyof typeof order];
-                            return (
-                              <TableCell key={column.key}>
-                                {column.render ? column.render(value, order) : value}
-                              </TableCell>
-                            );
-                          })}
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                  ))
+                ) : orders.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
+                      {t('message.noData')}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  orders.map((order, index) => (
+                    <TableRow 
+                      key={index}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => navigate(`/store/sales-orders/${order.orderId}`)}
+                    >
+                      {tableColumns.map((column) => {
+                        const value = order[column.key as keyof typeof order];
+                        return (
+                          <TableCell key={column.key}>
+                            {column.render ? column.render(value, order) : value}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </section>
 
       {/* Pagination footer */}
       {total > 50 && (
