@@ -33,7 +33,9 @@ export function StoreSelectionOverlay({ onStoreSelect }: StoreSelectionOverlayPr
           .order('store_name');
 
         if (error) throw error;
-        setStores(data || []);
+        // Filter out stores with empty or null IDs to prevent Select component errors
+        const validStores = (data || []).filter(store => store.id && store.id.trim() !== '');
+        setStores(validStores);
       } catch (error) {
         console.error('Error fetching stores:', error);
       } finally {
