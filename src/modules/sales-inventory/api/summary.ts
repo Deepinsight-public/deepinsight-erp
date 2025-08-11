@@ -51,14 +51,15 @@ export async function fetchSalesOrdersSummary(
         accessory,
         other_services,
         other_fee,
-        sales_order_items!inner(
+        sales_order_items(
           quantity,
           unit_price,
           total_amount
         )
       `)
       .eq('store_id', storeId || profile.store_id)
-      .order('order_date', { ascending: false });
+      .order('order_date', { ascending: false })
+      .order('created_at', { ascending: false });
 
     // Apply filters
     if (dateFrom) {
