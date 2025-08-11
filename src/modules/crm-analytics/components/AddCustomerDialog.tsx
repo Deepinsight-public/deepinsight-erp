@@ -84,7 +84,7 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
               id="phone"
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
-              placeholder={t('(xxx) xxx-xxxx)')}
+              placeholder={t('(xxx) xxx-xxxx')}
             />
           </div>
           <div className="space-y-2">
@@ -107,7 +107,7 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
               {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? t('customers.form.adding') : t('customers.form.addCustomer')}
+              {loading ? t('customers.form.adding') : t('Add Customer')}
             </Button>
           </div>
         </form>
