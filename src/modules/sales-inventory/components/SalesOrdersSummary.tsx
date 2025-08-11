@@ -359,8 +359,16 @@ export function SalesOrdersSummary() {
           <div className="min-w-[220px]">
             <h1 className="text-2xl font-semibold">Hello World</h1>
             <p className="text-muted-foreground text-sm">{t('sales.summary.description')}</p>
+            {/* Always-visible primary action on small screens */}
+            <div className="mt-3 flex gap-2 lg:hidden">
+              <Button data-testid="btn-new-mobile" onClick={() => navigate('/store/sales-orders/new')}>
+                <Plus className="h-4 w-4 mr-2" />
+                {t('sales.summary.newOrder')}
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Desktop actions */}
+          <div className="hidden lg:flex flex-wrap items-center gap-2">
             <Button 
               variant="outline" 
               onClick={() => navigate('/store/sales-orders/pivot')}
