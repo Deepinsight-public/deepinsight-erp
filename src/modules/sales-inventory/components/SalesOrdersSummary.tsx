@@ -125,6 +125,30 @@ export function SalesOrdersSummary() {
     { key: 'orderType', title: t('sales.summary.columns.orderType'), visible: false, advanced: true },
   ]);
 
+  // On narrow screens, hide non-essential columns by default so the page doesn't overflow
+  useEffect(() => {
+    const applyResponsiveColumns = () => {
+      const isNarrow = window.innerWidth < 1280; // below xl
+      if (!isNarrow) return;
+      const essentialKeys = new Set([
+        'orderDate',
+        'orderNumber',
+        'customerName',
+        'status',
+        'itemsCount',
+        'totalAmount',
+        'actions',
+      ]);
+      setColumns(prev => prev.map(col => ({
+        ...col,
+        visible: essentialKeys.has(col.key) ? true : false,
+      })));
+    };
+    applyResponsiveColumns();
+    window.addEventListener('resize', applyResponsiveColumns);
+    return () => window.removeEventListener('resize', applyResponsiveColumns);
+  }, []);
+
   const loadData = async (page = 1) => {
     setLoading(true);
     try {
@@ -331,7 +355,7 @@ export function SalesOrdersSummary() {
         className="w-full max-w-full px-4 md:px-6 pt-6"
         data-testid="so-toolbar"
       >
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="min-w-[220px]">
             <h1 className="text-2xl font-semibold">{t('sales.summary.title')}</h1>
             <p className="text-muted-foreground text-sm">{t('sales.summary.description')}</p>
@@ -471,7 +495,7 @@ export function SalesOrdersSummary() {
           data-testid="so-table-scroller"
           style={{ overflowX: 'auto', overscrollBehaviorX: 'contain', scrollbarGutter: 'stable' as any }}
         >
-          <div className="inline-block align-top min-w-[1600px]">
+          <div className="inline-block align-top">
             <Table className="min-w-full">
               <TableHeader>
                 <TableRow>
