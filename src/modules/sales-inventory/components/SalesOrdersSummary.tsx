@@ -516,6 +516,7 @@ export function SalesOrdersSummary() {
               'actions'
             ].includes(col.key as string)) as any}
             loading={loading}
+            minTableWidth={1800}
           />
         </div>
       </section>

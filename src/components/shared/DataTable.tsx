@@ -26,6 +26,7 @@ interface DataTableProps<T> {
   loading?: boolean;
   onRowClick?: (record: T) => void;
   pagination?: React.ReactNode;
+  minTableWidth?: number; // optional pixel width to force horizontal scroll
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -35,6 +36,7 @@ export function DataTable<T extends Record<string, any>>({
   loading,
   onRowClick,
   pagination,
+  minTableWidth,
 }: DataTableProps<T>) {
   const { t } = useTranslation();
   if (loading) {
@@ -57,7 +59,7 @@ export function DataTable<T extends Record<string, any>>({
         {/* Wrap table to enable horizontal scrolling while keeping the rest of the layout responsive */}
         <div className="w-full overflow-x-auto">
           {/* min-w-full ensures the table keeps its natural width so the scrollbar appears only for the table */}
-          <Table className="min-w-full">
+          <Table className="min-w-full" style={minTableWidth ? { minWidth: `${minTableWidth}px` } : undefined}>
             <TableHeader>
               <TableRow>
                 {columns.map((column) => (
