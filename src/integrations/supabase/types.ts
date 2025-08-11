@@ -115,8 +115,10 @@ export type Database = {
           created_by: string | null
           customer_code: string | null
           email: string | null
+          first_name: string | null
           id: string
           import_batch_id: string | null
+          last_name: string | null
           name: string
           notes: string | null
           phone: string | null
@@ -132,8 +134,10 @@ export type Database = {
           created_by?: string | null
           customer_code?: string | null
           email?: string | null
+          first_name?: string | null
           id?: string
           import_batch_id?: string | null
+          last_name?: string | null
           name: string
           notes?: string | null
           phone?: string | null
@@ -149,8 +153,10 @@ export type Database = {
           created_by?: string | null
           customer_code?: string | null
           email?: string | null
+          first_name?: string | null
           id?: string
           import_batch_id?: string | null
+          last_name?: string | null
           name?: string
           notes?: string | null
           phone?: string | null
@@ -577,9 +583,11 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
+          first_name: string | null
           full_name: string | null
           id: string
           is_active: boolean | null
+          last_name: string | null
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
           store_id: string | null
@@ -589,9 +597,11 @@ export type Database = {
         Insert: {
           created_at?: string
           email?: string | null
+          first_name?: string | null
           full_name?: string | null
           id?: string
           is_active?: boolean | null
+          last_name?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           store_id?: string | null
@@ -601,9 +611,11 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string | null
+          first_name?: string | null
           full_name?: string | null
           id?: string
           is_active?: boolean | null
+          last_name?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           store_id?: string | null
