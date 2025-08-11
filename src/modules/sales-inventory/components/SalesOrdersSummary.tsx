@@ -357,7 +357,7 @@ export function SalesOrdersSummary() {
       >
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="min-w-[220px]">
-            <h1 className="text-2xl font-semibold">{t('sales.summary.title')}</h1>
+            <h1 className="text-2xl font-semibold">Hello World</h1>
             <p className="text-muted-foreground text-sm">{t('sales.summary.description')}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
