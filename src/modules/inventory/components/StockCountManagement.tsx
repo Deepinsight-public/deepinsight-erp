@@ -9,8 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DataTable } from '@/components/shared/DataTable';
 import { toast } from 'sonner';
-import { inventoryApi } from '@/modules/inventory/api/inventory';
-import type { InventoryItem } from '@/modules/inventory/types';
+import { inventoryApi } from '../api/inventory';
+import type { InventoryItem, StockCountSession, ScanLogEntry } from '../types/inventory';
 
 interface StockCountManagementProps {
   storeId: string;
@@ -19,10 +19,10 @@ interface StockCountManagementProps {
 export function StockCountManagement({ storeId }: StockCountManagementProps) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
-  const [currentSession, setCurrentSession] = useState<any>(null);
+  const [currentSession, setCurrentSession] = useState<StockCountSession | null>(null);
   const [scanInput, setScanInput] = useState('');
   const [expectedItems, setExpectedItems] = useState<InventoryItem[]>([]);
-  const [scanHistory, setScanHistory] = useState<any[]>([]);
+  const [scanHistory, setScanHistory] = useState<ScanLogEntry[]>([]);
   const [showVarianceDialog, setShowVarianceDialog] = useState(false);
 
   useEffect(() => {
@@ -33,7 +33,8 @@ export function StockCountManagement({ storeId }: StockCountManagementProps) {
   const loadExpectedItems = async () => {
     try {
       const items = await inventoryApi.getInventory(storeId, { 
-        status: 'active',
+        currentStoreOnly: true,
+        status: 'in_stock',
         limit: 1000 
       });
       setExpectedItems(items);
@@ -54,9 +55,9 @@ export function StockCountManagement({ storeId }: StockCountManagementProps) {
   const startStockCount = () => {
     const docId = `SC-${storeId.slice(-4)}-${new Date().toISOString().replace(/[^\d]/g, '').slice(0, 12)}`;
     
-    const session = {
+    const session: StockCountSession = {
       docId,
-      status: 'active' as const,
+      status: 'active',
       startTime: new Date().toISOString(),
       scannedItems: [],
       expectedItems,
@@ -89,8 +90,8 @@ export function StockCountManagement({ storeId }: StockCountManagementProps) {
     const epc = scanInput.trim();
     
     try {
-      // Find item by EPC - mock since we don't have actual EPC data
-      const item = expectedItems.find(item => item.sku === epc); // Using SKU as mock EPC
+      // Find item by EPC
+      const item = expectedItems.find(item => item.epc === epc);
       
       if (!item) {
         toast.warning(t('inventory.stockCount.itemNotFound', { epc }));
@@ -98,7 +99,7 @@ export function StockCountManagement({ storeId }: StockCountManagementProps) {
       }
 
       // Check if already scanned
-      const alreadyScanned = currentSession.scannedItems.find((scanned: any) => scanned.sku === epc);
+      const alreadyScanned = currentSession.scannedItems.find(scanned => scanned.epc === epc);
       if (alreadyScanned) {
         toast.warning(t('inventory.stockCount.alreadyScanned'));
         return;
@@ -132,13 +133,13 @@ export function StockCountManagement({ storeId }: StockCountManagementProps) {
     if (!currentSession) return;
 
     try {
-      // Calculate variance - using SKU as mock EPC
-      const scannedSKUs = new Set(currentSession.scannedItems.map((item: any) => item.sku));
-      const expectedSKUs = new Set(expectedItems.map(item => item.sku));
+      // Calculate variance
+      const scannedEPCs = new Set(currentSession.scannedItems.map(item => item.epc));
+      const expectedEPCs = new Set(expectedItems.map(item => item.epc));
 
-      const missing = expectedItems.filter(item => !scannedSKUs.has(item.sku));
-      const extra = currentSession.scannedItems.filter((item: any) => !expectedSKUs.has(item.sku));
-      const found = currentSession.scannedItems.filter((item: any) => expectedSKUs.has(item.sku));
+      const missing = expectedItems.filter(item => !scannedEPCs.has(item.epc));
+      const extra = currentSession.scannedItems.filter(item => !expectedEPCs.has(item.epc));
+      const found = currentSession.scannedItems.filter(item => expectedEPCs.has(item.epc));
 
       const finalSession = {
         ...currentSession,
@@ -171,9 +172,9 @@ export function StockCountManagement({ storeId }: StockCountManagementProps) {
     if (!currentSession) return;
 
     const csvData = [
-      ['Type', 'SKU', 'Product Name', 'Status'], // Using SKU instead of EPC
-      ...currentSession.variance.missing.map((item: any) => ['Missing', item.sku, item.productName || '', item.status]),
-      ...currentSession.variance.extra.map((item: any) => ['Extra', item.sku, item.productName || '', item.status]),
+      ['Type', 'A4L Code', 'EPC', 'Product Name', 'Status'],
+      ...currentSession.variance.missing.map(item => ['Missing', item.a4lCode, item.epc, item.productName || '', item.status]),
+      ...currentSession.variance.extra.map(item => ['Extra', item.a4lCode, item.epc, item.productName || '', item.status]),
     ];
 
     const csvContent = csvData.map(row => row.join(',')).join('\n');
@@ -191,10 +192,17 @@ export function StockCountManagement({ storeId }: StockCountManagementProps) {
 
   const scannedColumns = [
     {
-      key: 'sku',
-      title: t('inventory.stockCount.columns.sku'),
+      key: 'a4lCode',
+      title: t('inventory.stockCount.columns.a4lCode'),
       render: (value: string) => (
         <span className="font-mono font-medium">{value}</span>
+      ),
+    },
+    {
+      key: 'epc',
+      title: t('inventory.stockCount.columns.epc'),
+      render: (value: string) => (
+        <span className="font-mono text-sm">{value}</span>
       ),
     },
     {
@@ -319,11 +327,12 @@ export function StockCountManagement({ storeId }: StockCountManagementProps) {
           )}
 
           {currentSession && (
-          <DataTable
-            data={currentSession.scannedItems}
-            columns={scannedColumns}
-            title={t('inventory.stockCount.scanned.title', { count: currentSession.scannedItems.length })}
-          />
+            <DataTable
+              data={currentSession.scannedItems}
+              columns={scannedColumns}
+              title={t('inventory.stockCount.scanned.title', { count: currentSession.scannedItems.length })}
+              emptyMessage={t('inventory.stockCount.scanned.empty')}
+            />
           )}
 
           {!currentSession && (
@@ -372,6 +381,7 @@ export function StockCountManagement({ storeId }: StockCountManagementProps) {
                 data={[...currentSession.variance.missing, ...currentSession.variance.extra]}
                 columns={varianceColumns}
                 title={t('inventory.stockCount.variance.items')}
+                emptyMessage={t('inventory.stockCount.variance.noVariance')}
               />
 
               <div className="flex justify-end gap-2">

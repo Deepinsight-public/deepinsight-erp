@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Barcode, Package, Clock, MapPin, AlertTriangle } from 'lucide-react';
+import { Search, Barcode, Package, Clock, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,8 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/shared/DataTable';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
-import { inventoryApi, type ItemEvent } from '@/modules/inventory/api/inventory';
-import type { InventoryItem, InventorySearchFilters } from '@/modules/inventory/types';
+import { inventoryApi } from '@/modules/inventory/api/inventory';
+import type { InventoryItem as ExistingInventoryItem, InventorySearchFilters as ExistingFilters } from '@/modules/inventory/types';
 
 interface InventorySearchAdvancedProps {
   storeId: string;
@@ -24,7 +24,7 @@ export function InventorySearchAdvanced({ storeId, onExport }: InventorySearchAd
   const [status, setStatus] = useState<string>('');
   const [currentStoreOnly, setCurrentStoreOnly] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [items, setItems] = useState<ExistingInventoryItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [itemEvents, setItemEvents] = useState<ItemEvent[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -47,8 +47,10 @@ export function InventorySearchAdvanced({ storeId, onExport }: InventorySearchAd
     setLoading(true);
     try {
       const filters: InventorySearchFilters = {
-        searchTerm: searchTerm.trim() || undefined,
+        q: searchTerm.trim() || undefined,
+        by: searchBy,
         status: status || undefined,
+        currentStoreOnly,
         limit: 50,
       };
       
@@ -84,11 +86,23 @@ export function InventorySearchAdvanced({ storeId, onExport }: InventorySearchAd
 
   const columns = [
     {
-      key: 'sku',
-      title: t('inventory.columns.sku'),
+      key: 'a4lCode',
+      title: t('inventory.columns.a4lCode'),
       render: (value: string) => (
         <span className="font-mono font-medium">{value}</span>
       ),
+    },
+    {
+      key: 'epc',
+      title: t('inventory.columns.epc'),
+      render: (value: string) => (
+        <span className="font-mono text-sm">{value}</span>
+      ),
+    },
+    {
+      key: 'serialNo',
+      title: t('inventory.columns.serial'),
+      render: (value: string) => value || '-',
     },
     {
       key: 'productName',
@@ -103,37 +117,23 @@ export function InventorySearchAdvanced({ storeId, onExport }: InventorySearchAd
       ),
     },
     {
-      key: 'currentStock',
-      title: t('inventory.columns.currentStock'),
-      render: (value: number) => (
-        <span className="font-medium">{value}</span>
-      ),
-    },
-    {
-      key: 'availableStock',
-      title: t('inventory.columns.available'),
-      render: (value: number, record: InventoryItem) => {
-        const isLowStock = value <= record.minStockLevel;
-        return (
-          <div className="flex items-center gap-2">
-            <span className={isLowStock ? 'text-warning font-medium' : 'font-medium'}>
-              {value}
-            </span>
-            {isLowStock && (
-              <AlertTriangle className="h-4 w-4 text-warning" />
-            )}
-          </div>
-        );
-      },
+      key: 'gradeLabel',
+      title: t('inventory.columns.grade'),
+      render: (value: string) => value ? (
+        <Badge variant="outline">{value}</Badge>
+      ) : '-',
     },
     {
       key: 'status',
       title: t('inventory.columns.status'),
       render: (value: string) => {
         const statusColors = {
-          active: 'bg-success/10 text-success',
-          discontinued: 'bg-warning/10 text-warning',
-          blocked: 'bg-danger/10 text-danger',
+          in_stock: 'bg-success/10 text-success',
+          in_transit: 'bg-warning/10 text-warning',
+          pending: 'bg-gray/10 text-gray',
+          sold: 'bg-primary/10 text-primary',
+          returned: 'bg-danger/10 text-danger',
+          scrapped: 'bg-danger/10 text-danger',
         };
         return (
           <Badge className={statusColors[value as keyof typeof statusColors] || 'bg-gray/10 text-gray'}>
@@ -143,13 +143,24 @@ export function InventorySearchAdvanced({ storeId, onExport }: InventorySearchAd
       },
     },
     {
-      key: 'lastCountedAt',
-      title: t('inventory.columns.lastCounted'),
+      key: 'currentStoreId',
+      title: t('inventory.columns.location'),
+      render: (value: string) => value ? (
+        <div className="flex items-center gap-1">
+          <MapPin className="h-3 w-3" />
+          <span className="text-sm">{value}</span>
+        </div>
+      ) : '-',
+    },
+    {
+      key: 'loadDate',
+      title: t('inventory.columns.daysOnHand'),
       render: (value: string) => {
-        return value ? (
+        const days = calculateDaysOnHand(value);
+        return days !== null ? (
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            <span className="text-sm">{new Date(value).toLocaleDateString()}</span>
+            <span className="text-sm">{days}d</span>
           </div>
         ) : '-';
       },
@@ -253,7 +264,7 @@ export function InventorySearchAdvanced({ storeId, onExport }: InventorySearchAd
         <DrawerContent className="max-h-[80vh]">
           <DrawerHeader>
             <DrawerTitle>
-              {selectedItem ? t('inventory.itemDetail.title', { code: selectedItem.sku }) : ''}
+              {selectedItem ? t('inventory.itemDetail.title', { code: selectedItem.a4lCode }) : ''}
             </DrawerTitle>
           </DrawerHeader>
           
@@ -262,16 +273,16 @@ export function InventorySearchAdvanced({ storeId, onExport }: InventorySearchAd
               {/* Basic Info */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <Label className="text-xs text-muted-foreground">{t('inventory.itemDetail.sku')}</Label>
-                  <div className="font-mono font-medium">{selectedItem.sku}</div>
+                  <Label className="text-xs text-muted-foreground">{t('inventory.itemDetail.a4lCode')}</Label>
+                  <div className="font-mono font-medium">{selectedItem.a4lCode}</div>
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">{t('inventory.itemDetail.productName')}</Label>
-                  <div className="font-medium">{selectedItem.productName || '-'}</div>
+                  <Label className="text-xs text-muted-foreground">{t('inventory.itemDetail.epc')}</Label>
+                  <div className="font-mono text-sm">{selectedItem.epc}</div>
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">{t('inventory.itemDetail.brand')}</Label>
-                  <div>{selectedItem.brand || '-'}</div>
+                  <Label className="text-xs text-muted-foreground">{t('inventory.itemDetail.serial')}</Label>
+                  <div>{selectedItem.serialNo || '-'}</div>
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">{t('inventory.itemDetail.status')}</Label>

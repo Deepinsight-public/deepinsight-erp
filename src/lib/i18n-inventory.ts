@@ -36,25 +36,29 @@ export const inventoryI18nKeys = {
     'inventory.status.scrapped': 'Scrapped',
     
     // Columns
-    'inventory.columns.sku': 'SKU',
+    'inventory.columns.a4lCode': 'A4L Code',
+    'inventory.columns.epc': 'EPC',
+    'inventory.columns.serial': 'Serial No',
     'inventory.columns.product': 'Product',
-    'inventory.columns.brand': 'Brand',
-    'inventory.columns.currentStock': 'Current Stock',
-    'inventory.columns.available': 'Available',
-    'inventory.columns.status': 'Status',
-    'inventory.columns.lastCounted': 'Last Counted',
+    'inventory.columns.grade': 'Grade',
+    'inventory.columns.status': 'Status', 
+    'inventory.columns.location': 'Location',
+    'inventory.columns.daysOnHand': 'Days on Hand',
     
     // Actions
     'inventory.actions.export': 'Export',
     
     // Item Detail
     'inventory.itemDetail.title': 'Item Details: {code}',
-    'inventory.itemDetail.sku': 'SKU',
+    'inventory.itemDetail.a4lCode': 'A4L Code',
+    'inventory.itemDetail.epc': 'EPC',
+    'inventory.itemDetail.serial': 'Serial Number',
+    'inventory.itemDetail.status': 'Status',
+    'inventory.itemDetail.productInfo': 'Product Information',
     'inventory.itemDetail.productName': 'Product Name',
     'inventory.itemDetail.brand': 'Brand',
     'inventory.itemDetail.model': 'Model',
-    'inventory.itemDetail.status': 'Status',
-    'inventory.itemDetail.productInfo': 'Product Information',
+    'inventory.itemDetail.sku': 'SKU',
     'inventory.itemDetail.eventsTimeline': 'Events Timeline',
     'inventory.itemDetail.noEvents': 'No events recorded for this item',
     
@@ -203,7 +207,8 @@ export const inventoryI18nKeys = {
     'inventory.stockCount.scan.hint': 'Use keyboard scanner or manually enter EPC codes',
     
     // Stock Count Columns
-    'inventory.stockCount.columns.sku': 'SKU',
+    'inventory.stockCount.columns.a4lCode': 'A4L Code',
+    'inventory.stockCount.columns.epc': 'EPC',
     'inventory.stockCount.columns.product': 'Product',
     'inventory.stockCount.columns.status': 'Status',
     
@@ -264,25 +269,29 @@ export const inventoryI18nKeys = {
     'inventory.status.scrapped': '已报废',
     
     // Columns
-    'inventory.columns.sku': 'SKU',
+    'inventory.columns.a4lCode': 'A4L编码',
+    'inventory.columns.epc': 'EPC',
+    'inventory.columns.serial': '序列号',
     'inventory.columns.product': '产品',
-    'inventory.columns.brand': '品牌',
-    'inventory.columns.currentStock': '当前库存',
-    'inventory.columns.available': '可用',
+    'inventory.columns.grade': '等级',
     'inventory.columns.status': '状态',
-    'inventory.columns.lastCounted': '上次盘点',
+    'inventory.columns.location': '位置',
+    'inventory.columns.daysOnHand': '在手天数',
     
     // Actions
     'inventory.actions.export': '导出',
     
     // Item Detail
     'inventory.itemDetail.title': '物品详情：{code}',
-    'inventory.itemDetail.sku': 'SKU',
+    'inventory.itemDetail.a4lCode': 'A4L编码',
+    'inventory.itemDetail.epc': 'EPC',
+    'inventory.itemDetail.serial': '序列号',
+    'inventory.itemDetail.status': '状态',
+    'inventory.itemDetail.productInfo': '产品信息',
     'inventory.itemDetail.productName': '产品名称',
     'inventory.itemDetail.brand': '品牌',
     'inventory.itemDetail.model': '型号',
-    'inventory.itemDetail.status': '状态',
-    'inventory.itemDetail.productInfo': '产品信息',
+    'inventory.itemDetail.sku': 'SKU',
     'inventory.itemDetail.eventsTimeline': '事件时间线',
     'inventory.itemDetail.noEvents': '此物品无事件记录',
     
@@ -431,7 +440,8 @@ export const inventoryI18nKeys = {
     'inventory.stockCount.scan.hint': '使用键盘扫描器或手动输入EPC码',
     
     // Stock Count Columns
-    'inventory.stockCount.columns.sku': 'SKU',
+    'inventory.stockCount.columns.a4lCode': 'A4L编码',
+    'inventory.stockCount.columns.epc': 'EPC',
     'inventory.stockCount.columns.product': '产品',
     'inventory.stockCount.columns.status': '状态',
     

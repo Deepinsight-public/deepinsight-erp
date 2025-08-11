@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DataTable } from '@/components/shared/DataTable';
 import { toast } from 'sonner';
-import { inventoryApi, type PurchaseRequestExt } from '@/modules/inventory/api/inventory';
+import { inventoryApi } from '../api/inventory';
+import type { PurchaseRequest, CreatePurchaseRequest, PurchaseRequestItem } from '../types/inventory';
 
 interface PurchaseManagementProps {
   storeId: string;
@@ -17,12 +18,12 @@ interface PurchaseManagementProps {
 
 export function PurchaseManagement({ storeId }: PurchaseManagementProps) {
   const { t } = useTranslation();
-  const [requests, setRequests] = useState<PurchaseRequestExt[]>([]);
+  const [requests, setRequests] = useState<PurchaseRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   
-  // Form state - using simple types
-  const [items, setItems] = useState<any[]>([
+  // Form state
+  const [items, setItems] = useState<PurchaseRequestItem[]>([
     { sku: '', productName: '', quantity: 1, notes: '' }
   ]);
   const [remarks, setRemarks] = useState('');
@@ -55,7 +56,7 @@ export function PurchaseManagement({ storeId }: PurchaseManagementProps) {
     }
 
     try {
-      const request = {
+      const request: CreatePurchaseRequest = {
         items: validItems.map(item => ({
           ...item,
           sku: item.sku?.trim(),
@@ -92,7 +93,7 @@ export function PurchaseManagement({ storeId }: PurchaseManagementProps) {
     }
   };
 
-  const updateItem = (index: number, field: string, value: any) => {
+  const updateItem = (index: number, field: keyof PurchaseRequestItem, value: any) => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
     setItems(newItems);
@@ -128,7 +129,7 @@ export function PurchaseManagement({ storeId }: PurchaseManagementProps) {
     {
       key: 'items',
       title: t('inventory.purchase.columns.items'),
-      render: (value: any[]) => (
+      render: (value: PurchaseRequestItem[]) => (
         <div className="flex items-center gap-1">
           <Package className="h-4 w-4 text-muted-foreground" />
           <span>{value?.length || 0} {t('inventory.purchase.columns.itemsCount')}</span>
@@ -157,7 +158,7 @@ export function PurchaseManagement({ storeId }: PurchaseManagementProps) {
     {
       key: 'actions',
       title: t('inventory.purchase.columns.actions'),
-      render: (value: any, record: PurchaseRequestExt) => (
+      render: (value: any, record: PurchaseRequest) => (
         <div className="flex gap-2">
           {record.status === 'approved' && (
             <Button size="sm" variant="outline">
@@ -289,6 +290,7 @@ export function PurchaseManagement({ storeId }: PurchaseManagementProps) {
         columns={columns}
         loading={loading}
         title={t('inventory.purchase.list.title')}
+        emptyMessage={t('inventory.purchase.list.empty')}
       />
     </div>
   );

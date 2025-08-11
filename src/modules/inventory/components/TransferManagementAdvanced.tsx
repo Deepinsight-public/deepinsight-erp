@@ -11,7 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DataTable } from '@/components/shared/DataTable';
 import { toast } from 'sonner';
-import { inventoryApi, type TransferOrderExt, type Store } from '@/modules/inventory/api/inventory';
+import { inventoryApi } from '../api/inventory';
+import type { TransferOrder, CreateTransferRequest, Store, Warehouse } from '../types/inventory';
 
 interface TransferManagementAdvancedProps {
   storeId: string;
@@ -19,10 +20,10 @@ interface TransferManagementAdvancedProps {
 
 export function TransferManagementAdvanced({ storeId }: TransferManagementAdvancedProps) {
   const { t } = useTranslation();
-  const [transferOut, setTransferOut] = useState<TransferOrderExt[]>([]);
-  const [transferIn, setTransferIn] = useState<TransferOrderExt[]>([]);
+  const [transferOut, setTransferOut] = useState<TransferOrder[]>([]);
+  const [transferIn, setTransferIn] = useState<TransferOrder[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
-  const [warehouses, setWarehouses] = useState<Store[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   
@@ -67,7 +68,7 @@ export function TransferManagementAdvanced({ storeId }: TransferManagementAdvanc
     try {
       const epcs = itemEPCs.split('\n').map(epc => epc.trim()).filter(Boolean);
       
-      const request = {
+      const request: CreateTransferRequest = {
         toStoreId: selectedDestination,
         itemEPCs: epcs,
         reason: reason.trim() || undefined,
@@ -140,7 +141,7 @@ export function TransferManagementAdvanced({ storeId }: TransferManagementAdvanc
     {
       key: 'toStoreName',
       title: t('inventory.transfer.columns.destination'),
-      render: (value: string, record: TransferOrderExt) => (
+      render: (value: string, record: TransferOrder) => (
         <div className="flex items-center gap-2">
           {record.kind === 'STORE_TO_WAREHOUSE' ? (
             <Warehouse className="h-4 w-4 text-muted-foreground" />
@@ -174,7 +175,7 @@ export function TransferManagementAdvanced({ storeId }: TransferManagementAdvanc
     {
       key: 'actions',
       title: t('inventory.transfer.columns.actions'),
-      render: (value: any, record: TransferOrderExt) => (
+      render: (value: any, record: TransferOrder) => (
         <div className="flex gap-2">
           {record.status === 'DRAFT' && (
             <Button 
@@ -202,7 +203,7 @@ export function TransferManagementAdvanced({ storeId }: TransferManagementAdvanc
     {
       key: 'fromStoreName',
       title: t('inventory.transfer.columns.source'),
-      render: (value: string, record: TransferOrderExt) => (
+      render: (value: string, record: TransferOrder) => (
         <div className="flex items-center gap-2">
           <Building className="h-4 w-4 text-muted-foreground" />
           <span>{value || record.fromStoreId}</span>
@@ -232,7 +233,7 @@ export function TransferManagementAdvanced({ storeId }: TransferManagementAdvanc
     {
       key: 'actions',
       title: t('inventory.transfer.columns.actions'),
-      render: (value: any, record: TransferOrderExt) => (
+      render: (value: any, record: TransferOrder) => (
         <div className="flex gap-2">
           {record.status === 'SHIPPED' && (
             <Button 
@@ -317,7 +318,7 @@ export function TransferManagementAdvanced({ storeId }: TransferManagementAdvanc
                           <SelectItem key={warehouse.id} value={warehouse.id}>
                             <div className="flex items-center gap-2">
                               <Warehouse className="h-4 w-4" />
-                              <span>{warehouse.storeName} ({warehouse.storeCode})</span>
+                              <span>{warehouse.warehouseName} ({warehouse.warehouseCode})</span>
                             </div>
                           </SelectItem>
                         ))
@@ -381,6 +382,7 @@ export function TransferManagementAdvanced({ storeId }: TransferManagementAdvanc
             columns={transferOutColumns}
             loading={loading}
             title={t('inventory.transfer.out.title')}
+            emptyMessage={t('inventory.transfer.out.empty')}
           />
         </TabsContent>
 
@@ -390,6 +392,7 @@ export function TransferManagementAdvanced({ storeId }: TransferManagementAdvanc
             columns={transferInColumns}
             loading={loading}
             title={t('inventory.transfer.in.title')}
+            emptyMessage={t('inventory.transfer.in.empty')}
           />
         </TabsContent>
       </Tabs>
