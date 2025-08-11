@@ -71,7 +71,7 @@ export function ScrapPage() {
   const columns = [
     {
       key: 'scrapNo',
-      title: t('scrapManagement.list.scrapNo'),
+      title: t('Scrap No.'),
       render: (value: any, record: ScrapHeader) => {
         console.log('Rendering scrap number:', record.scrapNo, record);
         return <span className="font-medium font-mono">{record.scrapNo || 'N/A'}</span>;
@@ -79,7 +79,7 @@ export function ScrapPage() {
     },
     {
       key: 'createdAt',
-      title: t('scrapManagement.list.date'),
+      title: t('Date'),
       render: (value: any, record: ScrapHeader) => {
         console.log('Rendering date:', record.createdAt, record);
         if (!record.createdAt) return '-';
@@ -95,7 +95,7 @@ export function ScrapPage() {
     },
     {
       key: 'status',
-      title: t('scrapManagement.list.status'),
+      title: t('Status'),
       render: (value: any, record: ScrapHeader) => (
         <Badge 
           variant="secondary"
@@ -107,14 +107,14 @@ export function ScrapPage() {
     },
     {
       key: 'reason',
-      title: t('scrapManagement.form.reason'),
+      title: t('Reason'),
       render: (value: any, record: ScrapHeader) => (
         <span className="capitalize">Coming soon</span>
       )
     },
     {
       key: 'totalQty',
-      title: t('scrapManagement.list.quantity'),
+      title: t('Total Quantity'),
       render: (value: any, record: ScrapHeader) => (
         <span className="font-medium">{record.totalQty || 0}</span>
       )
@@ -128,12 +128,12 @@ export function ScrapPage() {
         <div>
           <h1 className="text-3xl font-bold">{t('scrapManagement.title')}</h1>
           <p className="text-muted-foreground">
-            {t('scrapManagement.description')}
+            {t('Description')}
           </p>
         </div>
         <Button onClick={() => navigate('/store/scrap/new')}>
           <Plus className="h-4 w-4 mr-2" />
-          {t('scrapManagement.newRequest')}
+          {t('New Scrap Request')}
         </Button>
       </div>
 
