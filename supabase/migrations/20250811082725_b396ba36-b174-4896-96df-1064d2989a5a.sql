@@ -1,0 +1,42 @@
+BEGIN;
+CREATE OR REPLACE VIEW public.vw_sales_orders_list AS
+SELECT 
+  so.id,
+  so.order_number,
+  so.order_date,
+  so.status,
+  so.total_amount,
+  so.discount_amount,
+  so.tax_amount,
+  so.customer_name,
+  so.customer_email,
+  so.customer_phone,
+  so.customer_first,
+  so.customer_last,
+  so.addr_country,
+  so.addr_state,
+  so.addr_city,
+  so.addr_street,
+  so.addr_zipcode,
+  so.warranty_years,
+  so.warranty_amount,
+  so.walk_in_delivery,
+  so.accessory,
+  so.other_services,
+  so.other_fee,
+  so.payment_method,
+  so.payment_note,
+  so.customer_source,
+  so.cashier_id,
+  so.store_id,
+  so.created_by,
+  so.created_at,
+  so.updated_at,
+  COALESCE((SELECT COUNT(*) FROM public.sales_order_items soi WHERE soi.sales_order_id = so.id), 0) AS line_count,
+  COALESCE((SELECT SUM(soi.quantity) FROM public.sales_order_items soi WHERE soi.sales_order_id = so.id), 0) AS total_quantity,
+  CASE WHEN so.warranty_years > 1 THEN true ELSE false END AS has_extended_warranty
+FROM public.sales_orders so;
+
+COMMENT ON VIEW public.vw_sales_orders_list IS 'Sales orders list view without dependency on customers table.';
+ALTER VIEW public.vw_sales_orders_list SET (security_invoker = true);
+COMMIT;
