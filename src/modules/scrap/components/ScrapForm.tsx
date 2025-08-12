@@ -95,36 +95,58 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
     getWarehouses().then(setWarehouseOptions).catch(console.error);
   }, []);
 
-  // Load all products on component mount
+  // Load all products on component mount, but only after we have userStoreId
   useEffect(() => {
-    loadAllProducts();
-  }, []);
+    if (userStoreId) {
+      loadAllProducts();
+    }
+  }, [userStoreId]);
 
-  // Load products - preload all products and handle search
+  // Load products from inventory - only show products that are in stock
   const loadAllProducts = async () => {
     try {
+      if (!userStoreId) return;
+
       const { data, error } = await supabase
-        .from('products')
-        .select('id, sku, product_name, price')
-        .eq('is_active', true)
-        .order('product_name')
+        .from('inventory')
+        .select(`
+          product_id,
+          quantity,
+          reserved_quantity,
+          products:product_id (
+            id,
+            sku,
+            product_name,
+            price,
+            is_active
+          )
+        `)
+        .eq('store_id', userStoreId)
+        .gt('quantity', 0)
+        .eq('products.is_active', true)
+        .order('products(product_name)')
         .limit(100);
 
       if (error) {
-        console.error('Error loading products:', error);
+        console.error('Error loading inventory products:', error);
         return;
       }
 
-      const options = data?.map(product => ({
-        value: product.id,
-        label: `${product.sku} - ${product.product_name}`,
-        cost: product.price || 0,
-        product
-      })) || [];
+      const options = data?.map(inventory => {
+        const product = inventory.products;
+        const availableQty = (inventory.quantity || 0) - (inventory.reserved_quantity || 0);
+        return {
+          value: product.id,
+          label: `${product.sku} - ${product.product_name} (Available: ${availableQty})`,
+          cost: product.price || 0,
+          availableQty,
+          product
+        };
+      }).filter(option => option.availableQty > 0) || [];
 
       setProductOptions(options);
     } catch (error) {
-      console.error('Error loading products:', error);
+      console.error('Error loading inventory products:', error);
     }
   };
 
@@ -136,27 +158,49 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
     }
 
     try {
+      if (!userStoreId) return;
+
       const { data, error } = await supabase
-        .from('products')
-        .select('id, sku, product_name, price')
-        .or(`sku.ilike.%${search}%,product_name.ilike.%${search}%`)
-        .eq('is_active', true)
-        .order('product_name')
+        .from('inventory')
+        .select(`
+          product_id,
+          quantity,
+          reserved_quantity,
+          products:product_id (
+            id,
+            sku,
+            product_name,
+            price,
+            is_active
+          )
+        `)
+        .eq('store_id', userStoreId)
+        .gt('quantity', 0)
+        .eq('products.is_active', true)
+        .or(`products.sku.ilike.%${search}%,products.product_name.ilike.%${search}%`)
+        .order('products(product_name)')
         .limit(20);
 
       if (error) {
-        console.error('Error searching products:', error);
+        console.error('Error searching inventory products:', error);
         return;
       }
 
-      const options = (data || []).map(product => ({
-        value: product.id,
-        label: `${product.sku} - ${product.product_name}`,
-        cost: product.price || 0,
-      }));
+      const options = data?.map(inventory => {
+        const product = inventory.products;
+        const availableQty = (inventory.quantity || 0) - (inventory.reserved_quantity || 0);
+        return {
+          value: product.id,
+          label: `${product.sku} - ${product.product_name} (Available: ${availableQty})`,
+          cost: product.price || 0,
+          availableQty,
+          product
+        };
+      }).filter(option => option.availableQty > 0) || [];
+
       setProductOptions(options);
     } catch (error) {
-      console.error('Error searching products:', error);
+      console.error('Error searching inventory products:', error);
     }
   };
 
