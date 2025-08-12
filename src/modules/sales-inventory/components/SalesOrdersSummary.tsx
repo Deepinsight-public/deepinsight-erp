@@ -486,34 +486,33 @@ export function SalesOrdersSummary() {
           <DataTable
             data={orders as any}
             columns={tableColumns.filter(col => [
-              'orderDate',
-              'orderNumber',
-              'customerName',
-              'status',
-              'itemsCount',
-              'mapTotal',
-              'deliveryFee',
-              'accessoryFee',
-              'otherFee',
-              'cogsTotal',
-              'grossProfit',
-              'productMapRate',
-              'walkInDelivery',
-              'deliveryDate',
-              'paymentMethod1',
-              'paymentAmount1',
-              'paymentMethod2',
-              'paymentAmount2',
-              'paymentMethod3',
-              'paymentAmount3',
-              'customerSource',
-              'discountAmount',
-              'taxTotal',
-              'totalAmount',
-              'paidTotal',
-              'balanceAmount',
-              'cashierName',
-              'actions'
+              'orderDate',          // Date
+              'orderNumber',        // Order NO.
+              'customerName',       // Customer
+              'status',             // Status
+              'itemsCount',         // Items
+              'extendedWarranty',   // Extended Warranty
+              'warrantyAmount',     // Warranty Amount
+              'mapTotal',           // MAP
+              'productMapRate',     // Product/MAP rate
+              'walkInDelivery',     // Delivery/Pickup
+              'deliveryDate',       // Delivery Date
+              'deliveryFee',        // Delivery Fee
+              'accessoryFee',       // Accessory Fee
+              'otherFee',           // Other Fee
+              'cogsTotal',          // Product Cost
+              'grossProfit',        // Gross Profit
+              'cashierName',        // Cashier
+              'customerSource',     // Source
+              'paymentMethod1',     // Payment1
+              'paymentAmount1',     // Payment1 Amount
+              'paymentMethod2',     // Payment2
+              'paymentAmount2',     // Payment2 Amount
+              'paymentMethod3',     // Payment3
+              'paymentAmount3',     // Payment3 Amount
+              'discountAmount',     // Discount
+              'taxTotal',           // Tax
+              'totalAmount'         // Total
             ].includes(col.key as string)) as any}
             loading={loading}
             minTableWidth={1800}
