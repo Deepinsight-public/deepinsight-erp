@@ -10,9 +10,9 @@ export function StoreLayout() {
 
   return (
     <SidebarProvider defaultOpen>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
         <StoreSidebar />
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 overflow-x-hidden">
           <StoreHeader />
           <main className="flex-1 p-6 overflow-y-auto overflow-x-hidden min-h-0">
             <Outlet />
