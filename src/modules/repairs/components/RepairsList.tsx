@@ -7,7 +7,8 @@ import { Plus } from 'lucide-react';
 import { StandardSearchBar } from '@/components/shared/StandardSearchBar';
 import { useTranslation } from 'react-i18next';
 import { RepairsTable } from './RepairsTable';
-import type { Repair } from '../types';
+import { CreateRepairModal } from './CreateRepairModal';
+import type { Repair, RepairFilters } from '../types';
 import { getRepairs } from '../api/repairs';
 import { useToastService } from '@/components/shared/ToastService';
 
@@ -17,17 +18,24 @@ export function RepairsList() {
   const [repairs, setRepairs] = useState<Repair[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('processing');
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const { showError } = useToastService();
 
   const loadRepairs = async () => {
     try {
       setLoading(true);
-      const data = await getRepairs();
+      
+      const filters: RepairFilters = {};
+      if (searchQuery.trim()) {
+        filters.search = searchQuery;
+      }
+      
+      const data = await getRepairs(filters);
       setRepairs(data);
     } catch (error) {
       console.error('Error loading repairs:', error);
-      showError(t('repairs.loadError'));
+      showError('Failed to load repairs. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -43,15 +51,13 @@ export function RepairsList() {
   };
 
   const filteredRepairs = repairs.filter(repair => {
-    // Apply search filter only after search button is clicked
-    if (searchQuery && searchQuery.trim() !== '' && !repair.id.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
+    // Filter by tab
+    if (activeTab === 'processing') {
+      return ['pending', 'in_progress'].includes(repair.status);
     }
-    
-    if (activeTab === 'all') return true;
-    if (activeTab === 'pending') return repair.status === 'pending';
-    if (activeTab === 'in_progress') return repair.status === 'in_progress';
-    if (activeTab === 'completed') return repair.status === 'completed';
+    if (activeTab === 'warranty') {
+      return repair.type === 'warranty';
+    }
     return true;
   });
 
@@ -60,8 +66,13 @@ export function RepairsList() {
     navigate(`/store/repairs/${repair.id}`);
   };
 
+  const handleCreateSuccess = () => {
+    setCreateModalOpen(false);
+    loadRepairs();
+  };
+
   const breadcrumbs = [
-    { title: t('repairs') }
+    { title: 'Repairs' }
   ];
 
   return (
@@ -70,21 +81,21 @@ export function RepairsList() {
       
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">{t('repairs.title')}</h1>
+          <h1 className="text-3xl font-bold">Repairs Management</h1>
           <p className="text-muted-foreground">
-            {t('repairs.description')}
+            Manage product repairs and service orders
           </p>
         </div>
-        <Button onClick={() => navigate('/store/repairs/new')}>
+        <Button onClick={() => setCreateModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          {t('repairs.create')}
+          Create Repair
         </Button>
       </div>
 
       <StandardSearchBar
-        title={t('repairs.search.title') || 'Search Repairs'}
+        title="Search Repairs"
         searchValue={searchQuery}
-        searchPlaceholder={t('repairs.searchPlaceholder')}
+        searchPlaceholder="Search by Repair ID, Issue, or Status..."
         onSearchChange={setSearchQuery}
         onSearch={handleSearch}
       />
@@ -92,10 +103,8 @@ export function RepairsList() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
-          <TabsTrigger value="all">{t('repairs.tabs.all')}</TabsTrigger>
-          <TabsTrigger value="pending">{t('repairs.tabs.pending')}</TabsTrigger>
-          <TabsTrigger value="in_progress">{t('repairs.tabs.inProgress')}</TabsTrigger>
-          <TabsTrigger value="completed">{t('repairs.tabs.completed')}</TabsTrigger>
+          <TabsTrigger value="processing">Repair Processing</TabsTrigger>
+          <TabsTrigger value="warranty">Warranty Transfers</TabsTrigger>
         </TabsList>
         
         <TabsContent value={activeTab} className="space-y-4">
@@ -106,6 +115,12 @@ export function RepairsList() {
           />
         </TabsContent>
       </Tabs>
+
+      <CreateRepairModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSuccess={handleCreateSuccess}
+      />
     </div>
   );
 }
