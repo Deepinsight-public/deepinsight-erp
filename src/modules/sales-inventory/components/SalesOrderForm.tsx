@@ -25,7 +25,7 @@ const SalesOrderFormSchema = z.object({
   customerEmail: z.string().email('Please enter a valid email address').min(1, 'Email is required'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  fulfillmentType: z.enum(['pick-up', 'delivery'], { required_error: 'Please select pick-up or delivery' }),
+  fulfillmentType: z.enum(['pick-up', 'delivery'], { message: 'Please select pick-up or delivery' }),
   customerPhone: z.string().optional(),
   country: z.string().optional(),
   state: z.string().optional(),

@@ -113,7 +113,7 @@ export function SalesOrdersSummary() {
     { key: 'discountAmount', title: 'Discount', visible: true },
     { key: 'taxTotal', title: 'Tax', visible: true },
     { key: 'totalAmount', title: 'Total', visible: true },
-    { key: 'actions', title: 'Actions', visible: false },
+    // Actions column removed since rows are now clickable
     
     // Advanced columns - hidden for now
     { key: 'paidTotal', title: 'Paid Total', visible: false, advanced: true },
@@ -287,34 +287,7 @@ export function SalesOrdersSummary() {
               {t(`sales.summary.delivery.${value}`)}
             </Badge>
           ) : null;
-        case 'actions':
-          return (
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(`/store/sales-orders/${record.orderId}`)}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-              {record.invoiceUrl && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => window.open(record.invoiceUrl, '_blank')}
-                >
-                  <FileText className="h-4 w-4" />
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(`/store/after-sales/returns/new?orderId=${record.orderId}`)}
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            </div>
-          );
+        // Actions case removed - using clickable rows instead
         default:
           return value;
       }
@@ -529,6 +502,7 @@ export function SalesOrdersSummary() {
             ].includes(col.key as string)) as any}
             loading={loading}
             minTableWidth={1800}
+            onRowClick={(record) => navigate(`/store/sales-orders/${record.orderId || record.id}`)}
           />
         </div>
       </section>
