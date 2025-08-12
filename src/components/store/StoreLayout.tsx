@@ -14,7 +14,7 @@ export function StoreLayout() {
         <StoreSidebar />
         <div className="flex-1 flex flex-col">
           <StoreHeader />
-          <main className="flex-1 p-6 overflow-y-auto overflow-x-hidden">
+          <main className="flex-1 p-6 overflow-hidden">
             <Outlet />
           </main>
           <VersionFooter />

@@ -338,10 +338,10 @@ export function SalesOrdersSummary() {
   ];
 
   return (
-    <div className="w-full max-w-full flex flex-col">
+    <div className="w-full max-w-full h-full min-h-0 flex flex-col">
       {/* Toolbar */}
       <section
-        className="w-full max-w-full px-4 md:px-6 pt-6"
+        className="w-full max-w-full px-4 md:px-6 pt-2"
         data-testid="so-toolbar"
       >
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
@@ -480,9 +480,9 @@ export function SalesOrdersSummary() {
         </div>
       </section>
 
-      {/* Compact table with its own horizontal scrollbar */}
-      <section className="w-full max-w-full mt-4" aria-label="Sales Order Table">
-        <div className="w-full">
+      {/* Bottom section: takes remaining height and scrolls vertically; table scrolls horizontally */}
+      <section className="w-full max-w-full mt-2 flex-1 min-h-0" aria-label="Sales Order Table">
+        <div className="w-full h-full overflow-y-auto overflow-x-hidden">
           <DataTable
             data={orders as any}
             columns={tableColumns.filter(col => [
