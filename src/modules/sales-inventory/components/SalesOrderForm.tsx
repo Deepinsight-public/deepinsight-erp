@@ -26,7 +26,7 @@ const SalesOrderFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   fulfillmentType: z.enum(['pick-up', 'delivery'], { message: 'Please select pick-up or delivery' }),
-  customerPhone: z.string().optional(),
+  customerPhone: z.string().min(1, 'Phone number is required'),
   country: z.string().optional(),
   state: z.string().optional(),
   city: z.string().optional(),
@@ -210,10 +210,9 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
   };
 
   // Save order
-  const handleSave = async (status: 'draft' | 'submitted') => {
+  const handleSave = async (formData: SalesOrderFormData, status: 'draft' | 'submitted') => {
     setLoading(true);
     try {
-      const formData = getValues();
       
       // Get user profile for store_id and user_id
       const { data: { user } } = await supabase.auth.getUser();
@@ -613,13 +612,17 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
             </div>
             
             <div>
-              <Label htmlFor="customerPhone">Phone</Label>
+              <Label htmlFor="customerPhone">Phone <span className="text-destructive">*</span></Label>
               <Input
                 id="customerPhone"
                 {...register('customerPhone')}
                 disabled={readOnly}
                 placeholder=""
+                className={errors.customerPhone ? "border-destructive" : ""}
               />
+              {errors.customerPhone && (
+                <p className="text-xs text-destructive mt-1">{errors.customerPhone.message}</p>
+              )}
             </div>
             <div />
           </div>
@@ -955,14 +958,14 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         <div className="flex gap-4">
           <Button
             variant="outline"
-            onClick={() => handleSave('draft')}
+            onClick={handleSubmit((data) => handleSave(data, 'draft'))}
             disabled={loading}
           >
             Save Draft
           </Button>
           <Button
-            onClick={() => {
-              if (!watch('fulfillmentType')) {
+            onClick={handleSubmit((data) => {
+              if (!data.fulfillmentType) {
                 toast({
                   title: 'Validation Error',
                   description: 'Please choose pick-up or delivery',
@@ -970,9 +973,25 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                 });
                 return;
               }
-              handleSave('submitted');
-            }}
-            disabled={loading || lines.length === 0}
+              if (!data.customerEmail || !data.firstName || !data.lastName) {
+                toast({
+                  title: 'Validation Error',
+                  description: 'Please fill in all required customer information (Email, First Name, Last Name)',
+                  variant: 'destructive'
+                });
+                return;
+              }
+              if (lines.length === 0) {
+                toast({
+                  title: 'Validation Error',
+                  description: 'Please add at least one item to the order',
+                  variant: 'destructive'
+                });
+                return;
+              }
+              handleSave(data, 'submitted');
+            })}
+            disabled={loading}
           >
             Submit Order
           </Button>
