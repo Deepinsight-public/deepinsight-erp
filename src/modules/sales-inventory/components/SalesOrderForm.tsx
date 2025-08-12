@@ -20,12 +20,12 @@ import { SalesOrderDTO, SalesOrderLineDTO, ProductLookupItem } from '../types';
 import { fetchProductLookup, fetchStockLevel, createSalesOrder, updateSalesOrder } from '../api/sales-orders';
 import { supabase } from '@/integrations/supabase/client';
 
-// Form validation schema
+// Form validation schema with conditional address validation
 const SalesOrderFormSchema = z.object({
   customerEmail: z.string().email('Please enter a valid email address').min(1, 'Email is required'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  fulfillmentType: z.enum(['walk-in', 'delivery']).optional(),
+  fulfillmentType: z.enum(['pick-up', 'delivery'], { required_error: 'Please select pick-up or delivery' }),
   customerPhone: z.string().optional(),
   country: z.string().optional(),
   state: z.string().optional(),
@@ -42,6 +42,15 @@ const SalesOrderFormSchema = z.object({
   customerSource: z.string().optional(),
   cashierId: z.string().optional(),
   orderDate: z.string().optional()
+}).refine((data) => {
+  // If delivery is selected, address fields are required
+  if (data.fulfillmentType === 'delivery') {
+    return !!(data.street && data.city && data.state && data.country && data.zipcode);
+  }
+  return true;
+}, {
+  message: "Address fields are required for delivery orders",
+  path: ["fulfillmentType"]
 });
 
 type SalesOrderFormData = z.infer<typeof SalesOrderFormSchema>;
@@ -85,7 +94,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
     resolver: zodResolver(SalesOrderFormSchema),
     defaultValues: {
       orderDate: initialData?.orderDate || new Date().toISOString().split('T')[0],
-      fulfillmentType: (initialData?.walkInDelivery as 'walk-in' | 'delivery') || undefined,
+      fulfillmentType: (initialData?.walkInDelivery === 'walk-in' ? 'pick-up' : initialData?.walkInDelivery as 'pick-up' | 'delivery') || undefined,
       customerEmail: initialData?.customerEmail || '',
       customerPhone: initialData?.customerPhone || '',
       firstName: initialData?.customerFirst || '',
@@ -234,7 +243,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         addrZipcode: formData.zipcode,
         warrantyYears: formData.warrantyYears || 1,
         warrantyAmount: formData.warrantyAmount || 0,
-        walkInDelivery: formData.fulfillmentType || 'walk-in',
+        walkInDelivery: formData.fulfillmentType === 'pick-up' ? 'walk-in' : formData.fulfillmentType || 'walk-in',
         accessory: formData.accessory || '',
         otherServices: formData.otherServices,
         otherFee: formData.otherFee || 0,
@@ -559,7 +568,10 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                 {...register('customerEmail')}
                 disabled={readOnly}
                 placeholder="customer@example.com"
-                className={cn(customerFound && "border-success")}
+                className={cn(
+                  customerFound && "border-success",
+                  errors.customerEmail && "border-destructive"
+                )}
               />
               {isSearchingCustomer && (
                 <p className="text-xs text-muted-foreground mt-1">Searching customer...</p>
@@ -567,26 +579,37 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               {customerFound && (
                 <p className="text-xs text-success mt-1">Customer found and details auto-filled</p>
               )}
+              {errors.customerEmail && (
+                <p className="text-xs text-destructive mt-1">{errors.customerEmail.message}</p>
+              )}
             </div>
             <div />
             
             <div>
-              <Label htmlFor="firstName">First Name *</Label>
+              <Label htmlFor="firstName">First Name <span className="text-destructive">*</span></Label>
               <Input
                 id="firstName"
                 {...register('firstName')}
                 disabled={readOnly}
                 placeholder=""
+                className={errors.firstName ? "border-destructive" : ""}
               />
+              {errors.firstName && (
+                <p className="text-xs text-destructive mt-1">{errors.firstName.message}</p>
+              )}
             </div>
             <div>
-              <Label htmlFor="lastName">Last Name *</Label>
+              <Label htmlFor="lastName">Last Name <span className="text-destructive">*</span></Label>
               <Input
                 id="lastName"
                 {...register('lastName')}
                 disabled={readOnly}
                 placeholder=""
+                className={errors.lastName ? "border-destructive" : ""}
               />
+              {errors.lastName && (
+                <p className="text-xs text-destructive mt-1">{errors.lastName.message}</p>
+              )}
             </div>
             
             <div>
@@ -599,56 +622,84 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               />
             </div>
             <div />
-            
-            <div>
-              <Label htmlFor="country">Country</Label>
-              <Input
-                id="country"
-                {...register('country')}
-                disabled={readOnly}
-                placeholder=""
-              />
-            </div>
-            <div>
-              <Label htmlFor="state">State</Label>
-              <Input
-                id="state"
-                {...register('state')}
-                disabled={readOnly}
-                placeholder=""
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                {...register('city')}
-                disabled={readOnly}
-                placeholder=""
-              />
-            </div>
-            <div>
-              <Label htmlFor="street">Street</Label>
-              <Input
-                id="street"
-                {...register('street')}
-                disabled={readOnly}
-                placeholder=""
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="zipcode">Zipcode</Label>
-              <Input
-                id="zipcode"
-                {...register('zipcode')}
-                disabled={readOnly}
-                placeholder=""
-              />
-            </div>
           </div>
         </div>
+
+        {/* Address Information - Only show for delivery */}
+        {watch('fulfillmentType') === 'delivery' && (
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Delivery Address</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="street">
+                  Street Address <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="street"
+                  {...register('street')}
+                  disabled={readOnly}
+                  placeholder="123 Main Street"
+                  className={errors.fulfillmentType ? "border-destructive" : ""}
+                />
+              </div>
+              <div>
+                <Label htmlFor="city">
+                  City <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="city"
+                  {...register('city')}
+                  disabled={readOnly}
+                  placeholder="New York"
+                  className={errors.fulfillmentType ? "border-destructive" : ""}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="state">
+                  State <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="state"
+                  {...register('state')}
+                  disabled={readOnly}
+                  placeholder="NY"
+                  className={errors.fulfillmentType ? "border-destructive" : ""}
+                />
+              </div>
+              <div>
+                <Label htmlFor="zipcode">
+                  Zipcode <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="zipcode"
+                  {...register('zipcode')}
+                  disabled={readOnly}
+                  placeholder="10001"
+                  className={errors.fulfillmentType ? "border-destructive" : ""}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="country">
+                  Country <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="country"
+                  {...register('country')}
+                  disabled={readOnly}
+                  placeholder="USA"
+                  className={errors.fulfillmentType ? "border-destructive" : ""}
+                />
+              </div>
+            </div>
+            {errors.fulfillmentType && (
+              <p className="text-sm text-destructive mt-2">
+                {errors.fulfillmentType.message}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Order Details */}
         <div>
@@ -683,16 +734,16 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
             </div>
             
             <div>
-              <Label>Walk-in / Delivery *</Label>
+              <Label>Pick-up / Delivery <span className="text-destructive">*</span></Label>
               <RadioGroup
                 value={watch('fulfillmentType')}
-                onValueChange={(value) => setValue('fulfillmentType', value as 'walk-in' | 'delivery')}
+                onValueChange={(value) => setValue('fulfillmentType', value as 'pick-up' | 'delivery')}
                 disabled={readOnly}
                 className="flex gap-6 mt-2"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="walk-in" id="walk-in" />
-                  <Label htmlFor="walk-in">Walk-in</Label>
+                  <RadioGroupItem value="pick-up" id="pick-up" />
+                  <Label htmlFor="pick-up">Pick-up</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="delivery" id="delivery" />
@@ -700,7 +751,10 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                 </div>
               </RadioGroup>
               {!watch('fulfillmentType') && !readOnly && (
-                <p className="text-xs text-destructive mt-1">Please choose walk-in or delivery</p>
+                <p className="text-xs text-destructive mt-1">Please choose pick-up or delivery</p>
+              )}
+              {errors.fulfillmentType && (
+                <p className="text-xs text-destructive mt-1">{errors.fulfillmentType.message}</p>
               )}
             </div>
             
@@ -911,7 +965,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               if (!watch('fulfillmentType')) {
                 toast({
                   title: 'Validation Error',
-                  description: 'Please choose walk-in or delivery',
+                  description: 'Please choose pick-up or delivery',
                   variant: 'destructive'
                 });
                 return;
