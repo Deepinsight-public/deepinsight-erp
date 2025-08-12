@@ -344,20 +344,42 @@ export function SalesOrdersSummary() {
         className="w-full max-w-full px-4 md:px-6 pt-2"
         data-testid="so-toolbar"
       >
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-          <div className="min-w-[220px]">
+        {/* Top Row: Title and Search */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <div className="flex-1">
             <h1 className="text-2xl font-semibold">{t('sales.summary.title')}</h1>
             <p className="text-muted-foreground text-sm">{t('sales.summary.description')}</p>
-            {/* Always-visible primary action */}
-            <div className="mt-3 flex gap-2">
-              <Button data-testid="btn-new-primary" onClick={() => navigate('/store/sales-orders/new')}>
-                <Plus className="h-4 w-4 mr-2" />
-                {t('sales.summary.newOrder')}
-              </Button>
+          </div>
+          {/* Prominent Search Bar */}
+          <div className="flex-1 max-w-md">
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Search orders, customers, order numbers..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && loadData()}
+                className="pl-10 pr-4 h-10"
+              />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
             </div>
           </div>
-          {/* Desktop actions (without duplicate New button) */}
-          <div className="hidden lg:flex flex-wrap items-center gap-2">
+        </div>
+
+        {/* Second Row: Actions and Buttons */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex gap-2">
+            <Button data-testid="btn-new-primary" onClick={() => navigate('/store/sales-orders/new')}>
+              <Plus className="h-4 w-4 mr-2" />
+              {t('sales.summary.newOrder')}
+            </Button>
+          </div>
+          {/* Desktop actions */}
+          <div className="flex flex-wrap items-center gap-2">
             <Button 
               variant="outline" 
               onClick={() => navigate('/store/sales-orders/pivot')}
@@ -418,26 +440,27 @@ export function SalesOrdersSummary() {
           </div>
         </div>
 
-        {/* Filters under toolbar */}
+        {/* Filters - Simplified Layout */}
         <div className="mt-4">
           <Card>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <Label>{t('sales.summary.filters.dateRange')}</Label>
+            <CardContent className="p-4">
+              <div className="flex flex-wrap items-end gap-4">
+                <div className="min-w-[200px]">
+                  <Label className="text-sm font-medium">Date Range</Label>
                   <DateRangePicker
                     value={dateRange}
                     onChange={setDateRange}
-                    placeholder={t('sales.summary.filters.dateRangePlaceholder')}
+                    placeholder="Select date range"
+                    className="mt-1"
                   />
                 </div>
-                <div>
-                  <Label>{t('sales.summary.filters.status')}</Label>
+                <div className="min-w-[150px]">
+                  <Label className="text-sm font-medium">Status</Label>
                   <Select value={statusFilter.join(',')} onValueChange={(value) => 
                     setStatusFilter(value ? value.split(',') : [])
                   }>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('sales.summary.filters.statusPlaceholder')} />
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
                       {statusOptions.map(option => (
@@ -448,14 +471,14 @@ export function SalesOrdersSummary() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>{t('sales.summary.filters.paymentStatus')}</Label>
+                <div className="min-w-[150px]">
+                  <Label className="text-sm font-medium">Payment Status</Label>
                   <Select value={paymentStatusFilter} onValueChange={(value) => setPaymentStatusFilter(value === 'all' ? '' as any : (value as any))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('sales.summary.filters.paymentStatusPlaceholder')} />
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="All payments" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">{t('sales.summary.filters.all')}</SelectItem>
+                      <SelectItem value="all">All Payments</SelectItem>
                       {paymentStatusOptions.map(option => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
@@ -463,16 +486,6 @@ export function SalesOrdersSummary() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div>
-                  <Label>{t('sales.summary.filters.search')}</Label>
-                  <StandardSearchBar
-                    title=""
-                    searchValue={searchQuery}
-                    searchPlaceholder={t('sales.summary.filters.searchPlaceholder')}
-                    onSearchChange={setSearchQuery}
-                    onSearch={() => loadData()}
-                  />
                 </div>
               </div>
             </CardContent>
