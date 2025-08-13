@@ -1106,6 +1106,7 @@ export type Database = {
           payment_amount2: number | null
           payment_method3: string | null
           payment_amount3: number | null
+          store_invoice_number: string | null
           payment_note: string | null
           status: string | null
           store_id: string
@@ -1146,6 +1147,7 @@ export type Database = {
           payment_amount2?: number | null
           payment_method3?: string | null
           payment_amount3?: number | null
+          store_invoice_number?: string | null
           payment_note?: string | null
           status?: string | null
           store_id: string
@@ -1186,6 +1188,7 @@ export type Database = {
           payment_amount2?: number | null
           payment_method3?: string | null
           payment_amount3?: number | null
+          store_invoice_number?: string | null
           payment_note?: string | null
           status?: string | null
           store_id?: string
@@ -2136,6 +2139,15 @@ export type Database = {
       }
     }
     Functions: {
+      create_customer: {
+        Args: {
+          p_store_id: string
+          p_first_name: string
+          p_last_name: string
+          p_email: string
+        }
+        Returns: string
+      }
       create_sales_order_with_stock_deduction: {
         Args: { order_data: Json; line_items: Json[] }
         Returns: {

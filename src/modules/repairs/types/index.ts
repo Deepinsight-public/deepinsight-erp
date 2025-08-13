@@ -7,6 +7,8 @@ export interface Repair {
     id: string;
     name: string;
     sku: string;
+    brand?: string;
+    model?: string;
   };
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   description: string;
@@ -19,6 +21,12 @@ export interface Repair {
   warrantyExpiresAt?: string;
   createdAt: string;
   updatedAt: string;
+  // Additional fields for detailed view
+  customProduct?: string;
+  model?: string;
+  partsRequired?: string;
+  customerEmail?: string;
+  customerPhone?: string;
 }
 
 export interface RepairFilters {
@@ -30,7 +38,10 @@ export interface RepairFilters {
 }
 
 export interface CreateRepairData {
-  productId: string;
+  productId?: string;
+  customProduct?: string;
+  model?: string;
+  partsRequired?: string;
   customerId?: string;
   customerName?: string;
   salesOrderId?: string;

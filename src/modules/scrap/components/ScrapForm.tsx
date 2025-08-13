@@ -52,8 +52,6 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
       lines: [{
         productId: '',
         qty: 1,
-        uom: 'ea',
-        unitCost: 0,
         reason: '',
         batchNo: '',
       }],
@@ -97,36 +95,58 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
     getWarehouses().then(setWarehouseOptions).catch(console.error);
   }, []);
 
-  // Load all products on component mount
+  // Load all products on component mount, but only after we have userStoreId
   useEffect(() => {
-    loadAllProducts();
-  }, []);
+    if (userStoreId) {
+      loadAllProducts();
+    }
+  }, [userStoreId]);
 
-  // Load products - preload all products and handle search
+  // Load products from inventory - only show products that are in stock
   const loadAllProducts = async () => {
     try {
+      if (!userStoreId) return;
+
       const { data, error } = await supabase
-        .from('products')
-        .select('id, sku, product_name, price')
-        .eq('is_active', true)
-        .order('product_name')
+        .from('inventory')
+        .select(`
+          product_id,
+          quantity,
+          reserved_quantity,
+          products:product_id (
+            id,
+            sku,
+            product_name,
+            price,
+            is_active
+          )
+        `)
+        .eq('store_id', userStoreId)
+        .gt('quantity', 0)
+        .eq('products.is_active', true)
+        .order('products(product_name)')
         .limit(100);
 
       if (error) {
-        console.error('Error loading products:', error);
+        console.error('Error loading inventory products:', error);
         return;
       }
 
-      const options = data?.map(product => ({
-        value: product.id,
-        label: `${product.sku} - ${product.product_name}`,
-        cost: product.price || 0,
-        product
-      })) || [];
+      const options = data?.map(inventory => {
+        const product = inventory.products;
+        const availableQty = (inventory.quantity || 0) - (inventory.reserved_quantity || 0);
+        return {
+          value: product.id,
+          label: `${product.sku} - ${product.product_name} (Available: ${availableQty})`,
+          cost: product.price || 0,
+          availableQty,
+          product
+        };
+      }).filter(option => option.availableQty > 0) || [];
 
       setProductOptions(options);
     } catch (error) {
-      console.error('Error loading products:', error);
+      console.error('Error loading inventory products:', error);
     }
   };
 
@@ -138,27 +158,49 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
     }
 
     try {
+      if (!userStoreId) return;
+
       const { data, error } = await supabase
-        .from('products')
-        .select('id, sku, product_name, price')
-        .or(`sku.ilike.%${search}%,product_name.ilike.%${search}%`)
-        .eq('is_active', true)
-        .order('product_name')
+        .from('inventory')
+        .select(`
+          product_id,
+          quantity,
+          reserved_quantity,
+          products:product_id (
+            id,
+            sku,
+            product_name,
+            price,
+            is_active
+          )
+        `)
+        .eq('store_id', userStoreId)
+        .gt('quantity', 0)
+        .eq('products.is_active', true)
+        .or(`products.sku.ilike.%${search}%,products.product_name.ilike.%${search}%`)
+        .order('products(product_name)')
         .limit(20);
 
       if (error) {
-        console.error('Error searching products:', error);
+        console.error('Error searching inventory products:', error);
         return;
       }
 
-      const options = (data || []).map(product => ({
-        value: product.id,
-        label: `${product.sku} - ${product.product_name}`,
-        cost: product.price || 0,
-      }));
+      const options = data?.map(inventory => {
+        const product = inventory.products;
+        const availableQty = (inventory.quantity || 0) - (inventory.reserved_quantity || 0);
+        return {
+          value: product.id,
+          label: `${product.sku} - ${product.product_name} (Available: ${availableQty})`,
+          cost: product.price || 0,
+          availableQty,
+          product
+        };
+      }).filter(option => option.availableQty > 0) || [];
+
       setProductOptions(options);
     } catch (error) {
-      console.error('Error searching products:', error);
+      console.error('Error searching inventory products:', error);
     }
   };
 
@@ -167,7 +209,6 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
     const product = productOptions.find(p => p.value === productId);
     if (product) {
       form.setValue(`lines.${index}.productId`, productId);
-      form.setValue(`lines.${index}.unitCost`, product.cost || 0);
       
       // Check inventory availability
       try {
@@ -187,7 +228,6 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
   // Calculate totals
   const watchedLines = form.watch('lines');
   const totalQty = watchedLines.reduce((sum, line) => sum + (line.qty || 0), 0);
-  const totalValue = watchedLines.reduce((sum, line) => sum + ((line.qty || 0) * (line.unitCost || 0)), 0);
 
   // Add new line
   const addLine = () => {
@@ -195,7 +235,6 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
       productId: '',
       qty: 1,
       uom: 'ea',
-      unitCost: 0,
       reason: '',
       batchNo: '',
     });
@@ -242,10 +281,6 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
         }
         if (line.qty <= 0) {
           toast.error(t('scrapManagement.messages.qtyRequired', { line: i + 1 }));
-          return;
-        }
-        if (line.unitCost <= 0) {
-          toast.error(t('scrapManagement.messages.costRequired', { line: i + 1 }));
           return;
         }
       }
@@ -304,10 +339,6 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
         }
         if (line.qty <= 0) {
           toast.error(t('scrapManagement.messages.qtyRequired', { line: i + 1 }));
-          return;
-        }
-        if (line.unitCost <= 0) {
-          toast.error(t('scrapManagement.messages.costRequired', { line: i + 1 }));
           return;
         }
       }
@@ -379,8 +410,6 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
                         <TableRow>
                           <TableHead>{t('scrapManagement.form.product')} *</TableHead>
                           <TableHead>{t('scrapManagement.form.quantity')} *</TableHead>
-                          <TableHead>{t('scrapManagement.form.uom')}</TableHead>
-                          <TableHead>{t('scrapManagement.form.unitCost')} *</TableHead>
                           <TableHead>{t('scrapManagement.form.reason')} *</TableHead>
                           <TableHead>{t('scrapManagement.form.actions')}</TableHead>
                         </TableRow>
@@ -418,32 +447,8 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
                                   />
                                 )}
                               />
-                            </TableCell>
-                            <TableCell>
-                              <FormField
-                                control={form.control}
-                                name={`lines.${index}.uom`}
-                                render={({ field }) => (
-                                  <Input {...field} placeholder="ea" />
-                                )}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <FormField
-                                control={form.control}
-                                name={`lines.${index}.unitCost`}
-                                render={({ field }) => (
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    {...field}
-                                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                  />
-                                )}
-                              />
-                            </TableCell>
-                            <TableCell>
+                             </TableCell>
+                             <TableCell>
                               <FormField
                                 control={form.control}
                                 name={`lines.${index}.reason`}
@@ -481,19 +486,15 @@ export function ScrapForm({ initialData, mode = 'create', onSave }: ScrapFormPro
                   </CardContent>
                 </Card>
 
-                {/* Totals */}
-                <div className="flex justify-end">
-                  <div className="space-y-2 text-right">
-                    <div className="text-sm">
-                      <span className="font-medium">{t('scrapManagement.form.totalQuantity')} </span>
-                      <span className="font-mono">{totalQty}</span>
-                    </div>
-                    <div className="text-lg font-medium">
-                      <span>{t('scrapManagement.form.totalValue')} </span>
-                      <span className="font-mono">${totalValue.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
+                 {/* Totals */}
+                 <div className="flex justify-end">
+                   <div className="space-y-2 text-right">
+                     <div className="text-sm">
+                       <span className="font-medium">{t('scrapManagement.form.totalQuantity')} </span>
+                       <span className="font-mono">{totalQty}</span>
+                     </div>
+                   </div>
+                 </div>
               </div>
 
               {/* Actions */}

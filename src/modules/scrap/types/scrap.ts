@@ -24,10 +24,8 @@ export const scrapLineSchema = z.object({
   qty: z.number().int().positive({
     message: 'Quantity must be a positive integer',
   }),
-  uom: z.string().default('ea'),
-  unitCost: z.number().positive({
-    message: 'Unit cost must be positive',
-  }),
+  uom: z.string().optional().default('ea'),
+  unitCost: z.number().optional(),
   reason: z.string().min(1, {
     message: 'Reason is required',
   }),
