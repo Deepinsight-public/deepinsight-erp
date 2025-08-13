@@ -84,28 +84,30 @@ export const createRepair = async (repairData: CreateRepairData): Promise<Repair
   const { data: repairIdData, error: repairIdError } = await supabase.rpc('generate_repair_id');
   if (repairIdError) throw repairIdError;
 
-  // Handle custom products - use existing product or create description-based record
+  // Handle custom products - use the generic "Custom Product" placeholder
   let productId = repairData.productId;
   
-  // If no product selected but custom product specified, try to find a generic "Custom Product" record
   if (!productId && repairData.customProduct) {
     console.log('Using custom product:', repairData.customProduct);
     
-    // Try to find an existing "Custom Product" placeholder
-    const { data: customProductPlaceholder } = await supabase
+    // Find the "Custom Product" placeholder that was created in the migration
+    const { data: customProductPlaceholder, error: placeholderError } = await supabase
       .from('products')
       .select('id')
+      .eq('sku', 'CUSTOM-PLACEHOLDER')
       .eq('product_name', 'Custom Product')
-      .eq('is_active', true)
-      .maybeSingle();
+      .single();
     
-    if (customProductPlaceholder) {
-      productId = customProductPlaceholder.id;
-    } else {
-      // If no placeholder exists, we'll create the repair without a product_id
-      // and store all product info in the description
-      console.log('No custom product placeholder found, storing in description');
+    if (placeholderError || !customProductPlaceholder) {
+      console.error('Custom product placeholder not found:', placeholderError);
+      throw new Error('Custom product support is not available. Please contact administrator.');
     }
+    
+    productId = customProductPlaceholder.id;
+  }
+  
+  if (!productId) {
+    throw new Error('Product selection is required');
   }
 
   // Prepare description with additional context for custom products
