@@ -27,6 +27,8 @@ export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDT
       }
       
       // Create the order first
+      // Map payment methods to both JSONB and individual fields
+      const paymentMethods = dto.paymentMethods || [];
       const orderData = {
         order_number: dto.orderNumber || `ORD-${Date.now()}`,
         customer_name: dto.customerName,
@@ -50,7 +52,15 @@ export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDT
         accessory: dto.accessory,
         other_services: dto.otherServices,
         other_fee: dto.otherFee,
-        payment_method: dto.paymentMethod,
+        payment_method: dto.paymentMethod || paymentMethods[0]?.method,
+        payment_methods: JSON.stringify(paymentMethods),
+        // Map up to 3 payment methods to individual fields
+        payment_method1: paymentMethods[0]?.method || null,
+        payment_amount1: paymentMethods[0]?.amount || null,
+        payment_method2: paymentMethods[1]?.method || null,
+        payment_amount2: paymentMethods[1]?.amount || null,
+        payment_method3: paymentMethods[2]?.method || null,
+        payment_amount3: paymentMethods[2]?.amount || null,
         payment_note: dto.paymentNote,
         customer_source: dto.customerSource,
         cashier_id: dto.cashierId,
@@ -114,6 +124,8 @@ export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDT
   }
 
   // For draft orders, no stock deduction
+  // Map payment methods to both JSONB and individual fields
+  const paymentMethods = dto.paymentMethods || [];
   const orderData = {
     order_number: dto.orderNumber || `ORD-${Date.now()}`,
     customer_name: dto.customerName,
@@ -137,9 +149,18 @@ export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDT
     accessory: dto.accessory,
     other_services: dto.otherServices,
     other_fee: dto.otherFee,
-    payment_method: dto.paymentMethod,
+    payment_method: dto.paymentMethod || paymentMethods[0]?.method,
+    payment_methods: JSON.stringify(paymentMethods),
+    // Map up to 3 payment methods to individual fields
+    payment_method1: paymentMethods[0]?.method || null,
+    payment_amount1: paymentMethods[0]?.amount || null,
+    payment_method2: paymentMethods[1]?.method || null,
+    payment_amount2: paymentMethods[1]?.amount || null,
+    payment_method3: paymentMethods[2]?.method || null,
+    payment_amount3: paymentMethods[2]?.amount || null,
     payment_note: dto.paymentNote,
     customer_source: dto.customerSource,
+    store_invoice_number: dto.storeInvoiceNumber,
     cashier_id: dto.cashierId,
     store_id: profile.store_id,
     created_by: profile.user_id
@@ -227,6 +248,8 @@ export const updateSalesOrder = async (id: string, dto: SalesOrderDTO): Promise<
     }
   }
   
+  // Map payment methods to both JSONB and individual fields
+  const paymentMethods = dto.paymentMethods || [];
   const orderData = {
     customer_name: dto.customerName,
     customer_email: dto.customerEmail,
@@ -249,9 +272,18 @@ export const updateSalesOrder = async (id: string, dto: SalesOrderDTO): Promise<
     accessory: dto.accessory,
     other_services: dto.otherServices,
     other_fee: dto.otherFee,
-    payment_method: dto.paymentMethod,
+    payment_method: dto.paymentMethod || paymentMethods[0]?.method,
+    payment_methods: JSON.stringify(paymentMethods),
+    // Map up to 3 payment methods to individual fields
+    payment_method1: paymentMethods[0]?.method || null,
+    payment_amount1: paymentMethods[0]?.amount || null,
+    payment_method2: paymentMethods[1]?.method || null,
+    payment_amount2: paymentMethods[1]?.amount || null,
+    payment_method3: paymentMethods[2]?.method || null,
+    payment_amount3: paymentMethods[2]?.amount || null,
     payment_note: dto.paymentNote,
     customer_source: dto.customerSource,
+    store_invoice_number: dto.storeInvoiceNumber,
     cashier_id: dto.cashierId,
     updated_at: new Date().toISOString()
   };
@@ -545,7 +577,58 @@ const getUserProfile = async () => {
 
 // Helper function to map database record to DTO
 const mapDatabaseToDTO = (dbOrder: any, lines: SalesOrderLineDTO[]): SalesOrderDTO => {
-  return {
+  // Parse payment methods from database - try JSONB first, then fall back to individual fields
+  let paymentMethods: Array<{method: string, amount: number, note?: string}> = [];
+  
+  try {
+    // Try to parse the JSONB payment_methods field first
+    if (dbOrder.payment_methods && typeof dbOrder.payment_methods === 'string') {
+      paymentMethods = JSON.parse(dbOrder.payment_methods);
+    } else if (dbOrder.payment_methods && Array.isArray(dbOrder.payment_methods)) {
+      paymentMethods = dbOrder.payment_methods;
+    } else if (dbOrder.payment_methods && typeof dbOrder.payment_methods === 'object') {
+      // In case Supabase returns JSONB as object directly
+      paymentMethods = dbOrder.payment_methods;
+    }
+  } catch (e) {
+    console.warn('Failed to parse payment_methods JSONB:', e);
+  }
+  
+  // If no JSONB data, build from individual fields for backwards compatibility
+  if (paymentMethods.length === 0) {
+    if (dbOrder.payment_method1 && dbOrder.payment_amount1) {
+      paymentMethods.push({
+        method: dbOrder.payment_method1,
+        amount: parseFloat(dbOrder.payment_amount1),
+        note: ''
+      });
+    }
+    if (dbOrder.payment_method2 && dbOrder.payment_amount2) {
+      paymentMethods.push({
+        method: dbOrder.payment_method2,
+        amount: parseFloat(dbOrder.payment_amount2),
+        note: ''
+      });
+    }
+    if (dbOrder.payment_method3 && dbOrder.payment_amount3) {
+      paymentMethods.push({
+        method: dbOrder.payment_method3,
+        amount: parseFloat(dbOrder.payment_amount3),
+        note: ''
+      });
+    }
+    
+    // Final fallback to legacy payment_method field
+    if (paymentMethods.length === 0 && dbOrder.payment_method) {
+      paymentMethods.push({
+        method: dbOrder.payment_method,
+        amount: dbOrder.total_amount || 0,
+        note: ''
+      });
+    }
+  }
+
+  const result = {
     id: dbOrder.id,
     orderNumber: dbOrder.order_number,
     customerName: dbOrder.customer_name,
@@ -559,7 +642,7 @@ const mapDatabaseToDTO = (dbOrder: any, lines: SalesOrderLineDTO[]): SalesOrderD
     addrStreet: dbOrder.addr_street,
     addrZipcode: dbOrder.addr_zipcode,
     orderDate: dbOrder.order_date,
-    orderType: 'retail',
+    orderType: 'retail' as const,
     status: dbOrder.status,
     subTotal: lines.reduce((sum, line) => sum + line.subTotal, 0),
     discountAmount: dbOrder.discount_amount || 0,
@@ -573,12 +656,17 @@ const mapDatabaseToDTO = (dbOrder: any, lines: SalesOrderLineDTO[]): SalesOrderD
     otherServices: dbOrder.other_services,
     otherFee: dbOrder.other_fee,
     paymentMethod: dbOrder.payment_method,
+    paymentMethods: paymentMethods,
     paymentNote: dbOrder.payment_note,
     customerSource: dbOrder.customer_source,
+    storeInvoiceNumber: dbOrder.store_invoice_number,
     cashierId: dbOrder.cashier_id,
     createdAt: dbOrder.created_at,
     updatedAt: dbOrder.updated_at,
     createdBy: dbOrder.created_by,
     storeId: dbOrder.store_id
   };
+  
+
+  return result;
 };

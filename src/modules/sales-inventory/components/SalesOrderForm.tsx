@@ -20,6 +20,123 @@ import { SalesOrderDTO, SalesOrderLineDTO, ProductLookupItem } from '../types';
 import { fetchProductLookup, fetchStockLevel, createSalesOrder, updateSalesOrder } from '../api/sales-orders';
 import { supabase } from '@/integrations/supabase/client';
 
+// Payment Methods Section Component
+const PaymentMethodsSection = ({ control, watch, setValue, readOnly, totals }) => {
+  const paymentMethods = watch('paymentMethods') || [{ method: '', amount: 0, note: '' }];
+  
+  const addPaymentMethod = () => {
+    if (paymentMethods.length < 3) {
+      const newMethods = [...paymentMethods, { method: '', amount: 0, note: '' }];
+      setValue('paymentMethods', newMethods);
+    }
+  };
+  
+  const removePaymentMethod = (index) => {
+    if (paymentMethods.length > 1) {
+      const newMethods = paymentMethods.filter((_, i) => i !== index);
+      setValue('paymentMethods', newMethods);
+    }
+  };
+  
+  const updatePaymentMethod = (index, field, value) => {
+    const newMethods = [...paymentMethods];
+    newMethods[index] = { ...newMethods[index], [field]: value };
+    setValue('paymentMethods', newMethods);
+  };
+  
+  const remainingAmount = totals.totalAmount - paymentMethods.reduce((sum, pm) => sum + (pm.amount || 0), 0);
+  
+  return (
+    <div className="space-y-3">
+      {paymentMethods.map((paymentMethod, index) => (
+        <div key={index} className="border rounded-lg p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">Payment #{index + 1}</Label>
+            {paymentMethods.length > 1 && !readOnly && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => removePaymentMethod(index)}
+                className="h-6 w-6 p-0"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <Label className="text-xs">Method</Label>
+              <Select
+                value={paymentMethod.method}
+                onValueChange={(value) => updatePaymentMethod(index, 'method', value)}
+                disabled={readOnly}
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Select method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="cheque">Cheque</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label className="text-xs">Amount</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                max={remainingAmount + (paymentMethod.amount || 0)}
+                value={paymentMethod.amount || ''}
+                onChange={(e) => updatePaymentMethod(index, 'amount', parseFloat(e.target.value) || 0)}
+                disabled={readOnly}
+                className="h-8"
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div>
+              <Label className="text-xs">Note</Label>
+              <Input
+                value={paymentMethod.note || ''}
+                onChange={(e) => updatePaymentMethod(index, 'note', e.target.value)}
+                disabled={readOnly}
+                className="h-8"
+                placeholder="Optional note"
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+      
+      <div className="flex items-center justify-between">
+        {!readOnly && paymentMethods.length < 3 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addPaymentMethod}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add Payment Method
+          </Button>
+        )}
+        
+        <div className="text-sm text-muted-foreground">
+          Remaining: ${remainingAmount.toFixed(2)} / Total: ${totals.totalAmount.toFixed(2)}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Form validation schema with conditional address validation
 const SalesOrderFormSchema = z.object({
   customerEmail: z.string().email('Please enter a valid email address').min(1, 'Email is required'),
@@ -37,11 +154,16 @@ const SalesOrderFormSchema = z.object({
   accessory: z.string().optional(),
   otherFee: z.number().min(0).optional(),
   otherServices: z.string().optional(),
-  paymentMethod: z.string().optional(),
+      paymentMethods: z.array(z.object({
+      method: z.string(),
+      amount: z.number().min(0),
+      note: z.string().optional()
+    })).max(3, "Maximum 3 payment methods allowed").optional(),
   paymentNote: z.string().optional(),
   customerSource: z.string().optional(),
   cashierId: z.string().optional(),
-  orderDate: z.string().optional()
+  orderDate: z.string().optional(),
+  storeInvoiceNumber: z.string().optional()
 }).refine((data) => {
   // If delivery is selected, address fields are required
   if (data.fulfillmentType === 'delivery') {
@@ -90,7 +212,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
   const [customerFound, setCustomerFound] = useState(false);
   const [isSearchingCustomer, setIsSearchingCustomer] = useState(false);
   
-  const { register, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<SalesOrderFormData>({
+  const { register, handleSubmit, watch, setValue, getValues, control, formState: { errors } } = useForm<SalesOrderFormData>({
     resolver: zodResolver(SalesOrderFormSchema),
     defaultValues: {
       orderDate: initialData?.orderDate || new Date().toISOString().split('T')[0],
@@ -104,10 +226,11 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
       city: initialData?.addrCity || '',
       street: initialData?.addrStreet || '',
       zipcode: initialData?.addrZipcode || '',
-      paymentMethod: initialData?.paymentMethod || '',
+      paymentMethods: initialData?.paymentMethods || [{ method: '', amount: 0, note: '' }],
       paymentNote: initialData?.paymentNote || '',
       customerSource: initialData?.customerSource || '',
       cashierId: initialData?.cashierId || '',
+      storeInvoiceNumber: initialData?.storeInvoiceNumber || '',
       warrantyYears: initialData?.warrantyYears || 1,
       warrantyAmount: initialData?.warrantyAmount || 0,
       accessory: initialData?.accessory || '',
@@ -246,9 +369,11 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         accessory: formData.accessory || '',
         otherServices: formData.otherServices,
         otherFee: formData.otherFee || 0,
-        paymentMethod: formData.paymentMethod,
+        paymentMethod: formData.paymentMethods?.[0]?.method || null,
+        paymentMethods: formData.paymentMethods || [],
         paymentNote: formData.paymentNote,
         customerSource: formData.customerSource,
+        storeInvoiceNumber: formData.storeInvoiceNumber,
         totalAmount: totals.totalAmount,
         discountAmount: totals.discountAmount,
         taxAmount: totals.taxAmount,
@@ -269,47 +394,144 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         savedOrder = await createSalesOrder(orderDTO);
       }
 
+      console.log('=== CUSTOMER SAVE DEBUG START ===');
+      console.log('Form data received:', formData);
+      console.log('Customer email:', formData.customerEmail);
+      console.log('Customer first name:', formData.firstName);
+      console.log('Customer last name:', formData.lastName);
+      console.log('Profile store_id:', profile.store_id);
+      console.log('User ID:', user.id);
+
       // Save/update customer information in customers table
-      if (formData.customerEmail) {
+      if (formData.customerEmail && formData.firstName && formData.lastName) {
+        console.log('Attempting to save customer data...');
         try {
-          const { data: existingCustomer } = await supabase
+          // First check if customer exists with both email and store_id
+          const { data: existingCustomer, error: searchError } = await supabase
             .from('customers')
-            .select('id')
-            .eq('email', formData.customerEmail)
+            .select('id, email, first_name, last_name')
+            .eq('email', formData.customerEmail.toLowerCase().trim())
+            .eq('store_id', profile.store_id)
             .maybeSingle();
 
-          const customerData = {
-            store_id: profile.store_id,
-            first_name: formData.firstName || null,
-            last_name: formData.lastName || null,
-            email: formData.customerEmail,
-            phone: formData.customerPhone || null,
-            address: [
-              formData.street,
-              formData.city,
-              formData.state,
-              formData.zipcode,
-              formData.country
-            ].filter(Boolean).join(', ') || null,
-            created_by: user.id
-          };
+          if (searchError) {
+            console.error('Error searching for existing customer:', searchError);
+            throw searchError;
+          }
+
+                // Create customer data with the fields we know work
+      const customerData = {
+        store_id: profile.store_id,
+        first_name: formData.firstName.trim(),
+        last_name: formData.lastName.trim(),
+        email: formData.customerEmail.toLowerCase().trim(),
+        phone: formData.customerPhone?.trim() || null,
+        address: [
+          formData.street?.trim(),
+          formData.city?.trim(),
+          formData.state?.trim(),
+          formData.zipcode?.trim(),
+          formData.country?.trim()
+        ].filter(Boolean).join(', ') || null
+      };
+
+          console.log('Customer data to save:', customerData);
+          console.log('Existing customer found:', existingCustomer);
 
           if (existingCustomer) {
             // Update existing customer
-            await supabase
+            console.log('Updating existing customer with ID:', existingCustomer.id);
+            const { data: updatedCustomer, error: updateError } = await supabase
               .from('customers')
-              .update(customerData)
-              .eq('id', existingCustomer.id);
+              .update({
+                first_name: customerData.first_name,
+                last_name: customerData.last_name,
+                phone: customerData.phone,
+                address: customerData.address
+              })
+              .eq('id', existingCustomer.id)
+              .select()
+              .single();
+
+            if (updateError) {
+              console.error('Error updating customer:', updateError);
+              throw updateError;
+            }
+            
+            console.log('Customer updated successfully:', updatedCustomer);
+            toast({
+              title: 'Customer Updated',
+              description: `Updated details for ${customerData.first_name} ${customerData.last_name}`,
+              variant: 'default'
+            });
           } else {
-            // Create new customer
-            await supabase
-              .from('customers')
-              .insert(customerData);
+            // Create new customer - try using CRM module approach
+            console.log('Creating new customer via CRM pattern...');
+            try {
+              // Import and use the CRM addCustomer function
+              const { addCustomer } = await import('@/modules/crm-analytics/api/customers');
+              
+              const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+              const customerAddress = [
+                formData.street?.trim(),
+                formData.city?.trim(),
+                formData.state?.trim(),
+                formData.zipcode?.trim(),
+                formData.country?.trim()
+              ].filter(Boolean).join(', ') || '';
+              
+              const newCustomer = await addCustomer({
+                name: fullName,
+                email: formData.customerEmail,
+                phone: formData.customerPhone || '',
+                address: customerAddress
+              });
+              
+              console.log('Customer created successfully via CRM:', newCustomer);
+              toast({
+                title: 'Customer Created',
+                description: `Created new customer: ${fullName}`,
+                variant: 'default'
+              });
+            } catch (crmError) {
+              console.error('CRM module failed, trying direct insert:', crmError);
+              
+              // Fallback to direct insert with array format
+              const { data: newCustomer, error: insertError } = await supabase
+                .from('customers')
+                .insert([customerData])  // Use array format
+                .select()
+                .single();
+
+              if (insertError) {
+                console.error('Error creating customer:', insertError);
+                throw insertError;
+              }
+              
+              console.log('Customer created successfully (direct):', newCustomer);
+              toast({
+                title: 'Customer Created',
+                description: `Created new customer: ${customerData.first_name} ${customerData.last_name}`,
+                variant: 'default'
+              });
+            }
           }
         } catch (customerError) {
-          console.warn('Error saving customer:', customerError);
+          console.error('Error saving customer:', customerError);
+          toast({
+            title: 'Customer Save Warning',
+            description: `Order saved but customer data could not be saved: ${customerError.message}`,
+            variant: 'destructive'
+          });
         }
+      } else {
+        console.log('Skipping customer save - missing required customer information');
+        console.log('Email provided:', !!formData.customerEmail);
+        console.log('First name provided:', !!formData.firstName);
+        console.log('Last name provided:', !!formData.lastName);
       }
+      
+      console.log('=== CUSTOMER SAVE DEBUG END ===');
 
       toast({
         title: 'Success',
@@ -343,19 +565,55 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
 
   // Customer lookup by email
   const searchCustomerByEmail = useCallback(async (email: string) => {
+    console.log('searchCustomerByEmail called with:', email);
+    
     if (!email || email.length < 3) {
+      console.log('Email too short, skipping search');
       setCustomerFound(false);
       return;
     }
 
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.log('Invalid email format, skipping search');
+      setCustomerFound(false);
+      return;
+    }
+
+    console.log('Starting customer search for:', email);
     setIsSearchingCustomer(true);
+    
     try {
+      // Get current user's store_id for filtering
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('No authenticated user found');
+        setCustomerFound(false);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('store_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile?.store_id) {
+        console.log('No store_id found for user');
+        setCustomerFound(false);
+        return;
+      }
+
       // Use Supabase to search for customer by email in customers table
       const { data: customers, error } = await supabase
         .from('customers')
         .select('*')
-        .eq('email', email)
+        .eq('email', email.toLowerCase().trim())
+        .eq('store_id', profile.store_id)
         .limit(1);
+
+      console.log('Customer search result:', { customers, error });
 
       if (error) {
         throw error;
@@ -376,26 +634,47 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         setValue('lastName', lastName);
         setValue('customerPhone', customer.phone || '');
         
-        // Auto-fill address if available
+        // Auto-fill address if available - improved parsing
         if (customer.address) {
-          const addressParts = customer.address.split(', ');
-          if (addressParts.length >= 1) setValue('street', addressParts[0] || '');
-          if (addressParts.length >= 2) setValue('city', addressParts[1] || '');
-          if (addressParts.length >= 3) setValue('state', addressParts[2] || '');
-          if (addressParts.length >= 4) setValue('zipcode', addressParts[3] || '');
-          if (addressParts.length >= 5) setValue('country', addressParts[4] || '');
+          console.log('Parsing address:', customer.address);
+          const addressParts = customer.address.split(', ').filter(part => part.trim());
+          
+          // More flexible address parsing
+          if (addressParts.length >= 5) {
+            // Full address: street, city, state, zipcode, country
+            setValue('street', addressParts[0] || '');
+            setValue('city', addressParts[1] || '');
+            setValue('state', addressParts[2] || '');
+            setValue('zipcode', addressParts[3] || '');
+            setValue('country', addressParts[4] || '');
+          } else if (addressParts.length >= 3) {
+            // Partial address: assume street, city, state/country
+            setValue('street', addressParts[0] || '');
+            setValue('city', addressParts[1] || '');
+            setValue('state', addressParts[2] || '');
+          } else if (addressParts.length >= 1) {
+            // Just street or combined address
+            setValue('street', addressParts[0] || '');
+          }
         }
         
         toast({
           title: 'Customer Found',
-          description: `Auto-filled details for ${firstName} ${lastName}`
+          description: `Auto-filled details for ${firstName} ${lastName}`,
+          variant: 'default'
         });
       } else {
+        console.log('No customer found with email:', email);
         setCustomerFound(false);
       }
     } catch (error) {
       console.error('Customer search failed:', error);
       setCustomerFound(false);
+      toast({
+        title: 'Search Error',
+        description: 'Failed to search for customer. Please try again.',
+        variant: 'destructive'
+      });
     } finally {
       setIsSearchingCustomer(false);
     }
@@ -404,26 +683,68 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
   // Debounced email search - only for new orders
   useEffect(() => {
     // Don't search if we have initial data (viewing existing order)
-    if (initialData?.id) return;
+    if (initialData?.id) {
+      console.log('Skipping customer search - editing existing order');
+      return;
+    }
     
     const email = watch('customerEmail');
+    console.log('Email changed to:', email, 'customerFound:', customerFound);
+    
+    if (!email) {
+      setCustomerFound(false);
+      return;
+    }
+    
     const timeoutId = setTimeout(() => {
-      if (email && !customerFound) {
+      console.log('Debounced search triggered for:', email);
+      // Always search when email changes, don't skip if customer was found before
+      if (email && email.includes('@')) {
         searchCustomerByEmail(email);
       }
-    }, 500);
+    }, 800); // Increased delay to 800ms for better UX
 
-    return () => clearTimeout(timeoutId);
-  }, [watch('customerEmail'), searchCustomerByEmail, customerFound, initialData?.id]);
+    return () => {
+      console.log('Clearing timeout for email search');
+      clearTimeout(timeoutId);
+    };
+  }, [watch('customerEmail'), searchCustomerByEmail, initialData?.id]);
+
+  // Reset customer found status when email is cleared or changed significantly
+  useEffect(() => {
+    const email = watch('customerEmail');
+    if (!email || email.length < 3) {
+      setCustomerFound(false);
+    }
+  }, [watch('customerEmail')]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // Load staff options
   useEffect(() => {
     const loadStaff = async () => {
       try {
-        // Use Supabase to get staff from profiles table
+        // Use Supabase to get only store employees from profiles table
         const { data: staff, error } = await supabase
           .from('profiles')
-          .select('user_id, first_name, last_name');
+          .select('user_id, first_name, last_name, role')
+          .eq('role', 'store_employee');
 
         if (error) {
           throw error;
@@ -437,12 +758,8 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         setStaffOptions(staffOptions);
       } catch (error) {
         console.error('Failed to load staff:', error);
-        // Mock data for demo
-        setStaffOptions([
-          { id: '1', name: 'John Smith' },
-          { id: '2', name: 'Sarah Johnson' },
-          { id: '3', name: 'Mike Chen' },
-        ]);
+        // Fallback: set empty array if no store employees found
+        setStaffOptions([]);
       }
     };
     loadStaff();
@@ -547,6 +864,86 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
     }])
   ];
 
+  const handleOrderSubmit = handleSubmit(
+    (data) => {
+      console.log('Form validation passed, data:', data);
+      if (lines.length === 0) {
+        toast({
+          title: 'Validation Error',
+          description: 'Please add at least one item to the order',
+          variant: 'destructive'
+        });
+        return;
+      }
+      handleSave(data, 'submitted');
+    },
+    (errors) => {
+      console.log('Form validation failed, errors:', errors);
+      let message = 'Please fill in all required fields.';
+      if (errors.customerEmail || errors.firstName || errors.lastName || errors.customerPhone) {
+        message = 'Please fill in all required customer information (Email, First Name, Last Name, Phone)';
+      } else if (errors.fulfillmentType) {
+        message = 'Please choose pick-up or delivery';
+      } else if (errors.street || errors.city || errors.state || errors.zipcode || errors.country) {
+        message = 'Please fill in all required address fields for delivery';
+      }
+      toast({
+        title: 'Validation Error',
+        description: message,
+        variant: 'destructive'
+      });
+    }
+  );
+
+  // Alternative manual validation function as backup
+  const handleOrderSubmitManual = () => {
+    console.log('Manual submit clicked');
+    const currentValues = getValues();
+    console.log('Current form values:', currentValues);
+    
+    // Manual validation check
+    if (!currentValues.customerEmail || !currentValues.firstName || !currentValues.lastName || !currentValues.customerPhone) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required customer information (Email, First Name, Last Name, Phone)',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (!currentValues.fulfillmentType) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please choose pick-up or delivery',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (currentValues.fulfillmentType === 'delivery') {
+      if (!currentValues.street || !currentValues.city || !currentValues.state || !currentValues.country || !currentValues.zipcode) {
+        toast({
+          title: 'Validation Error',
+          description: 'Please fill in all required address fields for delivery',
+          variant: 'destructive'
+        });
+        return;
+      }
+    }
+    
+    if (lines.length === 0) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please add at least one item to the order',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    // If all validations pass, call handleSubmit
+    handleSubmit((data) => handleSave(data, 'submitted'))();
+  };
+
   return (
     <div className="space-y-6">
       {loading && <LoadingOverlay />}
@@ -581,6 +978,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               {errors.customerEmail && (
                 <p className="text-xs text-destructive mt-1">{errors.customerEmail.message}</p>
               )}
+
             </div>
             <div />
             
@@ -737,6 +1135,23 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
             </div>
             
             <div>
+              <Label>Store Invoice#</Label>
+              <Input
+                type="text"
+                value={watch('storeInvoiceNumber') || ''}
+                onChange={(e) => setValue('storeInvoiceNumber', e.target.value)}
+                placeholder="Enter custom invoice number..."
+                disabled={readOnly}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Optional: Create a custom invoice number for your store records
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-4">
+            <div>
               <Label>Pick-up / Delivery <span className="text-destructive">*</span></Label>
               <RadioGroup
                 value={watch('fulfillmentType')}
@@ -762,22 +1177,14 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
             </div>
             
             <div>
-              <Label>Payment Method</Label>
-              <Select 
-                value={watch('paymentMethod')} 
-                onValueChange={(value) => setValue('paymentMethod', value)}
-                disabled={readOnly}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
-                  <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Payment Methods (Max 3)</Label>
+              <PaymentMethodsSection 
+                control={control}
+                watch={watch}
+                setValue={setValue}
+                readOnly={readOnly}
+                totals={totals}
+              />
             </div>
             
             <div>
@@ -802,9 +1209,45 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="storefront">Storefront</SelectItem>
-                  <SelectItem value="website">Website</SelectItem>
-                  <SelectItem value="referral">Referral</SelectItem>
+                  {/* Physical & Direct */}
+                  <SelectItem value="storefront">Storefront Walk-in</SelectItem>
+                  <SelectItem value="phone">Phone Call</SelectItem>
+                  <SelectItem value="email">Email Inquiry</SelectItem>
+                  
+                  {/* Social Media */}
+                  <SelectItem value="facebook">Facebook</SelectItem>
+                  <SelectItem value="instagram">Instagram</SelectItem>
+                  <SelectItem value="tiktok">TikTok</SelectItem>
+                  <SelectItem value="youtube">YouTube</SelectItem>
+                  <SelectItem value="linkedin">LinkedIn</SelectItem>
+                  <SelectItem value="twitter">Twitter/X</SelectItem>
+                  
+                  {/* Digital Marketing */}
+                  <SelectItem value="website">Company Website</SelectItem>
+                  <SelectItem value="google-search">Google Search</SelectItem>
+                  <SelectItem value="google-ads">Google Ads</SelectItem>
+                  <SelectItem value="online-marketplace">Online Marketplace</SelectItem>
+                  <SelectItem value="email-marketing">Email Marketing</SelectItem>
+                  
+                  {/* Word of Mouth */}
+                  <SelectItem value="referral-friend">Friend/Family Referral</SelectItem>
+                  <SelectItem value="referral-customer">Customer Referral</SelectItem>
+                  <SelectItem value="referral-employee">Employee Referral</SelectItem>
+                  
+                  {/* Traditional Marketing */}
+                  <SelectItem value="print-ad">Print Advertisement</SelectItem>
+                  <SelectItem value="radio">Radio</SelectItem>
+                  <SelectItem value="tv">Television</SelectItem>
+                  <SelectItem value="billboard">Billboard/Outdoor</SelectItem>
+                  <SelectItem value="direct-mail">Direct Mail</SelectItem>
+                  
+                  {/* Events & Partnerships */}
+                  <SelectItem value="trade-show">Trade Show/Event</SelectItem>
+                  <SelectItem value="partnership">Business Partnership</SelectItem>
+                  <SelectItem value="affiliate">Affiliate/Reseller</SelectItem>
+                  
+                  {/* Other */}
+                  <SelectItem value="repeat-customer">Repeat Customer</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
@@ -964,33 +1407,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
             Save Draft
           </Button>
           <Button
-            onClick={handleSubmit((data) => {
-              if (!data.fulfillmentType) {
-                toast({
-                  title: 'Validation Error',
-                  description: 'Please choose pick-up or delivery',
-                  variant: 'destructive'
-                });
-                return;
-              }
-              if (!data.customerEmail || !data.firstName || !data.lastName) {
-                toast({
-                  title: 'Validation Error',
-                  description: 'Please fill in all required customer information (Email, First Name, Last Name)',
-                  variant: 'destructive'
-                });
-                return;
-              }
-              if (lines.length === 0) {
-                toast({
-                  title: 'Validation Error',
-                  description: 'Please add at least one item to the order',
-                  variant: 'destructive'
-                });
-                return;
-              }
-              handleSave(data, 'submitted');
-            })}
+            onClick={handleOrderSubmitManual}
             disabled={loading}
           >
             Submit Order

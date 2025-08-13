@@ -148,6 +148,10 @@ export function SalesOrdersSummary() {
         ...deriveSalesOrderMetrics(order),
       }));
 
+
+
+
+
       setOrders(enhancedData);
       setTotal(response.total);
       setCurrentPage(page);
@@ -282,11 +286,22 @@ export function SalesOrdersSummary() {
             </Badge>
           );
         case 'walkInDelivery':
-          return value ? (
+          if (!value) return null;
+          
+          // Map database values to display values
+          const deliveryTypeMap: Record<string, string> = {
+            'walk-in': 'Pickup',
+            'delivery': 'Delivery',
+            'pick-up': 'Pickup', // Alternative mapping
+          };
+          
+          const displayValue = deliveryTypeMap[value] || value;
+          
+          return (
             <Badge variant="secondary">
-              {t(`sales.summary.delivery.${value}`)}
+              {displayValue}
             </Badge>
-          ) : null;
+          );
         // Actions case removed - using clickable rows instead
         default:
           return value;

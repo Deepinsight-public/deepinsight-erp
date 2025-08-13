@@ -28,6 +28,7 @@ export function SalesOrdersHistory() {
 
   // Load data with pagination
   const loadData = async (page: number = 1) => {
+    console.log('🚀 Debug - loadData called with page:', page);
     setLoading(true);
     try {
       const params: ListParams = {
@@ -39,13 +40,25 @@ export function SalesOrdersHistory() {
         limit: pageSize
       };
 
+      console.log('🚀 Debug - Calling fetchSalesOrders with params:', params);
       const ordersData = await fetchSalesOrders(params);
+      console.log('🚀 Debug - fetchSalesOrders returned:', ordersData);
+
+      // Debug: Check if payment methods are in the fetched data
+      console.log('🚀 Debug - Fetched orders data:', ordersData);
+      console.log('🚀 Debug - Orders data length:', ordersData.length);
+      if (ordersData.length > 0) {
+        console.log('🚀 Debug - First order paymentMethods:', ordersData[0].paymentMethods);
+        console.log('🚀 Debug - First order structure:', ordersData[0]);
+      }
 
       // Orders data is already transformed DTOs from the API
       setOrders(ordersData);
       setTotalOrders(ordersData.length);
       setCurrentPage(page);
+      console.log('🚀 Debug - setOrders called, orders state should update');
     } catch (error) {
+      console.error('🚨 Debug - Error in loadData:', error);
       toast({
         title: t('common.error'),
         description: t('salesOrders.errors.loadFailed'),
@@ -53,12 +66,22 @@ export function SalesOrdersHistory() {
       });
     } finally {
       setLoading(false);
+      console.log('🚀 Debug - loadData finished, loading set to false');
     }
   };
 
   useEffect(() => {
     loadData(1);
   }, [searchTerm, statusFilter, dateRange]);
+
+  // Debug: Add console log to check orders data structure
+  useEffect(() => {
+    if (orders.length > 0) {
+      console.log('Debug - Orders in state:', orders);
+      console.log('Debug - First order keys:', Object.keys(orders[0]));
+      console.log('Debug - First order paymentMethods:', orders[0].paymentMethods);
+    }
+  }, [orders]);
 
   const columns = [
     {
@@ -92,10 +115,49 @@ export function SalesOrdersHistory() {
     },
     {
       key: 'totalAmount',
-      title: t('salesOrders.columns.totalAmount'),
-      render: (value: number) => (
-        <span className="font-medium">${value.toFixed(2)}</span>
-      ),
+      title: 'Test Column',
+      render: (value: number, record: SalesOrderDTO) => {
+        console.log('🧪 Test column render called with value:', value);
+        return <span>Test: ${value}</span>;
+      },
+    },
+    {
+      key: 'paymentMethods',
+      title: t('salesOrders.columns.payments'),
+      render: (value: Array<{method: string, amount: number}> | undefined, record: SalesOrderDTO) => {
+        console.log('🔍 Debug - UI render called!');
+        console.log('🔍 Debug - UI render paymentMethods value:', value);
+        console.log('🔍 Debug - UI render record.paymentMethods:', record.paymentMethods);
+        console.log('🔍 Debug - UI render record.paymentMethod:', record.paymentMethod);
+        console.log('🔍 Debug - UI render record keys:', Object.keys(record));
+        
+        // Use record.paymentMethods instead of value parameter
+        const paymentMethods = record.paymentMethods;
+        
+        if (!paymentMethods || paymentMethods.length === 0) {
+          return (
+            <div className="space-y-1">
+              <div className="text-sm">
+                <span className="font-medium">${record.totalAmount.toFixed(2)}</span>
+                {record.paymentMethod && <span className="text-muted-foreground ml-2">({record.paymentMethod})</span>}
+              </div>
+            </div>
+          );
+        }
+        return (
+          <div className="space-y-1">
+            {paymentMethods.map((payment, index) => (
+              <div key={index} className="text-sm">
+                <span className="font-medium">${payment.amount.toFixed(2)}</span>
+                <span className="text-muted-foreground ml-2">({payment.method})</span>
+              </div>
+            ))}
+            <div className="text-sm font-medium text-muted-foreground">
+              Total: ${record.totalAmount.toFixed(2)}
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: 'actions',

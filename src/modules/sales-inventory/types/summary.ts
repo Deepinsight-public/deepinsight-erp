@@ -13,6 +13,7 @@ export interface SalesOrderSummary {
   walkInDelivery?: string;
   deliveryDate?: string;
   customerSource?: string;
+  warrantyYears?: number;
   
   // Item counts and totals
   itemsCount: number;

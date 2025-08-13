@@ -56,8 +56,8 @@ export function DataTable<T extends Record<string, any>>({
   return (
     <Card>
       <CardContent className="p-0">
-        {/* Wrap table; min-w-0 allows it to shrink within flex parents so page doesn't overflow */}
-        <div className="w-full min-w-0 overflow-x-auto">
+        {/* Wrap table to enable horizontal scrolling while keeping the rest of the layout responsive */}
+        <div className="w-full overflow-x-auto">
           {/* min-w-full ensures the table keeps its natural width so the scrollbar appears only for the table */}
           <Table className="min-w-full" style={minTableWidth ? { minWidth: `${minTableWidth}px` } : undefined}>
             <TableHeader>

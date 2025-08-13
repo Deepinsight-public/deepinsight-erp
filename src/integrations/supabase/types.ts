@@ -1099,6 +1099,13 @@ export type Database = {
           other_fee: number | null
           other_services: string | null
           payment_method: string | null
+          payment_methods: string | null
+          payment_method1: string | null
+          payment_amount1: number | null
+          payment_method2: string | null
+          payment_amount2: number | null
+          payment_method3: string | null
+          payment_amount3: number | null
           payment_note: string | null
           status: string | null
           store_id: string
@@ -1132,6 +1139,13 @@ export type Database = {
           other_fee?: number | null
           other_services?: string | null
           payment_method?: string | null
+          payment_methods?: string | null
+          payment_method1?: string | null
+          payment_amount1?: number | null
+          payment_method2?: string | null
+          payment_amount2?: number | null
+          payment_method3?: string | null
+          payment_amount3?: number | null
           payment_note?: string | null
           status?: string | null
           store_id: string
@@ -1165,6 +1179,13 @@ export type Database = {
           other_fee?: number | null
           other_services?: string | null
           payment_method?: string | null
+          payment_methods?: string | null
+          payment_method1?: string | null
+          payment_amount1?: number | null
+          payment_method2?: string | null
+          payment_amount2?: number | null
+          payment_method3?: string | null
+          payment_amount3?: number | null
           payment_note?: string | null
           status?: string | null
           store_id?: string

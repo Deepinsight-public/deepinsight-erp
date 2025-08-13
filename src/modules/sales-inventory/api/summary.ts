@@ -41,7 +41,9 @@ export async function fetchSalesOrdersSummary(
         order_date,
         store_id,
         customer_name,
+        customer_source,
         cashier_id,
+        warranty_years,
         status,
         walk_in_delivery,
         total_amount,
@@ -51,6 +53,13 @@ export async function fetchSalesOrdersSummary(
         accessory,
         other_services,
         other_fee,
+        payment_methods,
+        payment_method1,
+        payment_amount1,
+        payment_method2,
+        payment_amount2,
+        payment_method3,
+        payment_amount3,
         sales_order_items(
           quantity,
           unit_price,
@@ -100,6 +109,33 @@ export async function fetchSalesOrdersSummary(
 
     if (error) throw error;
 
+
+
+    // Get unique cashier IDs to fetch their names
+    const cashierIds = [...new Set((data || [])
+      .map(order => order.cashier_id)
+      .filter(Boolean)
+    )];
+
+    // Fetch cashier names if we have any cashier IDs
+    let cashierMap: Record<string, string> = {};
+    if (cashierIds.length > 0) {
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', cashierIds);
+
+      if (!profileError && profiles) {
+        cashierMap = profiles.reduce((acc, profile) => {
+          const name = profile.first_name && profile.last_name 
+            ? `${profile.first_name} ${profile.last_name}`
+            : profile.first_name || profile.last_name || 'Unknown';
+          acc[profile.user_id] = name;
+          return acc;
+        }, {} as Record<string, string>);
+      }
+    }
+
     // Transform to summary format
     const summaryData: SalesOrderSummary[] = (data || []).map(order => {
       const items = order.sales_order_items || [];
@@ -111,9 +147,40 @@ export async function fetchSalesOrdersSummary(
       const deliveryFee = order.walk_in_delivery === 'delivery' ? 50 : 0; // Default delivery fee
       const otherFee = order.other_fee || 0;
       
+      // Parse payment methods from JSONB or individual fields
+      let paymentMethods: Array<{method: string, amount: number, note?: string}> = [];
+      
+      try {
+        if (order.payment_methods) {
+          if (typeof order.payment_methods === 'string') {
+            paymentMethods = JSON.parse(order.payment_methods);
+          } else if (Array.isArray(order.payment_methods)) {
+            paymentMethods = order.payment_methods;
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to parse payment_methods in summary:', e);
+      }
+      
+      // Fallback to individual payment fields if JSONB is empty
+      if (paymentMethods.length === 0) {
+        if (order.payment_method1 && order.payment_amount1) {
+          paymentMethods.push({ method: order.payment_method1, amount: order.payment_amount1 });
+        }
+        if (order.payment_method2 && order.payment_amount2) {
+          paymentMethods.push({ method: order.payment_method2, amount: order.payment_amount2 });
+        }
+        if (order.payment_method3 && order.payment_amount3) {
+          paymentMethods.push({ method: order.payment_method3, amount: order.payment_amount3 });
+        }
+      }
+
       // For now, assume fully paid (in real implementation, query payments table)
       const paidTotal = order.total_amount;
       const balanceAmount = 0;
+
+      // Get cashier name from the lookup map
+      const cashierName = order.cashier_id ? cashierMap[order.cashier_id] || 'Unknown Cashier' : null;
 
       return {
         orderId: order.id,
@@ -121,7 +188,10 @@ export async function fetchSalesOrdersSummary(
         orderDate: order.order_date,
         storeId: order.store_id,
         customerName: order.customer_name,
+        customerSource: order.customer_source,
         cashierId: order.cashier_id,
+        cashierName: cashierName,
+        warrantyYears: order.warranty_years,
         orderType: 'retail' as const, // Default since order_type doesn't exist in schema
         status: order.status as SalesOrderSummary['status'],
         walkInDelivery: order.walk_in_delivery,
@@ -138,6 +208,13 @@ export async function fetchSalesOrdersSummary(
         balanceAmount,
         productsTotal: subTotal,
         servicesTotal: accessoryFee + otherFee,
+        // Add individual payment fields for the table display
+        paymentMethod1: paymentMethods[0]?.method || null,
+        paymentAmount1: paymentMethods[0]?.amount || null,
+        paymentMethod2: paymentMethods[1]?.method || null,
+        paymentAmount2: paymentMethods[1]?.amount || null,
+        paymentMethod3: paymentMethods[2]?.method || null,
+        paymentAmount3: paymentMethods[2]?.amount || null,
       };
     });
 

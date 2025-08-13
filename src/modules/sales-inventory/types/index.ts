@@ -30,9 +30,15 @@ export interface SalesOrderDTO {
   otherServices?: string;
   otherFee?: number;
   paymentMethod?: string;
+  paymentMethods?: Array<{
+    method: string;
+    amount: number;
+    note?: string;
+  }>;
   paymentNote?: string;
   customerSource?: string;
   cashierId?: string;
+  storeInvoiceNumber?: string;
   // Meta
   createdAt?: string;
   updatedAt?: string;
