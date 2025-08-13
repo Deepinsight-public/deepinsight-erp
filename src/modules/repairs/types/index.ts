@@ -30,7 +30,10 @@ export interface RepairFilters {
 }
 
 export interface CreateRepairData {
-  productId: string;
+  productId?: string;
+  customProduct?: string;
+  model?: string;
+  partsRequired?: string;
   customerId?: string;
   customerName?: string;
   salesOrderId?: string;

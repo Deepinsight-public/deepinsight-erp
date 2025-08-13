@@ -100,7 +100,10 @@ export function CreateRepairModal({ open, onClose, onSuccess }: CreateRepairModa
       // Transform form data to match API expectations
       const repairData = {
         type: formData.source === 'warranty' ? 'warranty' : 'paid',
-        productId: formData.productId || '',
+        productId: formData.productId,
+        customProduct: formData.customProduct,
+        model: formData.model,
+        partsRequired: formData.partsRequired,
         customerId: formData.customerId,
         customerName: formData.customerName,
         salesOrderId: formData.salesOrderId,
@@ -112,6 +115,8 @@ export function CreateRepairModal({ open, onClose, onSuccess }: CreateRepairModa
           new Date(formData.estimatedCompletion.getTime() + (formData.guaranteeDays * 24 * 60 * 60 * 1000)) : 
           undefined
       };
+
+      console.log('Submitting repair data:', repairData);
 
       await createRepair(repairData);
       showSuccess('Repair created successfully');
@@ -127,7 +132,8 @@ export function CreateRepairModal({ open, onClose, onSuccess }: CreateRepairModa
       setCurrentStep(0);
     } catch (error) {
       console.error('Error creating repair:', error);
-      showError('Failed to create repair. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create repair. Please try again.';
+      showError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

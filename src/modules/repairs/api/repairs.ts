@@ -67,6 +67,8 @@ export const getRepairs = async (filters?: RepairFilters): Promise<Repair[]> => 
 };
 
 export const createRepair = async (repairData: CreateRepairData): Promise<Repair> => {
+  console.log('Creating repair with data:', repairData);
+  
   // Get user profile to get store_id
   const { data: profile } = await supabase
     .from('profiles')
@@ -82,17 +84,56 @@ export const createRepair = async (repairData: CreateRepairData): Promise<Repair
   const { data: repairIdData, error: repairIdError } = await supabase.rpc('generate_repair_id');
   if (repairIdError) throw repairIdError;
 
+  // Handle custom products by creating a temporary product record
+  let productId = repairData.productId;
+  if (!productId && repairData.customProduct) {
+    console.log('Creating custom product:', repairData.customProduct);
+    
+    const { data: customProductData, error: customProductError } = await supabase
+      .from('products')
+      .insert({
+        product_name: repairData.customProduct,
+        sku: `CUSTOM-${Date.now()}`,
+        is_active: true
+      })
+      .select('id')
+      .single();
+
+    if (customProductError) {
+      console.error('Error creating custom product:', customProductError);
+      throw new Error('Failed to create custom product');
+    }
+
+    productId = customProductData.id;
+  }
+
+  if (!productId) {
+    throw new Error('Product ID is required');
+  }
+
+  // Prepare description with additional context for custom products
+  let description = repairData.description;
+  if (repairData.customProduct) {
+    description = `[CUSTOM_PRODUCT]=${repairData.customProduct}\n${description}`;
+  }
+  if (repairData.model) {
+    description = `[MODEL]=${repairData.model}\n${description}`;
+  }
+  if (repairData.partsRequired) {
+    description = `[PARTS_REQUIRED]=${repairData.partsRequired}\n${description}`;
+  }
+
   const { data, error } = await supabase
     .from('repairs')
     .insert({
       repair_id: repairIdData,
       store_id: profile.store_id,
-      product_id: repairData.productId,
+      product_id: productId,
       customer_id: repairData.customerId,
       customer_name: repairData.customerName,
       sales_order_id: repairData.salesOrderId,
       type: repairData.type,
-      description: repairData.description,
+      description: description,
       cost: repairData.cost,
       estimated_completion: repairData.estimatedCompletion ? repairData.estimatedCompletion.toISOString() : null,
       warranty_status: repairData.warrantyStatus || 'unknown',
