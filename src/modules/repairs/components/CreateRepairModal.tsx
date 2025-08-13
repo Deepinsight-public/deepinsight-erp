@@ -147,7 +147,7 @@ export function CreateRepairModal({ open, onClose, onSuccess }: CreateRepairModa
   const isStepValid = () => {
     switch (currentStep) {
       case 0: // Source & Parties
-        return formData.source !== '';
+        return formData.source !== '' && formData.customerId !== undefined;
       case 1: // Product & Model
         return formData.productId || formData.customProduct;
       case 2: // Problem
@@ -155,7 +155,10 @@ export function CreateRepairModal({ open, onClose, onSuccess }: CreateRepairModa
       case 3: // Parts Required
         return true; // Optional step
       case 4: // Home Visit
-        return true; // Optional step
+        if (formData.homeVisitNeeded) {
+          return formData.visitAddress?.trim() !== '' && formData.preferredDateTime !== undefined;
+        }
+        return true;
       case 5: // Completion & Guarantee
         return true; // Optional step
       case 6: // Review

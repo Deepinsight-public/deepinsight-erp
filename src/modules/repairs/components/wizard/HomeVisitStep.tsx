@@ -37,13 +37,14 @@ export function HomeVisitStep({ formData, updateFormData }: HomeVisitStepProps) 
           {formData.homeVisitNeeded && (
             <div className="space-y-4 pl-4 border-l-2 border-muted">
               <div>
-                <Label className="text-base font-medium">Service Address</Label>
+                <Label className="text-base font-medium">Service Address *</Label>
                 <div className="mt-2">
                   <Textarea
                     value={formData.visitAddress || ''}
                     onChange={(e) => updateFormData({ visitAddress: e.target.value })}
                     placeholder="Enter the address where service is needed..."
                     rows={3}
+                    required
                   />
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -52,7 +53,7 @@ export function HomeVisitStep({ formData, updateFormData }: HomeVisitStepProps) 
               </div>
 
               <div>
-                <Label className="text-base font-medium">Preferred Date & Time</Label>
+                <Label className="text-base font-medium">Preferred Date & Time *</Label>
                 <div className="mt-2">
                   <Popover>
                     <PopoverTrigger asChild>

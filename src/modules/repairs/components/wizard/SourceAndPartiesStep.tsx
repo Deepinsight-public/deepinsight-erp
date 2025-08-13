@@ -81,9 +81,45 @@ export function SourceAndPartiesStep({ formData, updateFormData }: SourceAndPart
       customerId: customer.id,
       customerName: customer.name,
       customerPhone: customer.phone,
-      customerEmail: customer.email 
+      customerEmail: customer.email,
+      customerAddress: customer.address || '',
+      visitAddress: customer.address || '' // Prepopulate visit address
     });
     setShowAddCustomer(false);
+  };
+
+  const handleCustomerSelect = async (value: string) => {
+    const customer = customerOptions.find(c => c.value === value);
+    
+    // Fetch full customer details to get address
+    try {
+      const { getCustomerById } = await import('../../api/customers');
+      const fullCustomer = await getCustomerById(value);
+      
+      updateFormData({ 
+        customerId: value,
+        customerName: customer?.name,
+        customerPhone: customer?.phone,
+        customerEmail: customer?.email,
+        customerAddress: fullCustomer?.address || '',
+        visitAddress: fullCustomer?.address || '' // Prepopulate visit address
+      });
+    } catch (error) {
+      console.error('Error fetching customer details:', error);
+      updateFormData({ 
+        customerId: value,
+        customerName: customer?.name,
+        customerPhone: customer?.phone,
+        customerEmail: customer?.email
+      });
+    }
+  };
+
+  const handleOrderSelect = async (value: string) => {
+    updateFormData({ salesOrderId: value });
+    
+    // Note: Sales order doesn't include product details in current schema
+    // This can be enhanced when product details are available in sales orders
   };
 
   return (
@@ -117,24 +153,16 @@ export function SourceAndPartiesStep({ formData, updateFormData }: SourceAndPart
           {formData.source && (
             <>
               <div>
-                <Label className="text-base font-medium">Customer</Label>
+                <Label className="text-base font-medium">Customer *</Label>
                 <div className="mt-2 space-y-2">
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <SelectWithSearch
                         options={customerOptions}
                         value={formData.customerId || ''}
-                        onValueChange={(value) => {
-                          const customer = customerOptions.find(c => c.value === value);
-                          updateFormData({ 
-                            customerId: value,
-                            customerName: customer?.name,
-                            customerPhone: customer?.phone,
-                            customerEmail: customer?.email
-                          });
-                        }}
+                        onValueChange={handleCustomerSelect}
                         onSearchChange={handleCustomerSearch}
-                        placeholder="Search customers..."
+                        placeholder="Search customers... *"
                         searchPlaceholder="Type to search customers"
                         emptyText="No customers found"
                       />
@@ -206,7 +234,7 @@ export function SourceAndPartiesStep({ formData, updateFormData }: SourceAndPart
                   <SelectWithSearch
                     options={salesOrderOptions}
                     value={formData.salesOrderId || ''}
-                    onValueChange={(value) => updateFormData({ salesOrderId: value })}
+                    onValueChange={handleOrderSelect}
                     onSearchChange={handleOrderSearch}
                     placeholder="Search by order number..."
                     searchPlaceholder="Type order number or ID"
