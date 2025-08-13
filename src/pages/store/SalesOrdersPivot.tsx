@@ -1,5 +1,5 @@
 import { Breadcrumbs } from '@/components';
-import { PivotAnalysisPage } from '@/modules/sales/components/PivotAnalysisPage';
+import { SimplePivotTable } from '@/modules/sales-inventory/components/SimplePivotTable';
 
 export default function SalesOrdersPivot() {
   return (
@@ -9,7 +9,7 @@ export default function SalesOrdersPivot() {
         { title: 'Pivot Analysis' }
       ]} />
       
-      <PivotAnalysisPage />
+      <SimplePivotTable />
     </div>
   );
 }

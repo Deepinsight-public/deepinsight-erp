@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ArrowLeft, Package, User, Calendar, DollarSign, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Package, User, Calendar, DollarSign, AlertCircle, Printer, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { getAfterSalesReturnById } from '../api/newReturns';
+import { ReturnInvoiceView } from './ReturnInvoiceView';
 import type { AfterSalesReturn } from '../types/newReturn';
 
 export function ReturnDetail() {
@@ -82,21 +84,36 @@ export function ReturnDetail() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate('/store/after-sales/returns')}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">Return Details</h1>
-          <p className="text-muted-foreground">Return ID: {returnData.id}</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/store/after-sales/returns')}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Return Details</h1>
+            <p className="text-muted-foreground">Return ID: {returnData.id}</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => window.print()}>
+            <Printer className="h-4 w-4 mr-2" />
+            Print
+          </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <Tabs defaultValue="details" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="invoice">Invoice</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="details" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Details */}
         <div className="lg:col-span-2 space-y-6">
           {/* Return Information */}
@@ -251,6 +268,12 @@ export function ReturnDetail() {
           </Card>
         </div>
       </div>
+        </TabsContent>
+        
+        <TabsContent value="invoice" className="mt-6">
+          <ReturnInvoiceView returnOrder={returnData} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

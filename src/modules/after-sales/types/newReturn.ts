@@ -16,6 +16,11 @@ export const returnFormSchema = z.object({
   }),
   reason: z.string().min(1, 'Return reason is required'),
   refundAmount: z.number().positive('Refund amount must be greater than 0'),
+  // New optional fields
+  status: z.enum(['processing', 'failed', 'approved']).default('processing'),
+  selfScraped: z.boolean().default(false),
+  mapPrice: z.number().optional(),
+  totalAmountPaid: z.number().optional(),
 }).refine((data) => {
   if (data.returnType === 'store') {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -67,6 +72,12 @@ export interface AfterSalesReturn {
   refundAmount: number;
   createdAt: string;
   updatedAt: string;
+  // New columns
+  approvalMonth?: string;
+  status: 'processing' | 'failed' | 'approved';
+  selfScraped: boolean;
+  mapPrice?: number;
+  totalAmountPaid?: number;
   product?: {
     sku: string;
     productName: string;

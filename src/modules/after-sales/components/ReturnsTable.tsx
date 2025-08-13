@@ -12,19 +12,21 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ChevronUp, ChevronDown, FileText, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ReturnsTableProps {
   returns: AfterSalesReturn[];
   loading?: boolean;
   onReturnClick?: (returnItem: AfterSalesReturn) => void;
+  onInvoiceClick?: (returnItem: AfterSalesReturn) => void;
 }
 
-type SortField = 'returnDate' | 'refundAmount' | 'reason';
+type SortField = 'returnDate' | 'refundAmount' | 'reason' | 'status' | 'approvalMonth' | 'mapPrice' | 'totalAmountPaid';
 type SortDirection = 'asc' | 'desc';
 
-export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTableProps) {
+export function ReturnsTable({ returns, loading, onReturnClick, onInvoiceClick }: ReturnsTableProps) {
   const { t } = useTranslation();
   const [sortField, setSortField] = useState<SortField>('returnDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -72,6 +74,22 @@ export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTablePr
           aValue = a.reason;
           bValue = b.reason;
           break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        case 'approvalMonth':
+          aValue = a.approvalMonth || '';
+          bValue = b.approvalMonth || '';
+          break;
+        case 'mapPrice':
+          aValue = a.mapPrice || 0;
+          bValue = b.mapPrice || 0;
+          break;
+        case 'totalAmountPaid':
+          aValue = a.totalAmountPaid || 0;
+          bValue = b.totalAmountPaid || 0;
+          break;
         default:
           return 0;
       }
@@ -109,12 +127,18 @@ export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTablePr
               <TableHead>{t('returns.table.product')}</TableHead>
               <TableHead>{renderSortableHeader(t('returns.table.refundAmount'), 'refundAmount')}</TableHead>
               <TableHead>{renderSortableHeader(t('returns.table.reason'), 'reason')}</TableHead>
+              <TableHead>{renderSortableHeader('Approval Month', 'approvalMonth')}</TableHead>
+              <TableHead>{renderSortableHeader('Status', 'status')}</TableHead>
+              <TableHead>Self Scraped</TableHead>
+              <TableHead>{renderSortableHeader('MAP', 'mapPrice')}</TableHead>
+              <TableHead>{renderSortableHeader('Total Paid', 'totalAmountPaid')}</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedReturns.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
                   {t('returns.table.noReturns')}
                 </TableCell>
               </TableRow>
@@ -165,6 +189,63 @@ export function ReturnsTable({ returns, loading, onReturnClick }: ReturnsTablePr
                         ? `${returnItem.reason.substring(0, 30)}...` 
                         : returnItem.reason}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    {returnItem.approvalMonth ? (
+                      <span className="text-sm">{returnItem.approvalMonth}</span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={returnItem.status || 'processing'} />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {returnItem.selfScraped ? (
+                      <span className="text-green-600 text-lg">✓</span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {returnItem.mapPrice ? (
+                      <span className="font-medium">${returnItem.mapPrice.toFixed(2)}</span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {returnItem.totalAmountPaid ? (
+                      <span className="font-medium text-blue-600">${returnItem.totalAmountPaid.toFixed(2)}</span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onReturnClick?.(returnItem);
+                        }}
+                        title="View Details"
+                      >
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onInvoiceClick?.(returnItem);
+                        }}
+                        title="View Invoice"
+                      >
+                        <FileText className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

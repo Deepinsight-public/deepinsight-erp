@@ -57,6 +57,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { fetchSalesOrdersSummary } from '../api/summary';
 import { deriveSalesOrderMetrics } from '../lib/derive';
+import { applyFilters } from '../lib/filterUtils';
+import { AdvancedTableFilter, FilterRule, FilterColumn } from './AdvancedTableFilter';
 import type { SalesOrderSummary, SalesOrderSummaryFilters } from '../types/summary';
 
 interface Column {
@@ -73,6 +75,7 @@ export function SalesOrdersSummary() {
   const { t } = useTranslation();
   
   const [orders, setOrders] = useState<(SalesOrderSummary & any)[]>([]);
+  const [rawOrders, setRawOrders] = useState<(SalesOrderSummary & any)[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -83,6 +86,7 @@ export function SalesOrdersSummary() {
   });
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<'paid' | 'partial' | 'unpaid' | ''>('');
+  const [advancedFilters, setAdvancedFilters] = useState<FilterRule[]>([]);
 
   // Column visibility state
   const [columns, setColumns] = useState<Column[]>([
@@ -125,7 +129,55 @@ export function SalesOrdersSummary() {
     { key: 'orderType', title: 'Order Type', visible: false, advanced: true },
   ]);
 
-  // Removed auto-hiding on narrow screens to allow testing horizontal scroll
+  // Define status and payment options first
+  const statusOptions = [
+    { value: 'draft', label: t('sales.summary.status.draft') },
+    { value: 'submitted', label: t('sales.summary.status.submitted') },
+    { value: 'pending', label: t('sales.summary.status.pending') },
+    { value: 'confirmed', label: t('sales.summary.status.confirmed') },
+    { value: 'shipped', label: t('sales.summary.status.shipped') },
+    { value: 'completed', label: t('sales.summary.status.completed') },
+    { value: 'cancelled', label: t('sales.summary.status.cancelled') },
+  ];
+
+  const paymentStatusOptions = [
+    { value: 'paid', label: t('sales.summary.paymentStatus.paid') },
+    { value: 'partial', label: t('sales.summary.paymentStatus.partial') },
+    { value: 'unpaid', label: t('sales.summary.paymentStatus.unpaid') },
+  ];
+
+  // Define filter columns based on the table columns
+  const filterColumns: FilterColumn[] = [
+    { key: 'orderDate', label: 'Date', dataType: 'date' },
+    { key: 'orderNumber', label: 'Order NO.', dataType: 'text' },
+    { key: 'customerName', label: 'Customer', dataType: 'text' },
+    { key: 'status', label: 'Status', dataType: 'select', options: statusOptions },
+    { key: 'itemsCount', label: 'Items', dataType: 'number' },
+    { key: 'warrantyAmount', label: 'Warranty Amount', dataType: 'number' },
+    { key: 'mapTotal', label: 'MAP', dataType: 'number' },
+    { key: 'productMapRate', label: 'Product/MAP Rate', dataType: 'number' },
+    { key: 'walkInDelivery', label: 'Delivery/Pickup', dataType: 'select', options: [
+      { value: 'walk-in', label: 'Pickup' },
+      { value: 'delivery', label: 'Delivery' }
+    ]},
+    { key: 'deliveryDate', label: 'Delivery Date', dataType: 'date' },
+    { key: 'deliveryFee', label: 'Delivery Fee', dataType: 'number' },
+    { key: 'accessoryFee', label: 'Accessory Fee', dataType: 'number' },
+    { key: 'otherFee', label: 'Other Fee', dataType: 'number' },
+    { key: 'cogsTotal', label: 'Product Cost', dataType: 'number' },
+    { key: 'grossProfit', label: 'Gross Profit', dataType: 'number' },
+    { key: 'cashierName', label: 'Cashier', dataType: 'text' },
+    { key: 'customerSource', label: 'Source', dataType: 'text' },
+    { key: 'paymentMethod1', label: 'Payment1', dataType: 'text' },
+    { key: 'paymentAmount1', label: 'Payment1 Amount', dataType: 'number' },
+    { key: 'paymentMethod2', label: 'Payment2', dataType: 'text' },
+    { key: 'paymentAmount2', label: 'Payment2 Amount', dataType: 'number' },
+    { key: 'paymentMethod3', label: 'Payment3', dataType: 'text' },
+    { key: 'paymentAmount3', label: 'Payment3 Amount', dataType: 'number' },
+    { key: 'discountAmount', label: 'Discount', dataType: 'number' },
+    { key: 'taxTotal', label: 'Tax', dataType: 'number' },
+    { key: 'totalAmount', label: 'Total', dataType: 'number' },
+  ];
 
   const loadData = async (page = 1) => {
     setLoading(true);
@@ -152,7 +204,12 @@ export function SalesOrdersSummary() {
 
 
 
-      setOrders(enhancedData);
+      // Store raw data and apply filters client-side
+      setRawOrders(enhancedData);
+      
+      // Apply advanced filters
+      const filteredData = applyFilters(enhancedData, advancedFilters);
+      setOrders(filteredData);
       setTotal(response.total);
       setCurrentPage(page);
     } catch (error) {
@@ -169,6 +226,14 @@ export function SalesOrdersSummary() {
   useEffect(() => {
     loadData();
   }, [searchQuery, statusFilter, paymentStatusFilter, dateRange]);
+
+  // Apply advanced filters when they change
+  useEffect(() => {
+    if (rawOrders.length > 0) {
+      const filteredData = applyFilters(rawOrders, advancedFilters);
+      setOrders(filteredData);
+    }
+  }, [advancedFilters, rawOrders]);
 
   const handleColumnVisibility = (columnKey: string, visible: boolean) => {
     setColumns(prev => prev.map(col => 
@@ -308,22 +373,6 @@ export function SalesOrdersSummary() {
       }
     }),
   }));
-
-  const statusOptions = [
-    { value: 'draft', label: t('sales.summary.status.draft') },
-    { value: 'submitted', label: t('sales.summary.status.submitted') },
-    { value: 'pending', label: t('sales.summary.status.pending') },
-    { value: 'confirmed', label: t('sales.summary.status.confirmed') },
-    { value: 'shipped', label: t('sales.summary.status.shipped') },
-    { value: 'completed', label: t('sales.summary.status.completed') },
-    { value: 'cancelled', label: t('sales.summary.status.cancelled') },
-  ];
-
-  const paymentStatusOptions = [
-    { value: 'paid', label: t('sales.summary.paymentStatus.paid') },
-    { value: 'partial', label: t('sales.summary.paymentStatus.partial') },
-    { value: 'unpaid', label: t('sales.summary.paymentStatus.unpaid') },
-  ];
 
   return (
     <div className="w-full max-w-full h-full min-h-0 flex flex-col">
@@ -478,6 +527,15 @@ export function SalesOrdersSummary() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Advanced Filters */}
+        <div className="mt-4">
+          <AdvancedTableFilter
+            columns={filterColumns}
+            filters={advancedFilters}
+            onFiltersChange={setAdvancedFilters}
+          />
         </div>
       </section>
 

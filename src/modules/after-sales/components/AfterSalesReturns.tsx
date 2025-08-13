@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { StoreLayout } from '@/components/store/StoreLayout';
 import { Breadcrumbs } from '@/components/shared/Breadcrumbs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { StandardSearchBar } from '@/components/shared/StandardSearchBar';
 import { useTranslation } from 'react-i18next';
 import { ReturnsTable } from './ReturnsTable';
 import { CreateReturnDialog } from './CreateReturnDialog';
+import { ReturnInvoiceView } from './ReturnInvoiceView';
 import { WarrantyClaims } from './WarrantyClaims';
 import type { AfterSalesReturn } from '../types/newReturn';
 import { getAllAfterSalesReturns } from '../api/newReturns';
@@ -20,6 +22,8 @@ export function AfterSalesReturns() {
   const [returns, setReturns] = useState<AfterSalesReturn[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [selectedReturn, setSelectedReturn] = useState<AfterSalesReturn | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('processing');
   const { showError } = useToastService();
@@ -31,7 +35,7 @@ export function AfterSalesReturns() {
       setReturns(data);
     } catch (error) {
       console.error('Error loading returns:', error);
-      showError(t('afterSales.loadError'));
+      showError(t('afterSales.loadError') || 'Failed to load returns');
     } finally {
       setLoading(false);
     }
@@ -64,6 +68,11 @@ export function AfterSalesReturns() {
   const handleReturnClick = (returnItem: AfterSalesReturn) => {
     // Navigate to return detail page
     navigate(`/store/after-sales/returns/${returnItem.id}`);
+  };
+
+  const handleInvoiceClick = (returnItem: AfterSalesReturn) => {
+    setSelectedReturn(returnItem);
+    setInvoiceDialogOpen(true);
   };
 
   const handleCreateSuccess = () => {
@@ -111,6 +120,7 @@ export function AfterSalesReturns() {
             returns={filteredReturns}
             loading={loading}
             onReturnClick={handleReturnClick}
+            onInvoiceClick={handleInvoiceClick}
           />
         </TabsContent>
         
@@ -124,6 +134,18 @@ export function AfterSalesReturns() {
         onOpenChange={setCreateDialogOpen}
         onSuccess={handleCreateSuccess}
       />
+
+      {/* Invoice Dialog */}
+      <Dialog open={invoiceDialogOpen} onOpenChange={setInvoiceDialogOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Return Invoice - {selectedReturn?.id.substring(0, 8).toUpperCase()}</DialogTitle>
+          </DialogHeader>
+          {selectedReturn && (
+            <ReturnInvoiceView returnOrder={selectedReturn} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

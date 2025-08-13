@@ -29,6 +29,7 @@ import {
   searchCustomersByEmail, 
   getWarehouses, 
   searchProducts, 
+  getCustomerPurchaseHistory,
   getProductMapPrice, 
   createAfterSalesReturn 
 } from '../api/newReturns';
@@ -46,10 +47,30 @@ export function NewReturnForm() {
   const [customerSuggestions, setCustomerSuggestions] = useState<CustomerLookupResult[]>([]);
   const [warehouseOptions, setWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
   const [productOptions, setProductOptions] = useState<{ value: string; label: string }[]>([]);
+  const [purchaseHistoryProducts, setPurchaseHistoryProducts] = useState<{ 
+    value: string; 
+    label: string; 
+    orderGrandTotal?: number;
+    orderNumber?: string;
+    purchaseDate?: string;
+    itemsInOrder?: number;
+    itemPrice?: number;
+    actualProductId?: string;
+  }[]>([]);
+  const [showPurchaseHistoryOnly, setShowPurchaseHistoryOnly] = useState(false);
+  const [loadingPurchaseHistory, setLoadingPurchaseHistory] = useState(false);
   const [mapPrice, setMapPrice] = useState<number | null>(null);
   const [showMapPopover, setShowMapPopover] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerAutoFilled, setCustomerAutoFilled] = useState(false);
+  const [selectedProductInfo, setSelectedProductInfo] = useState<{
+    orderGrandTotal: number;
+    orderNumber: string;
+    purchaseDate: string;
+    itemsInOrder: number;
+    itemPrice: number;
+  } | null>(null);
+  const [selectedDisplayValue, setSelectedDisplayValue] = useState<string>('');
 
   const form = useForm<ReturnFormData>({
     resolver: zodResolver(returnFormSchema),
@@ -63,6 +84,9 @@ export function NewReturnForm() {
       productId: '',
       reason: '',
       refundAmount: 0,
+      // New fields - optional for backwards compatibility
+      status: 'processing',
+      selfScraped: false,
     },
   });
 
@@ -84,23 +108,67 @@ export function NewReturnForm() {
   const handleCustomerEmailSearch = async (email: string) => {
     if (!email.trim()) {
       setCustomerSuggestions([]);
+      // Reset purchase history when email is cleared
+      setPurchaseHistoryProducts([]);
+      setShowPurchaseHistoryOnly(false);
+      setSelectedProductInfo(null);
+      setSelectedDisplayValue('');
       return;
     }
 
     try {
       const customers = await searchCustomersByEmail(email);
       setCustomerSuggestions(customers);
+      
+      // If email changes, reset purchase history
+      if (email !== form.getValues('customerEmail')) {
+        setPurchaseHistoryProducts([]);
+        setShowPurchaseHistoryOnly(false);
+        setSelectedProductInfo(null);
+        setSelectedDisplayValue('');
+      }
     } catch (error) {
       console.error('Error searching customers:', error);
     }
   };
 
-  const handleCustomerSelect = (customer: CustomerLookupResult) => {
+  const handleCustomerSelect = async (customer: CustomerLookupResult) => {
     form.setValue('customerEmail', customer.email);
     form.setValue('customerFirst', customer.customerFirst || '');
     form.setValue('customerLast', customer.customerLast || '');
     setCustomerAutoFilled(true);
     setCustomerSuggestions([]);
+    
+    // Load customer's purchase history for product dropdown
+    setLoadingPurchaseHistory(true);
+    try {
+      const purchaseHistory = await getCustomerPurchaseHistory(customer.email);
+      if (purchaseHistory.length > 0) {
+        const historyOptions = purchaseHistory.map(product => ({
+          value: `${product.id}_${product.orderId}`, // Use composite key to distinguish same product from different orders
+          label: `${product.sku} - ${product.productName} (Order: ${product.orderNumber || 'N/A'}, ${
+            product.lastPurchaseDate ? format(new Date(product.lastPurchaseDate), 'MMM dd, yyyy') : 'Unknown'
+          }, Total: $${(product.orderGrandTotal || 0).toFixed(2)})`,
+          orderGrandTotal: product.orderGrandTotal,
+          orderNumber: product.orderNumber,
+          purchaseDate: product.lastPurchaseDate,
+          itemsInOrder: product.orderItemsCount,
+          itemPrice: product.unitPrice,
+          actualProductId: product.id, // Store the actual product ID for form submission
+        }));
+        setPurchaseHistoryProducts(historyOptions);
+        setShowPurchaseHistoryOnly(true);
+      } else {
+        // No purchase history, keep showing all products
+        setPurchaseHistoryProducts([]);
+        setShowPurchaseHistoryOnly(false);
+      }
+    } catch (error) {
+      console.error('Error loading customer purchase history:', error);
+      setShowPurchaseHistoryOnly(false);
+    } finally {
+      setLoadingPurchaseHistory(false);
+    }
   };
 
   const handleProductSearch = async (search: string) => {
@@ -117,11 +185,55 @@ export function NewReturnForm() {
   };
 
   const handleProductSelect = async (productId: string) => {
-    form.setValue('productId', productId);
+    // Set the display value for the dropdown
+    setSelectedDisplayValue(productId);
+    
+    // Find and store the selected product's purchase information
+    if (showPurchaseHistoryOnly) {
+      const selectedProduct = purchaseHistoryProducts.find(p => p.value === productId);
+      if (selectedProduct && selectedProduct.orderGrandTotal) {
+        // Set the actual product ID for form submission
+        form.setValue('productId', selectedProduct.actualProductId || productId);
+        
+        setSelectedProductInfo({
+          orderGrandTotal: selectedProduct.orderGrandTotal,
+          orderNumber: selectedProduct.orderNumber || 'N/A',
+          purchaseDate: selectedProduct.purchaseDate || 'Unknown',
+          itemsInOrder: selectedProduct.itemsInOrder || 1,
+          itemPrice: selectedProduct.itemPrice || 0,
+        });
+        // Pre-fill refund amount with order grand total
+        form.setValue('refundAmount', selectedProduct.orderGrandTotal);
+        // Set total amount paid to order grand total (if field exists)
+        try {
+          form.setValue('totalAmountPaid', selectedProduct.orderGrandTotal);
+        } catch (error) {
+          // Field might not exist yet if database hasn't been migrated
+          console.log('totalAmountPaid field not available yet');
+        }
+      }
+    } else {
+      // For regular product selection, use the product ID directly
+      form.setValue('productId', productId);
+      // Clear product info if not from purchase history
+      setSelectedProductInfo(null);
+    }
     
     try {
-      const mapData = await getProductMapPrice(productId);
+      // Use the actual product ID for MAP price lookup
+      const actualProductId = showPurchaseHistoryOnly 
+        ? purchaseHistoryProducts.find(p => p.value === productId)?.actualProductId || productId
+        : productId;
+      
+      const mapData = await getProductMapPrice(actualProductId);
       setMapPrice(mapData.mapPrice);
+      // Set MAP price in form (if field exists)
+      try {
+        form.setValue('mapPrice', mapData.mapPrice);
+      } catch (error) {
+        // Field might not exist yet if database hasn't been migrated
+        console.log('mapPrice field not available yet');
+      }
       if (mapData.mapPrice > 0) {
         setShowMapPopover(true);
         // Auto-hide popover after 3 seconds
@@ -361,15 +473,54 @@ export function NewReturnForm() {
                   </FormLabel>
                   <FormControl>
                     <SelectWithSearch
-                      options={productOptions}
-                      value={field.value}
+                      options={showPurchaseHistoryOnly ? purchaseHistoryProducts : productOptions}
+                      value={selectedDisplayValue}
                       onValueChange={handleProductSelect}
-                      onSearchChange={handleProductSearch}
-                      placeholder="Select"
+                      onSearchChange={showPurchaseHistoryOnly ? undefined : handleProductSearch}
+                      placeholder={loadingPurchaseHistory ? "Loading purchase history..." : "Select"}
                       searchPlaceholder="Search"
-                      emptyText="No products found."
+                      emptyText={showPurchaseHistoryOnly ? "No purchase history found." : "No products found."}
+                      disabled={loadingPurchaseHistory}
+                      className="w-full min-w-[400px]"
                     />
                   </FormControl>
+                  {showPurchaseHistoryOnly && (
+                    <div className="text-sm text-muted-foreground">
+                      Showing customer's purchase history.{" "}
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-sm"
+                        onClick={() => {
+                          setShowPurchaseHistoryOnly(false);
+                          form.setValue('productId', '');
+                          setSelectedProductInfo(null);
+                          setSelectedDisplayValue('');
+                        }}
+                      >
+                        Show all products instead
+                      </Button>
+                    </div>
+                  )}
+                  {!showPurchaseHistoryOnly && purchaseHistoryProducts.length > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-sm"
+                        onClick={() => {
+                          setShowPurchaseHistoryOnly(true);
+                          form.setValue('productId', '');
+                          setSelectedProductInfo(null);
+                          setSelectedDisplayValue('');
+                        }}
+                      >
+                        Show customer's purchase history instead
+                      </Button>
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -427,6 +578,31 @@ export function NewReturnForm() {
                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                     />
                   </FormControl>
+                  {selectedProductInfo && (
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <div className="text-sm text-blue-800">
+                        <strong>Order Information:</strong>
+                      </div>
+                      <div className="text-sm text-blue-700 mt-1">
+                        Order Total: <span className="font-semibold">${selectedProductInfo.orderGrandTotal.toFixed(2)}</span>
+                        {selectedProductInfo.itemsInOrder > 1 && (
+                          <span className="text-blue-600 ml-1">
+                            ({selectedProductInfo.itemsInOrder} items in order)
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-blue-700">
+                        Order: {selectedProductInfo.orderNumber} | Date: {
+                          selectedProductInfo.purchaseDate 
+                            ? format(new Date(selectedProductInfo.purchaseDate), 'MMM dd, yyyy')
+                            : 'Unknown'
+                        }
+                      </div>
+                      <div className="text-sm text-blue-600 mt-1">
+                        Item Price: ${selectedProductInfo.itemPrice.toFixed(2)}
+                      </div>
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

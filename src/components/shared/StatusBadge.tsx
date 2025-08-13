@@ -24,7 +24,9 @@ type StatusType =
   | 'paid'
   | 'goodwill'
   | 'in_progress'
-  | 'in progress';
+  | 'in progress'
+  | 'processing'
+  | 'failed';
 
 interface StatusBadgeProps {
   status: StatusType;
@@ -152,10 +154,33 @@ const statusConfig: Record<StatusType, {
     variant: 'outline',
     className: 'bg-warning text-warning-foreground',
   },
+  processing: {
+    label: 'Processing',
+    variant: 'outline',
+    className: 'bg-blue-100 text-blue-800 border-blue-200',
+  },
+  failed: {
+    label: 'Failed',
+    variant: 'destructive',
+    className: 'bg-red-100 text-red-800 border-red-200',
+  },
 };
 
 export function StatusBadge({ status, variant, className }: StatusBadgeProps) {
   const config = statusConfig[status];
+  
+  // Safety check for undefined status or config
+  if (!config) {
+    console.warn(`StatusBadge: Unknown status "${status}"`);
+    return (
+      <Badge
+        variant={variant || 'secondary'}
+        className={cn('bg-gray-100 text-gray-800', className)}
+      >
+        {status || 'Unknown'}
+      </Badge>
+    );
+  }
   
   return (
     <Badge

@@ -62,7 +62,18 @@ export interface ProductLookupItem {
   sku: string;
   productName: string;
   price: number;
+  cost?: number;
   availableStock: number;
+  // Purchase history fields (optional, used in returns)
+  lastPurchaseDate?: string;
+  orderNumber?: string;
+  quantityPurchased?: number;
+  unitPrice?: number;
+  // Order-level information for returns
+  orderId?: string;
+  orderGrandTotal?: number;
+  orderItemsCount?: number;
+  itemTotalAmount?: number;
 }
 
 export interface StockLevel {

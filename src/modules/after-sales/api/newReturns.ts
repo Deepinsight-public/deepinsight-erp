@@ -37,6 +37,99 @@ export const getWarehouses = async (): Promise<WarehouseOption[]> => {
   ];
 };
 
+export const getCustomerPurchaseHistory = async (customerEmail: string): Promise<ProductLookupItem[]> => {
+  if (!customerEmail.trim()) return [];
+  
+  try {
+    // Get all sales orders for this customer with their items and order totals
+    const { data: orders, error } = await supabase
+      .from('sales_orders')
+      .select(`
+        id,
+        order_number,
+        order_date,
+        status,
+        total_amount,
+        discount_amount,
+        tax_amount,
+        warranty_amount,
+        other_fee,
+        accessory,
+        other_services,
+        walk_in_delivery,
+        sales_order_items (
+          id,
+          product_id,
+          quantity,
+          unit_price,
+          total_amount,
+          products:product_id (
+            id,
+            sku,
+            product_name,
+            price,
+            cost
+          )
+        )
+      `)
+      .eq('customer_email', customerEmail)
+      .neq('status', 'cancelled')
+      .order('order_date', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching customer purchase history:', error);
+      throw error;
+    }
+
+    if (!orders || orders.length === 0) {
+      return [];
+    }
+
+    // Extract unique products from all orders, but keep order-level information
+    const productMap = new Map<string, ProductLookupItem>();
+    
+    orders.forEach(order => {
+      if (order.sales_order_items) {
+        order.sales_order_items.forEach((item: any) => {
+          const product = item.products;
+          if (product) {
+            // Use a composite key: product_id + order_id to allow same product from different orders
+            const key = `${product.id}_${order.id}`;
+            if (!productMap.has(key)) {
+              productMap.set(key, {
+                id: product.id,
+                sku: product.sku,
+                productName: product.product_name,
+                price: product.price || 0,
+                cost: product.cost || 0,
+                availableStock: 0, // Not relevant for returns
+                // Add purchase info for better display
+                lastPurchaseDate: order.order_date,
+                orderNumber: order.order_number,
+                quantityPurchased: item.quantity,
+                unitPrice: item.unit_price,
+                // Add order-level information for calculating total refund
+                orderId: order.id,
+                orderGrandTotal: order.total_amount || 0,
+                orderItemsCount: order.sales_order_items?.length || 1,
+                // Individual item's share of the order total
+                itemTotalAmount: item.total_amount
+              });
+            }
+          }
+        });
+      }
+    });
+
+    return Array.from(productMap.values()).sort((a, b) => 
+      new Date(b.lastPurchaseDate || 0).getTime() - new Date(a.lastPurchaseDate || 0).getTime()
+    );
+  } catch (error) {
+    console.error('Error in getCustomerPurchaseHistory:', error);
+    throw error;
+  }
+};
+
 export const searchProducts = async (search: string): Promise<ProductLookupItem[]> => {
   console.log('Searching for products with query:', search);
   
@@ -119,20 +212,28 @@ export const createAfterSalesReturn = async (returnData: ReturnFormData): Promis
   if (!profile?.store_id) throw new Error('Store not found for user');
 
   // Create the return record
+  const insertData: any = {
+    store_id: profile.store_id,
+    return_date: returnData.returnDate.toISOString().split('T')[0],
+    return_type: returnData.returnType,
+    warehouse_id: returnData.warehouseId || null,
+    customer_email: returnData.customerEmail || null,
+    customer_first: returnData.customerFirst || null,
+    customer_last: returnData.customerLast || null,
+    product_id: returnData.productId,
+    reason: returnData.reason,
+    refund_amount: returnData.refundAmount,
+  };
+
+  // Only add new columns if they are provided (to avoid errors if columns don't exist yet)
+  if (returnData.status) insertData.status = returnData.status;
+  if (returnData.selfScraped !== undefined) insertData.self_scraped = returnData.selfScraped;
+  if (returnData.mapPrice !== undefined) insertData.map_price = returnData.mapPrice;
+  if (returnData.totalAmountPaid !== undefined) insertData.total_amount_paid = returnData.totalAmountPaid;
+
   const { data, error } = await supabase
     .from('after_sales_returns')
-    .insert([{
-      store_id: profile.store_id,
-      return_date: returnData.returnDate.toISOString().split('T')[0],
-      return_type: returnData.returnType,
-      warehouse_id: returnData.warehouseId || null,
-      customer_email: returnData.customerEmail || null,
-      customer_first: returnData.customerFirst || null,
-      customer_last: returnData.customerLast || null,
-      product_id: returnData.productId,
-      reason: returnData.reason,
-      refund_amount: returnData.refundAmount,
-    }])
+    .insert([insertData])
     .select()
     .single();
 
@@ -188,20 +289,27 @@ export const createAfterSalesReturn = async (returnData: ReturnFormData): Promis
     }
   }
 
+  const createdItem = data as any;
   return {
-    id: data.id,
-    storeId: data.store_id,
-    returnDate: data.return_date,
-    returnType: data.return_type as 'store' | 'warehouse',
-    warehouseId: data.warehouse_id,
-    customerEmail: data.customer_email,
-    customerFirst: data.customer_first,
-    customerLast: data.customer_last,
-    productId: data.product_id,
-    reason: data.reason,
-    refundAmount: Number(data.refund_amount),
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+    id: createdItem.id,
+    storeId: createdItem.store_id,
+    returnDate: createdItem.return_date,
+    returnType: createdItem.return_type as 'store' | 'warehouse',
+    warehouseId: createdItem.warehouse_id,
+    customerEmail: createdItem.customer_email,
+    customerFirst: createdItem.customer_first,
+    customerLast: createdItem.customer_last,
+    productId: createdItem.product_id,
+    reason: createdItem.reason,
+    refundAmount: Number(createdItem.refund_amount),
+    createdAt: createdItem.created_at,
+    updatedAt: createdItem.updated_at,
+    // New columns with safe fallbacks
+    approvalMonth: createdItem.approval_month || undefined,
+    status: (createdItem.status as 'processing' | 'failed' | 'approved') || 'processing',
+    selfScraped: Boolean(createdItem.self_scraped) || false,
+    mapPrice: createdItem.map_price ? Number(createdItem.map_price) : undefined,
+    totalAmountPaid: createdItem.total_amount_paid ? Number(createdItem.total_amount_paid) : undefined,
   };
 };
 
@@ -226,20 +334,27 @@ export const getAfterSalesReturnById = async (returnId: string): Promise<AfterSa
     .eq('id', data.product_id)
     .maybeSingle();
 
+  const dataItem = data as any;
   return {
-    id: data.id,
-    storeId: data.store_id,
-    returnDate: data.return_date,
-    returnType: data.return_type as 'store' | 'warehouse',
-    warehouseId: data.warehouse_id,
-    customerEmail: data.customer_email,
-    customerFirst: data.customer_first,
-    customerLast: data.customer_last,
-    productId: data.product_id,
-    reason: data.reason,
-    refundAmount: Number(data.refund_amount),
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+    id: dataItem.id,
+    storeId: dataItem.store_id,
+    returnDate: dataItem.return_date,
+    returnType: dataItem.return_type as 'store' | 'warehouse',
+    warehouseId: dataItem.warehouse_id,
+    customerEmail: dataItem.customer_email,
+    customerFirst: dataItem.customer_first,
+    customerLast: dataItem.customer_last,
+    productId: dataItem.product_id,
+    reason: dataItem.reason,
+    refundAmount: Number(dataItem.refund_amount),
+    createdAt: dataItem.created_at,
+    updatedAt: dataItem.updated_at,
+    // New columns with safe fallbacks
+    approvalMonth: dataItem.approval_month || undefined,
+    status: (dataItem.status as 'processing' | 'failed' | 'approved') || 'processing',
+    selfScraped: Boolean(dataItem.self_scraped) || false,
+    mapPrice: dataItem.map_price ? Number(dataItem.map_price) : undefined,
+    totalAmountPaid: dataItem.total_amount_paid ? Number(dataItem.total_amount_paid) : undefined,
     product: productData ? {
       sku: productData.sku,
       productName: productData.product_name,
@@ -290,22 +405,26 @@ export const getAllAfterSalesReturns = async (): Promise<AfterSalesReturn[]> => 
     });
   });
 
-  return (data || []).map(item => {
-    return {
-      id: item.id,
-      storeId: item.store_id,
-      returnDate: item.return_date,
-      returnType: item.return_type as 'store' | 'warehouse',
-      warehouseId: item.warehouse_id,
-      customerEmail: item.customer_email,
-      customerFirst: item.customer_first,
-      customerLast: item.customer_last,
-      productId: item.product_id,
-      reason: item.reason,
-      refundAmount: Number(item.refund_amount),
-      createdAt: item.created_at,
-      updatedAt: item.updated_at,
-      product: productsMap.get(item.product_id),
-    };
-  });
+  return (data || []).map((item: any) => ({
+    id: item.id,
+    storeId: item.store_id,
+    returnDate: item.return_date,
+    returnType: item.return_type as 'store' | 'warehouse',
+    warehouseId: item.warehouse_id,
+    customerEmail: item.customer_email,
+    customerFirst: item.customer_first,
+    customerLast: item.customer_last,
+    productId: item.product_id,
+    reason: item.reason,
+    refundAmount: Number(item.refund_amount),
+    createdAt: item.created_at,
+    updatedAt: item.updated_at,
+    // New columns with safe fallbacks
+    approvalMonth: item.approval_month || undefined,
+    status: (item.status as 'processing' | 'failed' | 'approved') || 'processing',
+    selfScraped: Boolean(item.self_scraped) || false,
+    mapPrice: item.map_price ? Number(item.map_price) : undefined,
+    totalAmountPaid: item.total_amount_paid ? Number(item.total_amount_paid) : undefined,
+    product: productsMap.get(item.product_id),
+  }));
 };
