@@ -167,3 +167,97 @@ export const createRepair = async (repairData: CreateRepairData): Promise<Repair
     updatedAt: data.updated_at,
   };
 };
+
+export const getRepair = async (id: string): Promise<Repair> => {
+  // Get user profile to get store_id
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('store_id')
+    .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+    .single();
+
+  if (!profile?.store_id) {
+    throw new Error('User store not found');
+  }
+
+  const { data, error } = await supabase
+    .from('repairs')
+    .select('*')
+    .eq('id', id)
+    .eq('store_id', profile.store_id)
+    .single();
+
+  if (error) throw error;
+  if (!data) throw new Error('Repair not found');
+
+  // Get product details separately
+  let productData = null;
+  if (data.product_id) {
+    const { data: product } = await supabase
+      .from('products')
+      .select('id, product_name, sku, brand, model')
+      .eq('id', data.product_id)
+      .single();
+    productData = product;
+  }
+
+  // Get customer details separately
+  let customerData = null;
+  if (data.customer_id) {
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('id, first_name, last_name, email, phone')
+      .eq('id', data.customer_id)
+      .single();
+    customerData = customer;
+  }
+
+  // Parse custom product info from description if it exists
+  const customProductInfo = {
+    customProduct: '',
+    model: '',
+    partsRequired: ''
+  };
+
+  if (data.description) {
+    const customProductMatch = data.description.match(/\[CUSTOM_PRODUCT\]=([^\n]+)/);
+    const modelMatch = data.description.match(/\[MODEL\]=([^\n]+)/);
+    const partsMatch = data.description.match(/\[PARTS_REQUIRED\]=([^\n]+)/);
+    
+    if (customProductMatch) customProductInfo.customProduct = customProductMatch[1];
+    if (modelMatch) customProductInfo.model = modelMatch[1];
+    if (partsMatch) customProductInfo.partsRequired = partsMatch[1];
+  }
+
+  return {
+    id: data.id,
+    repairId: data.repair_id,
+    date: data.created_at,
+    type: data.type as 'warranty' | 'paid' | 'goodwill',
+    product: {
+      id: data.product_id || '',
+      name: productData?.product_name || customProductInfo.customProduct || 'Unknown Product',
+      sku: productData?.sku || 'CUSTOM',
+      brand: productData?.brand,
+      model: productData?.model || customProductInfo.model
+    },
+    status: data.status as 'pending' | 'in_progress' | 'completed' | 'cancelled',
+    description: data.description || '',
+    customerId: data.customer_id,
+    customerName: data.customer_name || (customerData ? `${customerData.first_name} ${customerData.last_name}` : undefined),
+    salesOrderId: data.sales_order_id,
+    cost: data.cost ? parseFloat(data.cost.toString()) : undefined,
+    estimatedCompletion: data.estimated_completion,
+    warrantyStatus: data.warranty_status,
+    warrantyExpiresAt: data.warranty_expires_at,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+    // Add custom product details
+    customProduct: customProductInfo.customProduct,
+    model: customProductInfo.model,
+    partsRequired: customProductInfo.partsRequired,
+    // Add customer details if available
+    customerEmail: customerData?.email,
+    customerPhone: customerData?.phone,
+  };
+};
