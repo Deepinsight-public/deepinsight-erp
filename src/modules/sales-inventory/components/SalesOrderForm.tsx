@@ -276,18 +276,18 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
       // Find product details
       const product = productOptions.find(p => p.id === productId);
       if (!product) {
-        throw new Error('Product not found');
+        throw new Error(t('salesOrder.errors.productNotFound'));
       }
 
       // Check if item already exists
       const existingLineIndex = lines.findIndex(line => line.productId === productId);
       if (existingLineIndex !== -1) {
-        throw new Error('Product already added to order');
+        throw new Error(t('salesOrder.errors.productAlreadyAdded'));
       }
 
       // Check stock availability (client-side validation)
       if (product.availableStock < quantity) {
-        throw new Error(`Insufficient stock. Available: ${product.availableStock}`);
+        throw new Error(t('salesOrder.errors.insufficientStock', { available: product.availableStock }));
       }
 
       const newLine: SalesOrderLineDTO = {
@@ -549,7 +549,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         if (error.message.includes('INSUFFICIENT_STOCK')) {
           // Extract SKU from error message
           const match = error.message.match(/INSUFFICIENT_STOCK: (.+)/);
-          errorMessage = match ? match[1] : 'Insufficient stock for one or more items';
+          errorMessage = match ? match[1] : t('salesOrder.errors.insufficientStockGeneric');
         } else {
           errorMessage = error.message;
         }

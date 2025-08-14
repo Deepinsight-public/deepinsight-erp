@@ -525,6 +525,10 @@ const resources = {
       'salesOrder.form.payment.cheque': 'Cheque',
       'salesOrder.form.payment.other': 'Other',
       'salesOrder.form.payment.amountPlaceholder': '0.00',
+      'salesOrder.errors.productNotFound': 'Product not found',
+      'salesOrder.errors.productAlreadyAdded': 'Product already added to order',
+      'salesOrder.errors.insufficientStock': 'Insufficient stock. Available: {available}',
+      'salesOrder.errors.insufficientStockGeneric': 'Insufficient stock for one or more items',
       
       // Purchase Requests  
       'purchaseRequests.title': 'Purchase Requests',
@@ -1367,6 +1371,10 @@ const resources = {
       'salesOrder.form.payment.cheque': '支票',
       'salesOrder.form.payment.other': '其他',
       'salesOrder.form.payment.amountPlaceholder': '0.00',
+      'salesOrder.errors.productNotFound': '产品未找到',
+      'salesOrder.errors.productAlreadyAdded': '产品已添加到订单',
+      'salesOrder.errors.insufficientStock': '库存不足。可用: {available}',
+      'salesOrder.errors.insufficientStockGeneric': '一个或多个商品库存不足',
 
       // Invoice translations
       'invoice.header.companyName': 'APPLIANCES 4 LESS',
