@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { CalendarIcon } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import type { RepairFormData } from '../CreateRepairModal';
 
 interface CompletionGuaranteeStepProps {
@@ -14,6 +15,7 @@ interface CompletionGuaranteeStepProps {
 }
 
 export function CompletionGuaranteeStep({ formData, updateFormData }: CompletionGuaranteeStepProps) {
+  const { t } = useTranslation();
   const guaranteeEndDate = formData.estimatedCompletion 
     ? addDays(formData.estimatedCompletion, formData.guaranteeDays)
     : null;
@@ -21,11 +23,11 @@ export function CompletionGuaranteeStep({ formData, updateFormData }: Completion
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-4">Completion & Guarantee</h3>
+        <h3 className="text-lg font-semibold mb-4">{t('repairs.wizard.completion.title')}</h3>
         
         <div className="space-y-4">
           <div>
-            <Label className="text-base font-medium">Estimated Completion Date</Label>
+            <Label className="text-base font-medium">{t('repairs.wizard.completion.estimatedDate')}</Label>
             <div className="mt-2">
               <Popover>
                 <PopoverTrigger asChild>
@@ -40,7 +42,7 @@ export function CompletionGuaranteeStep({ formData, updateFormData }: Completion
                     {formData.estimatedCompletion ? (
                       format(formData.estimatedCompletion, "PPP")
                     ) : (
-                      <span>Pick a completion date</span>
+                      <span>{t('repairs.wizard.completion.pickDate')}</span>
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -57,16 +59,16 @@ export function CompletionGuaranteeStep({ formData, updateFormData }: Completion
               </Popover>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              This can be updated later as the repair progresses.
+              {t('repairs.wizard.completion.updateLater')}
             </p>
           </div>
 
           <div className="bg-muted p-4 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-base font-medium">90-Day Guarantee</Label>
+                <Label className="text-base font-medium">{t('repairs.wizard.completion.guarantee')}</Label>
                 <p className="text-sm text-muted-foreground mt-1">
-                  All repairs come with a standard 90-day guarantee
+                  {t('repairs.wizard.completion.guaranteeDescription')}
                 </p>
               </div>
               <div className="text-right">
@@ -77,10 +79,10 @@ export function CompletionGuaranteeStep({ formData, updateFormData }: Completion
             {guaranteeEndDate && (
               <div className="mt-3 p-3 bg-background rounded border">
                 <div className="text-sm">
-                  <strong>Guarantee Period:</strong>
+                  <strong>{t('repairs.wizard.completion.guaranteePeriod')}</strong>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  From completion date until {format(guaranteeEndDate, "PPP")}
+                  {t('repairs.wizard.completion.fromCompletion')} {format(guaranteeEndDate, "PPP")}
                 </div>
               </div>
             )}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Payment Methods Section Component
 const PaymentMethodsSection = ({ control, watch, setValue, readOnly, totals }) => {
+  const { t } = useTranslation();
   const paymentMethods = watch('paymentMethods') || [{ method: '', amount: 0, note: '' }];
   
   const addPaymentMethod = () => {
@@ -52,7 +54,7 @@ const PaymentMethodsSection = ({ control, watch, setValue, readOnly, totals }) =
       {paymentMethods.map((paymentMethod, index) => (
         <div key={index} className="border rounded-lg p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Payment #{index + 1}</Label>
+            <Label className="text-sm font-medium">{t('salesOrder.form.payment.title', { number: index + 1 })}</Label>
             {paymentMethods.length > 1 && !readOnly && (
               <Button
                 type="button"
@@ -68,27 +70,27 @@ const PaymentMethodsSection = ({ control, watch, setValue, readOnly, totals }) =
           
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <Label className="text-xs">Method</Label>
+              <Label className="text-xs">{t('salesOrder.form.payment.method')}</Label>
               <Select
                 value={paymentMethod.method}
                 onValueChange={(value) => updatePaymentMethod(index, 'method', value)}
                 disabled={readOnly}
               >
                 <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select method" />
+                  <SelectValue placeholder={t('salesOrder.form.payment.selectMethod')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
-                  <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                  <SelectItem value="cheque">Cheque</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="cash">{t('salesOrder.form.payment.cash')}</SelectItem>
+                  <SelectItem value="card">{t('salesOrder.form.payment.card')}</SelectItem>
+                  <SelectItem value="bank-transfer">{t('salesOrder.form.payment.bankTransfer')}</SelectItem>
+                  <SelectItem value="cheque">{t('salesOrder.form.payment.cheque')}</SelectItem>
+                  <SelectItem value="other">{t('salesOrder.form.payment.other')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div>
-              <Label className="text-xs">Amount</Label>
+              <Label className="text-xs">{t('salesOrder.form.payment.amount')}</Label>
               <Input
                 type="text"
                 value={paymentMethod.amount || ''}
@@ -214,6 +216,7 @@ interface StaffMember {
 }
 
 export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, readOnly = false }: SalesOrderFormProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showAddItemDialog, setShowAddItemDialog] = useState(false);
@@ -324,18 +327,18 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
       // Find product details
       const product = productOptions.find(p => p.id === productId);
       if (!product) {
-        throw new Error('Product not found');
+        throw new Error(t('salesOrder.errors.productNotFound'));
       }
 
       // Check if item already exists
       const existingLineIndex = lines.findIndex(line => line.productId === productId);
       if (existingLineIndex !== -1) {
-        throw new Error('Product already added to order');
+        throw new Error(t('salesOrder.errors.productAlreadyAdded'));
       }
 
       // Check stock availability (client-side validation)
       if (product.availableStock < quantity) {
-        throw new Error(`Insufficient stock. Available: ${product.availableStock}`);
+        throw new Error(t('salesOrder.errors.insufficientStock', { available: product.availableStock }));
       }
 
       // Check MAP price validation for new products
@@ -643,7 +646,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
         if (error.message.includes('INSUFFICIENT_STOCK')) {
           // Extract SKU from error message
           const match = error.message.match(/INSUFFICIENT_STOCK: (.+)/);
-          errorMessage = match ? match[1] : 'Insufficient stock for one or more items';
+          errorMessage = match ? match[1] : t('salesOrder.errors.insufficientStockGeneric');
         } else {
           errorMessage = error.message;
         }

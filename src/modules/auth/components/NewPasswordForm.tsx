@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,24 +11,40 @@ import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
 import { updatePassword } from '../api/passwordReset';
 import { KeyRound } from 'lucide-react';
 
-const passwordSchema = z.object({
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
-});
-
-type PasswordFormData = z.infer<typeof passwordSchema>;
+type PasswordFormData = {
+  password: string;
+  confirmPassword: string;
+};
 
 interface NewPasswordFormProps {
   onSuccess: () => void;
 }
 
 export function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
-  const { t } = useTranslation();
+  const { t, ready } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const passwordSchema = useMemo(() => {
+    if (!t || !ready) {
+      // Fallback schema without translations
+      return z.object({
+        password: z.string().min(6, 'Password must be at least 6 characters'),
+        confirmPassword: z.string(),
+      }).refine((data) => data.password === data.confirmPassword, {
+        message: 'Passwords do not match',
+        path: ['confirmPassword'],
+      });
+    }
+    
+    return z.object({
+      password: z.string().min(6, t('auth.validation.passwordMinLength')),
+      confirmPassword: z.string(),
+    }).refine((data) => data.password === data.confirmPassword, {
+      message: t('auth.validation.passwordsDoNotMatch'),
+      path: ['confirmPassword'],
+    });
+  }, [t, ready]);
 
   const form = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
@@ -46,7 +62,7 @@ export function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
       await updatePassword(data);
       onSuccess();
     } catch (err: any) {
-      setError(err.message || t('auth.reset.newPassword.error'));
+      setError(err.message || (t ? t('auth.reset.newPassword.error') : 'Failed to update password'));
     } finally {
       setLoading(false);
     }
@@ -61,20 +77,20 @@ export function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
           <KeyRound className="w-6 h-6 text-primary" />
         </div>
         <h1 className="text-2xl font-semibold text-foreground">
-          {t('auth.reset.newPassword.title')}
+          {t ? t('auth.reset.newPassword.title') : 'Set New Password'}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {t('auth.reset.newPassword.description')}
+          {t ? t('auth.reset.newPassword.description') : 'Choose a strong password for your account.'}
         </p>
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <Label htmlFor="password">{t('auth.reset.newPassword.password')}</Label>
+          <Label htmlFor="password">{t ? t('auth.reset.newPassword.password') : 'New Password'}</Label>
           <Input
             id="password"
             type="password"
-            placeholder={t('auth.reset.newPassword.passwordPlaceholder')}
+            placeholder={t ? t('auth.reset.newPassword.passwordPlaceholder') : 'Enter new password'}
             {...form.register('password')}
             disabled={loading}
             className="mt-1"
@@ -87,11 +103,11 @@ export function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
         </div>
 
         <div>
-          <Label htmlFor="confirmPassword">{t('auth.reset.newPassword.confirmPassword')}</Label>
+          <Label htmlFor="confirmPassword">{t ? t('auth.reset.newPassword.confirmPassword') : 'Confirm New Password'}</Label>
           <Input
             id="confirmPassword"
             type="password"
-            placeholder={t('auth.reset.newPassword.confirmPasswordPlaceholder')}
+            placeholder={t ? t('auth.reset.newPassword.confirmPasswordPlaceholder') : 'Confirm new password'}
             {...form.register('confirmPassword')}
             disabled={loading}
             className="mt-1"
@@ -114,7 +130,7 @@ export function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
           className="w-full" 
           disabled={loading}
         >
-          {loading ? t('auth.reset.newPassword.saving') : t('auth.reset.newPassword.save')}
+          {loading ? (t ? t('auth.reset.newPassword.saving') : 'Saving...') : (t ? t('auth.reset.newPassword.save') : 'Save New Password')}
         </Button>
       </form>
     </div>

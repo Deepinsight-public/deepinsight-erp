@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import type { RepairFormData } from '../CreateRepairModal';
 
 interface HomeVisitStepProps {
@@ -17,10 +18,12 @@ interface HomeVisitStepProps {
 }
 
 export function HomeVisitStep({ formData, updateFormData }: HomeVisitStepProps) {
+  const { t } = useTranslation();
+  
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-4">Home Visit Details</h3>
+        <h3 className="text-lg font-semibold mb-4">{t('repairs.wizard.homeVisit.title')}</h3>
         
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
@@ -30,30 +33,30 @@ export function HomeVisitStep({ formData, updateFormData }: HomeVisitStepProps) 
               onCheckedChange={(checked) => updateFormData({ homeVisitNeeded: checked })}
             />
             <Label htmlFor="homeVisit" className="text-base font-medium">
-              Home visit needed?
+              {t('repairs.wizard.homeVisit.needed')}
             </Label>
           </div>
 
           {formData.homeVisitNeeded && (
             <div className="space-y-4 pl-4 border-l-2 border-muted">
               <div>
-                <Label className="text-base font-medium">Service Address *</Label>
+                <Label className="text-base font-medium">{t('repairs.wizard.homeVisit.serviceAddress')}</Label>
                 <div className="mt-2">
                   <Textarea
                     value={formData.visitAddress || ''}
                     onChange={(e) => updateFormData({ visitAddress: e.target.value })}
-                    placeholder="Enter the address where service is needed..."
+                    placeholder={t('repairs.wizard.homeVisit.addressPlaceholder')}
                     rows={3}
                     required
                   />
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Address will be prefilled from customer data but can be edited if service is needed at a different location.
+                  {t('repairs.wizard.homeVisit.addressDescription')}
                 </p>
               </div>
 
               <div>
-                <Label className="text-base font-medium">Preferred Date & Time *</Label>
+                <Label className="text-base font-medium">{t('repairs.wizard.homeVisit.preferredDateTime')}</Label>
                 <div className="mt-2">
                   <Popover>
                     <PopoverTrigger asChild>
@@ -68,7 +71,7 @@ export function HomeVisitStep({ formData, updateFormData }: HomeVisitStepProps) 
                         {formData.preferredDateTime ? (
                           format(formData.preferredDateTime, "PPP")
                         ) : (
-                          <span>Pick a date</span>
+                          <span>{t('repairs.wizard.homeVisit.pickDate')}</span>
                         )}
                       </Button>
                     </PopoverTrigger>
@@ -87,28 +90,28 @@ export function HomeVisitStep({ formData, updateFormData }: HomeVisitStepProps) 
               </div>
 
               <div>
-                <Label className="text-base font-medium">Technician</Label>
+                <Label className="text-base font-medium">{t('repairs.wizard.homeVisit.technician')}</Label>
                 <div className="mt-2">
                   <select
                     className="w-full p-2 border rounded-md"
                     value={formData.technicianId || ''}
                     onChange={(e) => updateFormData({ technicianId: e.target.value })}
                   >
-                    <option value="">Select a technician</option>
-                    <option value="tech1">John Smith - Senior Technician</option>
-                    <option value="tech2">Sarah Johnson - Appliance Specialist</option>
-                    <option value="tech3">Mike Chen - Electronics Expert</option>
+                    <option value="">{t('repairs.wizard.homeVisit.selectTechnician')}</option>
+                    <option value="tech1">{t('repairs.wizard.homeVisit.tech1')}</option>
+                    <option value="tech2">{t('repairs.wizard.homeVisit.tech2')}</option>
+                    <option value="tech3">{t('repairs.wizard.homeVisit.tech3')}</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <Label className="text-base font-medium">On-site Notes</Label>
+                <Label className="text-base font-medium">{t('repairs.wizard.homeVisit.onSiteNotes')}</Label>
                 <div className="mt-2">
                   <Textarea
                     value={formData.onSiteNotes || ''}
                     onChange={(e) => updateFormData({ onSiteNotes: e.target.value })}
-                    placeholder="Any special instructions or notes for the technician..."
+                    placeholder={t('repairs.wizard.homeVisit.notesPlaceholder')}
                     rows={3}
                   />
                 </div>

@@ -174,8 +174,8 @@ export function AdvancedTableFilter({
         return (
           <Input
             type="number"
-            value={filter.value || ''}
-            onChange={(e) => updateFilter(filter.id, 'value', parseFloat(e.target.value) || '')}
+            value={filter.value as string || ''}
+            onChange={(e) => updateFilter(filter.id, 'value', e.target.value ? parseFloat(e.target.value) : '')}
             className="min-w-[120px]"
             placeholder="Enter number"
           />
