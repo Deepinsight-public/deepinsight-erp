@@ -103,7 +103,7 @@ export function AfterSalesReturns() {
         
         <TabsContent value="processing" className="space-y-4">
           <StandardSearchBar
-            title={t('afterSales.search.title') || 'Search Returns'}
+            title={t('afterSales.search.title')}
             searchValue={searchQuery}
             searchPlaceholder={t('afterSales.search.placeholder')}
             onSearchChange={setSearchQuery}
@@ -139,7 +139,7 @@ export function AfterSalesReturns() {
       <Dialog open={invoiceDialogOpen} onOpenChange={setInvoiceDialogOpen}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Return Invoice - {selectedReturn?.id.substring(0, 8).toUpperCase()}</DialogTitle>
+            <DialogTitle>{t('afterSales.invoice.title', { id: selectedReturn?.id.substring(0, 8).toUpperCase() })}</DialogTitle>
           </DialogHeader>
           {selectedReturn && (
             <ReturnInvoiceView returnOrder={selectedReturn} />
