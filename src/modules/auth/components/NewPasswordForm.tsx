@@ -12,10 +12,10 @@ import { updatePassword } from '../api/passwordReset';
 import { KeyRound } from 'lucide-react';
 
 const passwordSchema = z.object({
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(6, t('auth.validation.passwordMinLength')),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
+  message: t('auth.validation.passwordsDoNotMatch'),
   path: ['confirmPassword'],
 });
 
