@@ -406,6 +406,11 @@ const resources = {
       'returns.types.warehouse': 'Warehouse Return',
       'returns.table.na': 'N/A',
       'returns.table.productNotFound': 'Product not found',
+      'returns.table.approvalMonth': 'Approval Month',
+      'returns.table.selfScraped': 'Self Scraped',
+      'returns.table.map': 'MAP',
+      'returns.table.totalPaid': 'Total Paid',
+      'returns.table.actions': 'Actions',
       
       // Warranty Claims
       'warranty.title': 'Warranty Claims',
@@ -1110,6 +1115,21 @@ const resources = {
       'returns.mapPrice': 'MAP 价格: {price}',
       'returns.form.reason': '退货原因',
       'returns.success': '退货记录已创建',
+      'returns.table.returnId': '退货ID',
+      'returns.table.returnDate': '退货日期',
+      'returns.table.returnType': '退货类型',
+      'returns.table.customer': '客户',
+      'returns.table.product': '产品',
+      'returns.table.refundAmount': '退款金额',
+      'returns.table.reason': '原因',
+      'returns.table.approvalMonth': '审批月份',
+      'returns.table.selfScraped': '自行报废',
+      'returns.table.map': 'MAP价格',
+      'returns.table.totalPaid': '总付款',
+      'returns.table.actions': '操作',
+      'returns.table.noReturns': '未找到退货记录',
+      'returns.table.na': 'N/A',
+      'returns.table.productNotFound': '产品未找到',
       
       // Create Return Dialog
       'createReturn.dialog.title': '创建新退货',

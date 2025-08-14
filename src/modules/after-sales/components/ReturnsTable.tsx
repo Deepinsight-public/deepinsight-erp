@@ -130,12 +130,12 @@ export function ReturnsTable({ returns, loading, onReturnClick, onInvoiceClick }
               <TableHead>{t('returns.table.product')}</TableHead>
               <TableHead>{renderSortableHeader(t('returns.table.refundAmount'), 'refundAmount')}</TableHead>
               <TableHead>{renderSortableHeader(t('returns.table.reason'), 'reason')}</TableHead>
-              <TableHead>{renderSortableHeader('Approval Month', 'approvalMonth')}</TableHead>
-              <TableHead>{renderSortableHeader('Status', 'status')}</TableHead>
-              <TableHead>Self Scraped</TableHead>
-              <TableHead>{renderSortableHeader('MAP', 'mapPrice')}</TableHead>
-              <TableHead>{renderSortableHeader('Total Paid', 'totalAmountPaid')}</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>{renderSortableHeader(t('returns.table.approvalMonth'), 'approvalMonth')}</TableHead>
+              <TableHead>{renderSortableHeader(t('returns.table.status'), 'status')}</TableHead>
+              <TableHead>{t('returns.table.selfScraped')}</TableHead>
+              <TableHead>{renderSortableHeader(t('returns.table.map'), 'mapPrice')}</TableHead>
+              <TableHead>{renderSortableHeader(t('returns.table.totalPaid'), 'totalAmountPaid')}</TableHead>
+              <TableHead>{t('returns.table.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
