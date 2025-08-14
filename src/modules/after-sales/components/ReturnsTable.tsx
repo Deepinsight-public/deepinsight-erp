@@ -117,8 +117,11 @@ export function ReturnsTable({ returns, loading, onReturnClick, onInvoiceClick }
   return (
     <Card>
       <CardContent className="p-0">
-        <Table>
-          <TableHeader>
+        {/* Wrap table to enable horizontal scrolling while keeping the rest of the layout responsive */}
+        <div className="w-full overflow-x-auto">
+          {/* min-w-full ensures the table keeps its natural width so the scrollbar appears only for the table */}
+          <Table className="min-w-full">
+            <TableHeader>
             <TableRow>
               <TableHead>{t('returns.table.returnId')}</TableHead>
               <TableHead>{renderSortableHeader(t('returns.table.returnDate'), 'returnDate')}</TableHead>
@@ -251,7 +254,8 @@ export function ReturnsTable({ returns, loading, onReturnClick, onInvoiceClick }
               ))
             )}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
