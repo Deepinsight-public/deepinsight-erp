@@ -11,15 +11,10 @@ import { LoadingOverlay } from '@/components/shared/LoadingOverlay';
 import { updatePassword } from '../api/passwordReset';
 import { KeyRound } from 'lucide-react';
 
-const passwordSchema = z.object({
-  password: z.string().min(6, t('auth.validation.passwordMinLength')),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: t('auth.validation.passwordsDoNotMatch'),
-  path: ['confirmPassword'],
-});
-
-type PasswordFormData = z.infer<typeof passwordSchema>;
+type PasswordFormData = {
+  password: string;
+  confirmPassword: string;
+};
 
 interface NewPasswordFormProps {
   onSuccess: () => void;
@@ -29,6 +24,14 @@ export function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const passwordSchema = z.object({
+    password: z.string().min(6, t('auth.validation.passwordMinLength')),
+    confirmPassword: z.string(),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: t('auth.validation.passwordsDoNotMatch'),
+    path: ['confirmPassword'],
+  });
 
   const form = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),

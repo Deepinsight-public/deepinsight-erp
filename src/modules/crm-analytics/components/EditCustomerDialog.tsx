@@ -11,14 +11,12 @@ import { Customer } from '../types/customer';
 import { updateCustomer } from '../api/customers';
 import { toast } from 'sonner';
 
-const formSchema = z.object({
-  name: z.string().min(1, t('customers.validation.nameRequired')),
-  email: z.string().email(t('customers.validation.emailInvalid')),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-});
-
-type FormData = z.infer<typeof formSchema>;
+type FormData = {
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+};
 
 interface EditCustomerDialogProps {
   open: boolean;
@@ -35,6 +33,13 @@ export function EditCustomerDialog({
 }: EditCustomerDialogProps) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+
+  const formSchema = z.object({
+    name: z.string().min(1, t('customers.validation.nameRequired')),
+    email: z.string().email(t('customers.validation.emailInvalid')),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+  });
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),

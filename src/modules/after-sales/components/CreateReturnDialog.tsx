@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { FormDialog } from '@/components/shared/FormDialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,7 +15,6 @@ interface CreateReturnDialogProps {
 }
 
 export function CreateReturnDialog({ open, onOpenChange, onSuccess }: CreateReturnDialogProps) {
-  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     orderId: '',
@@ -46,7 +44,7 @@ export function CreateReturnDialog({ open, onOpenChange, onSuccess }: CreateRetu
       };
 
       await createReturn(returnData);
-      showSuccess(t('createReturn.messages.success'));
+      showSuccess('Return created successfully');
       onOpenChange(false);
       onSuccess?.();
       
@@ -61,7 +59,7 @@ export function CreateReturnDialog({ open, onOpenChange, onSuccess }: CreateRetu
       });
     } catch (error) {
       console.error('Error creating return:', error);
-      showError(t('createReturn.messages.error'));
+      showError('Failed to create return');
     } finally {
       setLoading(false);
     }
@@ -98,8 +96,8 @@ export function CreateReturnDialog({ open, onOpenChange, onSuccess }: CreateRetu
     <FormDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={t('createReturn.dialog.title')}
-      description={t('createReturn.dialog.description')}
+      title="Create New Return"
+      description="Create a new return request for processing"
       loading={loading}
       onSubmit={handleSubmit}
       size="lg"

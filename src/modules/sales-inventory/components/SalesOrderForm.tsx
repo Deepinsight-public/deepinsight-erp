@@ -204,6 +204,7 @@ interface StaffMember {
 }
 
 export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false }: SalesOrderFormProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showAddItemDialog, setShowAddItemDialog] = useState(false);
