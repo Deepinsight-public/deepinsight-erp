@@ -23,7 +23,6 @@ export interface SalesOrderSummary {
   deliveryFee: number;
   otherFee: number;
   warrantyAmount: number;
-  warrantyYears?: number;
   taxTotal: number;
   totalAmount: number;
   paidTotal: number;
