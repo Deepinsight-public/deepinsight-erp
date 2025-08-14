@@ -81,18 +81,22 @@ export interface ReceiptItem {
 export interface TransferOrder {
   id: string;
   transferNumber: string;
-  type: 'transfer_out' | 'transfer_in';
   fromStoreId: string;
+  fromStoreName: string;
   toStoreId: string;
-  status: 'draft' | 'submitted' | 'approved' | 'shipped' | 'received' | 'canceled';
+  toStoreName: string;
+  status: 'draft' | 'shipped' | 'received' | 'cancelled';
   items: TransferItem[];
   reason?: string;
   notes?: string;
-  requestedBy: string;
-  approvedBy?: string;
+  shippingNotes?: string;
+  receivingNotes?: string;
+  createdBy: string;
+  shippedBy?: string;
+  receivedBy?: string;
+  createdAt: string;
   shippedAt?: string;
   receivedAt?: string;
-  createdAt: string;
   updatedAt: string;
 }
 
@@ -101,10 +105,30 @@ export interface TransferItem {
   productId: string;
   sku: string;
   productName: string;
+  brand?: string;
+  model?: string;
+  serialNumber?: string;
+  rfidTag?: string;
   quantityRequested: number;
   quantityShipped: number;
   quantityReceived: number;
+  status: 'in_stock' | 'transit' | 'received';
   condition?: 'good' | 'damaged' | 'defective';
+  scannedAt?: string;
+  notes?: string;
+}
+
+export interface ItemEvent {
+  id: string;
+  itemId: string;
+  eventType: 'transfer_out' | 'transfer_in' | 'status_change';
+  fromStoreId?: string;
+  toStoreId?: string;
+  fromStatus: string;
+  toStatus: string;
+  transferOrderId?: string;
+  performedBy: string;
+  timestamp: string;
   notes?: string;
 }
 
