@@ -512,6 +512,18 @@ const resources = {
       'salesOrders.pagination.previous': 'Previous',
       'salesOrders.pagination.next': 'Next',
       
+      // Sales Order Form
+      'salesOrder.form.payment.title': 'Payment #{number}',
+      'salesOrder.form.payment.method': 'Method',
+      'salesOrder.form.payment.amount': 'Amount',
+      'salesOrder.form.payment.selectMethod': 'Select method',
+      'salesOrder.form.payment.cash': 'Cash',
+      'salesOrder.form.payment.card': 'Card',
+      'salesOrder.form.payment.bankTransfer': 'Bank Transfer',
+      'salesOrder.form.payment.cheque': 'Cheque',
+      'salesOrder.form.payment.other': 'Other',
+      'salesOrder.form.payment.amountPlaceholder': '0.00',
+      
       // Purchase Requests  
       'purchaseRequests.title': 'Purchase Requests',
       'purchaseRequests.description': 'Manage purchase requests and queue system.',
@@ -777,6 +789,8 @@ const resources = {
       'customers.edit.updateButton': 'Update Customer',
       'customers.edit.updateSuccess': 'Customer updated successfully',
       'customers.edit.updateError': 'Failed to update customer',
+      'customers.validation.nameRequired': 'Name is required',
+      'customers.validation.emailInvalid': 'Invalid email address',
 
 
       // Store
@@ -1322,6 +1336,18 @@ const resources = {
       'salesOrders.pagination.info': '第 {{page}} 页 • 显示 {{count}} 条订单',
       'salesOrders.pagination.previous': '上一页',
       'salesOrders.pagination.next': '下一页',
+      
+      // Sales Order Form
+      'salesOrder.form.payment.title': '付款方式 #{number}',
+      'salesOrder.form.payment.method': '方式',
+      'salesOrder.form.payment.amount': '金额',
+      'salesOrder.form.payment.selectMethod': '选择方式',
+      'salesOrder.form.payment.cash': '现金',
+      'salesOrder.form.payment.card': '银行卡',
+      'salesOrder.form.payment.bankTransfer': '银行转账',
+      'salesOrder.form.payment.cheque': '支票',
+      'salesOrder.form.payment.other': '其他',
+      'salesOrder.form.payment.amountPlaceholder': '0.00',
 
       // Invoice translations
       'invoice.header.companyName': 'APPLIANCES 4 LESS',
@@ -1669,6 +1695,8 @@ const resources = {
       'customers.edit.updateButton': '更新客户',
       'customers.edit.updateSuccess': '客户更新成功',
       'customers.edit.updateError': '更新客户失败',
+      'customers.validation.nameRequired': '姓名为必填项',
+      'customers.validation.emailInvalid': '邮箱地址无效',
 
       // Store
       storeName: '门店名称',

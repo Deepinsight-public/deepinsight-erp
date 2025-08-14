@@ -12,8 +12,8 @@ import { updateCustomer } from '../api/customers';
 import { toast } from 'sonner';
 
 const formSchema = z.object({
-  name: z.string().min(1, 'customers.edit.nameRequired'),
-  email: z.string().email('customers.edit.emailInvalid'),
+  name: z.string().min(1, t('customers.validation.nameRequired')),
+  email: z.string().email(t('customers.validation.emailInvalid')),
   phone: z.string().optional(),
   address: z.string().optional(),
 });
