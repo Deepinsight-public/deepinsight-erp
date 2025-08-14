@@ -12,8 +12,17 @@ export interface SalesOrderSummary {
   status: 'draft' | 'submitted' | 'pending' | 'confirmed' | 'shipped' | 'completed' | 'cancelled';
   walkInDelivery?: string;
   deliveryDate?: string;
+  actualDeliveryDate?: string;
+  storeInvoiceNumber?: string;
   customerSource?: string;
   warrantyYears?: number;
+  presale?: boolean;
+  lines?: Array<{
+    productName: string;
+    sku: string;
+    quantity: number;
+    unitPrice: number;
+  }>;
   
   // Item counts and totals
   itemsCount: number;
@@ -23,7 +32,6 @@ export interface SalesOrderSummary {
   deliveryFee: number;
   otherFee: number;
   warrantyAmount: number;
-  warrantyYears?: number;
   taxTotal: number;
   totalAmount: number;
   paidTotal: number;

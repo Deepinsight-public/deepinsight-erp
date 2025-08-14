@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
@@ -89,14 +90,21 @@ const PaymentMethodsSection = ({ control, watch, setValue, readOnly, totals }) =
             <div>
               <Label className="text-xs">Amount</Label>
               <Input
-                type="number"
-                step="0.01"
-                min="0"
-                max={remainingAmount + (paymentMethod.amount || 0)}
+                type="text"
                 value={paymentMethod.amount || ''}
-                onChange={(e) => updatePaymentMethod(index, 'amount', parseFloat(e.target.value) || 0)}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  // Allow numbers, decimal point, and empty string
+                  if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+                    const amount = parseFloat(newValue) || 0;
+                    const maxAmount = remainingAmount + (paymentMethod.amount || 0);
+                    if (amount <= maxAmount || newValue === '') {
+                      updatePaymentMethod(index, 'amount', amount);
+                    }
+                  }
+                }}
                 disabled={readOnly}
-                className="h-8"
+                className="h-8 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.00"
               />
             </div>
@@ -143,12 +151,14 @@ const SalesOrderFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   fulfillmentType: z.enum(['pick-up', 'delivery'], { message: 'Please select pick-up or delivery' }),
+  deliveryDate: z.string().optional(),
   customerPhone: z.string().min(1, 'Phone number is required'),
   country: z.string().optional(),
   state: z.string().optional(),
   city: z.string().optional(),
   street: z.string().optional(),
   zipcode: z.string().optional(),
+  actualDeliveryDate: z.string().optional(),
   warrantyYears: z.number().min(0).optional(),
   warrantyAmount: z.number().min(0).optional(),
   accessory: z.string().optional(),
@@ -163,15 +173,16 @@ const SalesOrderFormSchema = z.object({
   customerSource: z.string().optional(),
   cashierId: z.string().optional(),
   orderDate: z.string().optional(),
-  storeInvoiceNumber: z.string().optional()
+  storeInvoiceNumber: z.string().optional(),
+  presale: z.boolean().optional()
 }).refine((data) => {
-  // If delivery is selected, address fields are required
+  // If delivery is selected, address fields and delivery date are required
   if (data.fulfillmentType === 'delivery') {
-    return !!(data.street && data.city && data.state && data.country && data.zipcode);
+    return !!(data.street && data.city && data.state && data.country && data.zipcode && data.deliveryDate);
   }
   return true;
 }, {
-  message: "Address fields are required for delivery orders",
+  message: "Address fields and delivery date are required for delivery orders",
   path: ["fulfillmentType"]
 });
 
@@ -181,6 +192,7 @@ interface SalesOrderFormProps {
   initialData?: SalesOrderDTO;
   onSave?: (order: SalesOrderDTO) => void;
   onCancel?: () => void;
+  onFormChange?: (hasChanges: boolean) => void;
   readOnly?: boolean;
 }
 
@@ -201,7 +213,7 @@ interface StaffMember {
   name: string;
 }
 
-export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false }: SalesOrderFormProps) {
+export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, readOnly = false }: SalesOrderFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showAddItemDialog, setShowAddItemDialog] = useState(false);
@@ -212,11 +224,13 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
   const [customerFound, setCustomerFound] = useState(false);
   const [isSearchingCustomer, setIsSearchingCustomer] = useState(false);
   
-  const { register, handleSubmit, watch, setValue, getValues, control, formState: { errors } } = useForm<SalesOrderFormData>({
+  const { register, handleSubmit, watch, setValue, getValues, control, formState: { errors }, reset } = useForm<SalesOrderFormData>({
     resolver: zodResolver(SalesOrderFormSchema),
     defaultValues: {
       orderDate: initialData?.orderDate || new Date().toISOString().split('T')[0],
       fulfillmentType: (initialData?.walkInDelivery === 'walk-in' ? 'pick-up' : initialData?.walkInDelivery as 'pick-up' | 'delivery') || undefined,
+      deliveryDate: initialData?.deliveryDate || '',
+      actualDeliveryDate: initialData?.actualDeliveryDate || '',
       customerEmail: initialData?.customerEmail || '',
       customerPhone: initialData?.customerPhone || '',
       firstName: initialData?.customerFirst || '',
@@ -231,6 +245,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
       customerSource: initialData?.customerSource || '',
       cashierId: initialData?.cashierId || '',
       storeInvoiceNumber: initialData?.storeInvoiceNumber || '',
+      presale: initialData?.presale || false,
       warrantyYears: initialData?.warrantyYears || 1,
       warrantyAmount: initialData?.warrantyAmount || 0,
       accessory: initialData?.accessory || '',
@@ -238,6 +253,41 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
       otherFee: initialData?.otherFee || 0
     }
   });
+
+  // Reset form when initialData changes (important for cancel edit functionality)
+  useEffect(() => {
+    if (initialData) {
+      const resetValues = {
+        orderDate: initialData.orderDate || new Date().toISOString().split('T')[0],
+        fulfillmentType: (initialData.walkInDelivery === 'walk-in' ? 'pick-up' : initialData.walkInDelivery as 'pick-up' | 'delivery') || undefined,
+        deliveryDate: initialData.deliveryDate || '',
+        actualDeliveryDate: initialData.actualDeliveryDate || '',
+        customerEmail: initialData.customerEmail || '',
+        firstName: initialData.customerFirst || '',
+        lastName: initialData.customerLast || '',
+        customerPhone: initialData.customerPhone || '',
+        country: initialData.addrCountry || '',
+        state: initialData.addrState || '',
+        city: initialData.addrCity || '',
+        street: initialData.addrStreet || '',
+        zipcode: initialData.addrZipcode || '',
+        paymentMethods: initialData.paymentMethods || [{ method: '', amount: 0, note: '' }],
+        paymentNote: initialData.paymentNote || '',
+        customerSource: initialData.customerSource || '',
+        cashierId: initialData.cashierId || '',
+        storeInvoiceNumber: initialData.storeInvoiceNumber || '',
+        presale: initialData.presale || false,
+        warrantyYears: initialData.warrantyYears || 1,
+        warrantyAmount: initialData.warrantyAmount || 0,
+        accessory: initialData.accessory || '',
+        otherServices: initialData.otherServices || '',
+        otherFee: initialData.otherFee || 0
+      };
+      
+      reset(resetValues);
+      setLines(initialData.lines || []);
+    }
+  }, [initialData, reset]);
 
   // Calculate totals including fees
   const calculateTotals = (orderLines: SalesOrderLineDTO[], warrantyAmount?: number, accessoryFee?: number, otherFee?: number, taxPct = 10) => {
@@ -288,6 +338,11 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         throw new Error(`Insufficient stock. Available: ${product.availableStock}`);
       }
 
+      // Check MAP price validation for new products
+      if (product.isNew && product.mapPrice && product.price < product.mapPrice) {
+        throw new Error(`Price of $${product.price.toFixed(2)} is below MAP price of $${product.mapPrice.toFixed(2)} for new product "${product.productName}"`);
+      }
+
       const newLine: SalesOrderLineDTO = {
         id: Date.now().toString(),
         productId: product.id,
@@ -319,6 +374,21 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
     setLines(prev => prev.map(line => {
       if (line.id === lineId) {
         const updated = { ...line, ...updates };
+        
+        // Check MAP price validation for new products
+        if (updates.unitPrice !== undefined) {
+          const product = productOptions.find(p => p.id === line.productId);
+          if (product?.isNew && product?.mapPrice && updates.unitPrice < product.mapPrice) {
+            toast({
+              title: 'MAP Price Violation',
+              description: `Price cannot be below MAP price of $${product.mapPrice.toFixed(2)} for new product "${product.productName}"`,
+              variant: 'destructive'
+            });
+            // Don't update the price, keep the original
+            updated.unitPrice = line.unitPrice;
+          }
+        }
+        
         updated.subTotal = updated.quantity * updated.unitPrice * (1 - updated.discountPercent / 100);
         return updated;
       }
@@ -366,6 +436,8 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         warrantyYears: formData.warrantyYears || 1,
         warrantyAmount: formData.warrantyAmount || 0,
         walkInDelivery: formData.fulfillmentType === 'pick-up' ? 'walk-in' : formData.fulfillmentType || 'walk-in',
+        deliveryDate: formData.deliveryDate || null,
+        actualDeliveryDate: formData.actualDeliveryDate || null,
         accessory: formData.accessory || '',
         otherServices: formData.otherServices,
         otherFee: formData.otherFee || 0,
@@ -373,13 +445,14 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         paymentMethods: formData.paymentMethods || [],
         paymentNote: formData.paymentNote,
         customerSource: formData.customerSource,
-        storeInvoiceNumber: formData.storeInvoiceNumber,
+        storeInvoiceNumber: formData.storeInvoiceNumber || `INV-${Date.now()}`,
+        presale: formData.presale || false,
         totalAmount: totals.totalAmount,
         discountAmount: totals.discountAmount,
         taxAmount: totals.taxAmount,
         subTotal: totals.subTotal,
         status,
-        orderDate: new Date().toISOString(),
+        orderDate: initialData?.id ? (initialData.orderDate || formData.orderDate) : new Date().toISOString(),
         orderType: 'retail',
         storeId: profile.store_id,
         createdBy: user.id,
@@ -387,6 +460,11 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         lines
       };
 
+      // Debug logging for save operations (can be commented out)
+      // console.log('=== ORDER SAVE DEBUG ===');
+      // console.log('Is update operation:', !!initialData?.id);
+      // console.log('Order ID:', initialData?.id);
+      
       let savedOrder;
       if (initialData?.id) {
         savedOrder = await updateSalesOrder(initialData.id, orderDTO);
@@ -538,9 +616,27 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         description: `Order ${status === 'draft' ? 'saved as draft' : 'submitted'} successfully`
       });
       
+      // Refresh product list to update stock levels after order submission
+      if (status === 'submitted') {
+        console.log('🔄 Refreshing product list after order submission');
+        handleProductSearch('');
+      }
+      
       onSave?.(savedOrder);
     } catch (error) {
       console.error('Error saving sales order:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error constructor:', error?.constructor?.name);
+      console.error('Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name,
+        cause: error?.cause,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code
+      });
+      console.error('Full error object:', JSON.stringify(error, null, 2));
       
       let errorMessage = 'Unknown error';
       if (error instanceof Error) {
@@ -551,6 +647,23 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         } else {
           errorMessage = error.message;
         }
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error && typeof error === 'object') {
+        // Handle Supabase errors and other object errors
+        if (error.message) {
+          errorMessage = error.message;
+        } else if (error.details) {
+          errorMessage = error.details;
+        } else if (error.hint) {
+          errorMessage = error.hint;
+        } else if (error.code) {
+          errorMessage = `Database error: ${error.code}`;
+        } else {
+          errorMessage = 'Database or validation error occurred';
+        }
+      } else {
+        errorMessage = `Unexpected error type: ${typeof error}`;
       }
       
       toast({
@@ -710,6 +823,46 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
     };
   }, [watch('customerEmail'), searchCustomerByEmail, initialData?.id]);
 
+  // Track form changes for unsaved changes detection
+  useEffect(() => {
+    if (onFormChange && initialData) {
+      const currentFormData = getValues();
+      const hasChanges = (
+        // Customer information
+        currentFormData.customerEmail !== (initialData.customerEmail || '') ||
+        currentFormData.firstName !== (initialData.customerFirst || '') ||
+        currentFormData.lastName !== (initialData.customerLast || '') ||
+        currentFormData.customerPhone !== (initialData.customerPhone || '') ||
+        // Address fields
+        currentFormData.country !== (initialData.addrCountry || '') ||
+        currentFormData.state !== (initialData.addrState || '') ||
+        currentFormData.city !== (initialData.addrCity || '') ||
+        currentFormData.street !== (initialData.addrStreet || '') ||
+        currentFormData.zipcode !== (initialData.addrZipcode || '') ||
+        // Order details
+        currentFormData.orderDate !== (initialData.orderDate || new Date().toISOString().split('T')[0]) ||
+        currentFormData.fulfillmentType !== (initialData.walkInDelivery === 'walk-in' ? 'pick-up' : initialData.walkInDelivery) ||
+        currentFormData.deliveryDate !== (initialData.deliveryDate || '') ||
+        currentFormData.actualDeliveryDate !== (initialData.actualDeliveryDate || '') ||
+        currentFormData.presale !== (initialData.presale || false) ||
+        // Warranty and fees
+        currentFormData.warrantyYears !== (initialData.warrantyYears || 1) ||
+        currentFormData.warrantyAmount !== (initialData.warrantyAmount || 0) ||
+        currentFormData.accessory !== (initialData.accessory || '') ||
+        currentFormData.otherServices !== (initialData.otherServices || '') ||
+        currentFormData.otherFee !== (initialData.otherFee || 0) ||
+        // Payment and other details
+        currentFormData.paymentNote !== (initialData.paymentNote || '') ||
+        currentFormData.customerSource !== (initialData.customerSource || '') ||
+        currentFormData.cashierId !== (initialData.cashierId || '') ||
+        currentFormData.storeInvoiceNumber !== (initialData.storeInvoiceNumber || '') ||
+        JSON.stringify(currentFormData.paymentMethods) !== JSON.stringify(initialData.paymentMethods || [{ method: '', amount: 0, note: '' }]) ||
+        JSON.stringify(lines) !== JSON.stringify(initialData.lines || [])
+      );
+      onFormChange(hasChanges);
+    }
+  }, [watch(), lines, onFormChange, initialData, getValues]);
+
   // Reset customer found status when email is cleared or changed significantly
   useEffect(() => {
     const email = watch('customerEmail');
@@ -767,13 +920,14 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
 
   // Product search
   const handleProductSearch = async (search: string) => {
-    console.log('handleProductSearch called with:', search);
+    console.log('🔍 handleProductSearch called with:', search, 'length:', search.length);
     
     try {
       const { searchAvailableProducts } = await import('../api/products');
       const products = await searchAvailableProducts(search);
-      console.log('Setting product options:', products);
+      console.log('📋 Setting product options:', products.length, 'products:', products);
       setProductOptions(products);
+      console.log('📋 Product options state after setting:', products.length, 'items');
     } catch (error) {
       console.error('Failed to search products:', error);
       toast({
@@ -788,12 +942,29 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
     {
       key: 'sku',
       title: 'SKU',
-      render: (value: string, record: SalesOrderLineDTO) => (
-        <div>
-          <div className="font-medium">{value}</div>
-          <div className="text-sm text-muted-foreground">{record.productName}</div>
-        </div>
-      )
+      render: (value: string, record: SalesOrderLineDTO) => {
+        const product = productOptions.find(p => p.id === record.productId);
+        const isNew = product?.isNew || false;
+        
+        return (
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{value}</span>
+              {isNew && (
+                <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-md font-medium">
+                  NEW
+                </span>
+              )}
+            </div>
+            <div className="text-sm text-muted-foreground">{record.productName}</div>
+            {isNew && product?.mapPrice && (
+              <div className="text-xs text-orange-600 font-medium">
+                MAP: ${product.mapPrice.toFixed(2)}
+              </div>
+            )}
+          </div>
+        );
+      }
     },
     {
       key: 'quantity',
@@ -802,11 +973,20 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         <span>{value}</span>
       ) : (
         <Input
-          type="number"
+          type="text"
           value={value}
-          onChange={(e) => handleUpdateLine(record.id!, { quantity: parseInt(e.target.value) || 0 })}
-          className="w-20"
-          min="1"
+          onChange={(e) => {
+            const newValue = e.target.value;
+            // Allow only numbers and empty string for typing
+            if (newValue === '' || /^\d+$/.test(newValue)) {
+              const qty = parseInt(newValue) || 0;
+              if (qty >= 1 || newValue === '') {
+                handleUpdateLine(record.id!, { quantity: qty });
+              }
+            }
+          }}
+          className="w-20 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          placeholder="1"
         />
       )
     },
@@ -817,12 +997,18 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         <span>${value.toFixed(2)}</span>
       ) : (
         <Input
-          type="number"
-          value={value}
-          onChange={(e) => handleUpdateLine(record.id!, { unitPrice: parseFloat(e.target.value) || 0 })}
-          className="w-24"
-          min="0"
-          step="0.01"
+          type="text"
+          value={value.toFixed(2)}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            // Allow numbers, decimal point, and empty string
+            if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+              const price = parseFloat(newValue) || 0;
+              handleUpdateLine(record.id!, { unitPrice: price });
+            }
+          }}
+          className="w-24 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          placeholder="0.00"
         />
       )
     },
@@ -833,13 +1019,21 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         <span>{value}%</span>
       ) : (
         <Input
-          type="number"
-          value={value}
-          onChange={(e) => handleUpdateLine(record.id!, { discountPercent: parseFloat(e.target.value) || 0 })}
-          className="w-20"
-          min="0"
-          max="100"
-          step="0.1"
+          type="text"
+          value={value.toString()}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            // Allow numbers, decimal point, and empty string
+            if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+              const discount = parseFloat(newValue) || 0;
+              // Limit to 0-100%
+              if (discount <= 100 || newValue === '') {
+                handleUpdateLine(record.id!, { discountPercent: discount });
+              }
+            }
+          }}
+          className="w-20 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          placeholder="0"
         />
       )
     },
@@ -875,6 +1069,20 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         });
         return;
       }
+      
+      // Validate MAP price restrictions for new products before submission
+      for (const line of lines) {
+        const product = productOptions.find(p => p.id === line.productId);
+        if (product?.isNew && product?.mapPrice && line.unitPrice < product.mapPrice) {
+          toast({
+            title: 'MAP Price Violation',
+            description: `Cannot submit order: "${product.productName}" unit price $${line.unitPrice.toFixed(2)} is below MAP price $${product.mapPrice.toFixed(2)}`,
+            variant: 'destructive'
+          });
+          return;
+        }
+      }
+      
       handleSave(data, 'submitted');
     },
     (errors) => {
@@ -884,8 +1092,8 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         message = 'Please fill in all required customer information (Email, First Name, Last Name, Phone)';
       } else if (errors.fulfillmentType) {
         message = 'Please choose pick-up or delivery';
-      } else if (errors.street || errors.city || errors.state || errors.zipcode || errors.country) {
-        message = 'Please fill in all required address fields for delivery';
+      } else if (errors.street || errors.city || errors.state || errors.zipcode || errors.country || errors.deliveryDate) {
+        message = 'Please fill in all required address fields and delivery date for delivery';
       }
       toast({
         title: 'Validation Error',
@@ -921,10 +1129,10 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
     }
     
     if (currentValues.fulfillmentType === 'delivery') {
-      if (!currentValues.street || !currentValues.city || !currentValues.state || !currentValues.country || !currentValues.zipcode) {
+      if (!currentValues.street || !currentValues.city || !currentValues.state || !currentValues.country || !currentValues.zipcode || !currentValues.deliveryDate) {
         toast({
           title: 'Validation Error',
-          description: 'Please fill in all required address fields for delivery',
+          description: 'Please fill in all required address fields and delivery date for delivery',
           variant: 'destructive'
         });
         return;
@@ -938,6 +1146,19 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
         variant: 'destructive'
       });
       return;
+    }
+    
+    // Validate MAP price restrictions for new products before submission
+    for (const line of lines) {
+      const product = productOptions.find(p => p.id === line.productId);
+      if (product?.isNew && product?.mapPrice && line.unitPrice < product.mapPrice) {
+        toast({
+          title: 'MAP Price Violation',
+          description: `Cannot submit order: "${product.productName}" unit price $${line.unitPrice.toFixed(2)} is below MAP price $${product.mapPrice.toFixed(2)}`,
+          variant: 'destructive'
+        });
+        return;
+      }
     }
     
     // If all validations pass, call handleSubmit
@@ -1148,6 +1369,24 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                 Optional: Create a custom invoice number for your store records
               </p>
             </div>
+            
+            <div className="flex items-center space-x-3 p-3 border-2 border-dashed border-primary/30 rounded-lg bg-primary/5">
+              <Checkbox
+                id="presale"
+                checked={watch('presale') || false}
+                onCheckedChange={(checked) => setValue('presale', checked as boolean)}
+                disabled={readOnly}
+                className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              />
+              <div>
+                <Label htmlFor="presale" className="text-base font-medium cursor-pointer">
+                  Presale Order
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Mark this order as a presale for special handling
+                </p>
+              </div>
+            </div>
           </div>
           
           <div className="grid grid-cols-1 gap-4">
@@ -1175,6 +1414,70 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
                 <p className="text-xs text-destructive mt-1">{errors.fulfillmentType.message}</p>
               )}
             </div>
+
+            {/* Estimated Delivery Date - Only show for delivery */}
+            {watch('fulfillmentType') === 'delivery' && (
+              <div>
+                <Label>Estimated Delivery Date <span className="text-destructive">*</span></Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-64 justify-start text-left font-normal",
+                        !watch('deliveryDate') && "text-muted-foreground"
+                      )}
+                      disabled={readOnly}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {watch('deliveryDate') ? format(new Date(watch('deliveryDate')), 'PPP') : <span>Pick an estimated delivery date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={watch('deliveryDate') ? new Date(watch('deliveryDate')) : undefined}
+                      onSelect={(date) => setValue('deliveryDate', date ? format(date, 'yyyy-MM-dd') : '')}
+                      initialFocus
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {watch('fulfillmentType') === 'delivery' && !watch('deliveryDate') && !readOnly && (
+                  <p className="text-xs text-destructive mt-1">Estimated delivery date is required for delivery orders</p>
+                )}
+              </div>
+            )}
+
+            {/* Actual Delivery Date - Only show for delivery */}
+            {watch('fulfillmentType') === 'delivery' && (
+              <div>
+                <Label>Actual Delivery Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-64 justify-start text-left font-normal",
+                        !watch('actualDeliveryDate') && "text-muted-foreground"
+                      )}
+                      disabled={readOnly}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {watch('actualDeliveryDate') ? format(new Date(watch('actualDeliveryDate')), 'PPP') : <span>Pick actual delivery date (optional)</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={watch('actualDeliveryDate') ? new Date(watch('actualDeliveryDate')) : undefined}
+                      onSelect={(date) => setValue('actualDeliveryDate', date ? format(date, 'yyyy-MM-dd') : '')}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
             
             <div>
               <Label>Payment Methods (Max 3)</Label>
@@ -1278,11 +1581,21 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               <Label htmlFor="warrantyYears">Warranty (years)</Label>
               <Input
                 id="warrantyYears"
-                type="number"
-                {...register('warrantyYears', { valueAsNumber: true })}
+                type="text"
+                value={watch('warrantyYears') || ''}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  // Allow only positive integers
+                  if (newValue === '' || /^\d+$/.test(newValue)) {
+                    const years = parseInt(newValue) || 0;
+                    if (years >= 0 || newValue === '') {
+                      setValue('warrantyYears', years);
+                    }
+                  }
+                }}
                 disabled={readOnly}
-                min="0"
-                step="1"
+                className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                placeholder="1"
               />
             </div>
             
@@ -1290,11 +1603,20 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               <Label htmlFor="warrantyAmount">Warranty Amount ($)</Label>
               <Input
                 id="warrantyAmount"
-                type="number"
-                {...register('warrantyAmount', { valueAsNumber: true })}
+                type="text"
+                value={watch('warrantyAmount') || ''}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  // Allow numbers, decimal point, and empty string
+                  if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+                    const amount = parseFloat(newValue) || 0;
+                    if (amount >= 0 || newValue === '') {
+                      setValue('warrantyAmount', amount);
+                    }
+                  }
+                }}
                 disabled={readOnly}
-                min="0"
-                step="0.01"
+                className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.00"
               />
             </div>
@@ -1303,11 +1625,20 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               <Label htmlFor="accessory">Accessory Fee ($)</Label>
               <Input
                 id="accessory"
-                type="number"
-                {...register('accessory')}
+                type="text"
+                value={watch('accessory') || ''}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  // Allow numbers, decimal point, and empty string
+                  if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+                    const amount = parseFloat(newValue) || 0;
+                    if (amount >= 0 || newValue === '') {
+                      setValue('accessory', newValue === '' ? '' : amount.toString());
+                    }
+                  }
+                }}
                 disabled={readOnly}
-                min="0"
-                step="0.01"
+                className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.00"
               />
             </div>
@@ -1326,11 +1657,20 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
               <Label htmlFor="otherFee">Other Fee ($)</Label>
               <Input
                 id="otherFee"
-                type="number"
-                {...register('otherFee', { valueAsNumber: true })}
+                type="text"
+                value={watch('otherFee') || ''}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  // Allow numbers, decimal point, and empty string
+                  if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+                    const amount = parseFloat(newValue) || 0;
+                    if (amount >= 0 || newValue === '') {
+                      setValue('otherFee', amount);
+                    }
+                  }
+                }}
                 disabled={readOnly}
-                min="0"
-                step="0.01"
+                className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.00"
               />
             </div>
@@ -1399,19 +1739,32 @@ export function SalesOrderForm({ initialData, onSave, onCancel, readOnly = false
       {/* Actions */}
       {!readOnly && (
         <div className="flex gap-4">
-          <Button
-            variant="outline"
-            onClick={handleSubmit((data) => handleSave(data, 'draft'))}
-            disabled={loading}
-          >
-            Save Draft
-          </Button>
-          <Button
-            onClick={handleOrderSubmitManual}
-            disabled={loading}
-          >
-            Submit Order
-          </Button>
+          {initialData?.id ? (
+            // Editing existing order - show only Save button
+            <Button
+              onClick={handleSubmit((data) => handleSave(data, (initialData.status === 'submitted' ? 'submitted' : 'draft')))}
+              disabled={loading}
+            >
+              Save Changes
+            </Button>
+          ) : (
+            // Creating new order - show Save Draft and Submit buttons
+            <>
+              <Button
+                variant="outline"
+                onClick={handleSubmit((data) => handleSave(data, 'draft'))}
+                disabled={loading}
+              >
+                Save Draft
+              </Button>
+              <Button
+                onClick={handleOrderSubmitManual}
+                disabled={loading}
+              >
+                Submit Order
+              </Button>
+            </>
+          )}
           {onCancel && (
             <Button variant="outline" onClick={onCancel}>
               Cancel
@@ -1487,11 +1840,17 @@ function AddItemDialog({ open, onClose, onAdd, onProductSearch, productOptions }
         <div>
           <Label>Product</Label>
           <SelectWithSearch
-            options={productOptions.map(p => ({
-              value: p.id,
-              label: `${p.sku} - ${p.productName} ($${p.price.toFixed(2)}) - Stock: ${p.availableStock}`,
-              disabled: p.availableStock === 0
-            }))}
+            key={open ? 'dialog-open' : 'dialog-closed'}
+            options={(() => {
+              console.log('🔍 productOptions state in render:', productOptions.length, 'items:', productOptions);
+              const mappedOptions = productOptions.map(p => ({
+                value: p.id,
+                label: `${p.sku} - ${p.productName} ($${p.price.toFixed(2)}) - Stock: ${p.availableStock}`,
+                disabled: p.availableStock === 0
+              }));
+              console.log('🎯 SelectWithSearch options being passed:', mappedOptions.length, 'options:', mappedOptions.map(o => ({ value: o.value, label: o.label, disabled: o.disabled })));
+              return mappedOptions;
+            })()}
             value={selectedProduct}
             onValueChange={setSelectedProduct}
             placeholder="Search products..."
@@ -1507,9 +1866,20 @@ function AddItemDialog({ open, onClose, onAdd, onProductSearch, productOptions }
               
               return (
                 <div className={`flex items-center justify-between w-full ${isOutOfStock ? 'opacity-50' : ''}`}>
-                  <span className="font-medium truncate flex-1">{product.sku} – {product.productName}</span>
+                  <div className="flex items-center gap-2 flex-1">
+                    <span className="font-medium truncate">{product.sku} – {product.productName}</span>
+                    {product.isNew && (
+                      <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-md font-medium">NEW</span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground ml-2">
                     <span className="font-medium">${product.price.toFixed(2)}</span>
+                    {product.isNew && product.mapPrice && (
+                      <>
+                        <span>•</span>
+                        <span className="text-orange-600 font-medium">MAP: ${product.mapPrice.toFixed(2)}</span>
+                      </>
+                    )}
                     <span>•</span>
                     <span className={isOutOfStock ? 'text-destructive font-medium' : ''}>
                       In stock: {product.availableStock}
@@ -1524,11 +1894,23 @@ function AddItemDialog({ open, onClose, onAdd, onProductSearch, productOptions }
           <Label htmlFor="quantity">Quantity</Label>
           <Input
             id="quantity"
-            type="number"
+            type="text"
             value={quantity}
-            onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-            min="1"
-            max={selectedProduct ? productOptions.find(p => p.id === selectedProduct)?.availableStock || 1 : undefined}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              // Allow only numbers and empty string for typing
+              if (newValue === '' || /^\d+$/.test(newValue)) {
+                const qty = parseInt(newValue) || 1;
+                const maxStock = selectedProduct ? productOptions.find(p => p.id === selectedProduct)?.availableStock || 1 : 999;
+                if (qty >= 1 && qty <= maxStock) {
+                  setQuantity(qty);
+                } else if (newValue === '') {
+                  setQuantity(1);
+                }
+              }
+            }}
+            className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            placeholder="1"
           />
           {selectedProduct && (
             <p className="text-sm text-muted-foreground mt-1">

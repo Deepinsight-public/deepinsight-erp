@@ -15,6 +15,7 @@ const resources = {
       orderSearch: 'Order Search',
       warranty: 'Warranty Claims',
       scrap: 'Scrap',
+      barcodesPO2: 'Barcodes (PO2)',
       settings: 'Settings',
 
       // Search module
@@ -789,6 +790,7 @@ const resources = {
       orderSearch: '订单查询',
       warranty: '保修索赔',
       scrap: '报废管理',
+      barcodesPO2: '条码管理 (PO2)',
       settings: '设置',
 
       // Sales Summary module  

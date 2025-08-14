@@ -47,6 +47,7 @@ export const getCustomerPurchaseHistory = async (customerEmail: string): Promise
       .select(`
         id,
         order_number,
+        store_invoice_number,
         order_date,
         status,
         total_amount,
@@ -57,12 +58,19 @@ export const getCustomerPurchaseHistory = async (customerEmail: string): Promise
         accessory,
         other_services,
         walk_in_delivery,
+        payment_method1,
+        payment_amount1,
+        payment_method2,
+        payment_amount2,
+        payment_method3,
+        payment_amount3,
         sales_order_items (
           id,
           product_id,
           quantity,
           unit_price,
           total_amount,
+          discount_amount,
           products:product_id (
             id,
             sku,
@@ -85,43 +93,62 @@ export const getCustomerPurchaseHistory = async (customerEmail: string): Promise
       return [];
     }
 
-    // Extract unique products from all orders, but keep order-level information
-    const productMap = new Map<string, ProductLookupItem>();
+    // Transform orders into a structured format for better display
+    const orderHistory: ProductLookupItem[] = [];
     
     orders.forEach(order => {
-      if (order.sales_order_items) {
-        order.sales_order_items.forEach((item: any) => {
-          const product = item.products;
-          if (product) {
-            // Use a composite key: product_id + order_id to allow same product from different orders
-            const key = `${product.id}_${order.id}`;
-            if (!productMap.has(key)) {
-              productMap.set(key, {
-                id: product.id,
-                sku: product.sku,
-                productName: product.product_name,
-                price: product.price || 0,
-                cost: product.cost || 0,
-                availableStock: 0, // Not relevant for returns
-                // Add purchase info for better display
-                lastPurchaseDate: order.order_date,
-                orderNumber: order.order_number,
-                quantityPurchased: item.quantity,
-                unitPrice: item.unit_price,
-                // Add order-level information for calculating total refund
-                orderId: order.id,
-                orderGrandTotal: order.total_amount || 0,
-                orderItemsCount: order.sales_order_items?.length || 1,
-                // Individual item's share of the order total
-                itemTotalAmount: item.total_amount
-              });
-            }
-          }
+      if (order.sales_order_items && order.sales_order_items.length > 0) {
+        // Calculate payment information
+        const totalPaid = (order.payment_amount1 || 0) + (order.payment_amount2 || 0) + (order.payment_amount3 || 0);
+        const balance = Math.max(0, order.total_amount - totalPaid);
+        
+        // Create one entry per order that contains all items as detailed info
+        const orderItems = order.sales_order_items.map((item: any) => ({
+          productId: item.products?.id || item.product_id,
+          sku: item.products?.sku || 'Unknown SKU',
+          productName: item.products?.product_name || 'Unknown Product',
+          quantity: item.quantity,
+          unitPrice: item.unit_price,
+          totalAmount: item.total_amount,
+          discountAmount: item.discount_amount || 0,
+          cost: item.products?.cost || 0,
+        }));
+
+        // Create a single order entry with all items embedded
+        orderHistory.push({
+          id: `order_${order.id}`, // Special ID to indicate this is an order entry
+          sku: order.store_invoice_number || order.order_number || 'No Invoice',
+          productName: `Order ${order.order_number || order.id}`,
+          price: order.total_amount || 0,
+          cost: 0, // Not applicable at order level
+          availableStock: 0, // Not relevant for returns
+          // Order-level information
+          lastPurchaseDate: order.order_date,
+          orderNumber: order.order_number,
+          orderId: order.id,
+          orderGrandTotal: order.total_amount || 0,
+          orderItemsCount: order.sales_order_items.length,
+          // Extended order information
+          storeInvoiceNumber: order.store_invoice_number,
+          orderStatus: order.status,
+          discountAmount: order.discount_amount || 0,
+          taxAmount: order.tax_amount || 0,
+          warrantyAmount: order.warranty_amount || 0,
+          otherFee: order.other_fee || 0,
+          totalPaid: totalPaid,
+          balance: balance,
+          paymentMethods: [
+            order.payment_method1 && order.payment_amount1 ? { method: order.payment_method1, amount: order.payment_amount1 } : null,
+            order.payment_method2 && order.payment_amount2 ? { method: order.payment_method2, amount: order.payment_amount2 } : null,
+            order.payment_method3 && order.payment_amount3 ? { method: order.payment_method3, amount: order.payment_amount3 } : null,
+          ].filter(Boolean),
+          // All items in this order for detailed display
+          orderItems: orderItems,
         });
       }
     });
 
-    return Array.from(productMap.values()).sort((a, b) => 
+    return orderHistory.sort((a, b) => 
       new Date(b.lastPurchaseDate || 0).getTime() - new Date(a.lastPurchaseDate || 0).getTime()
     );
   } catch (error) {

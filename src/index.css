@@ -151,3 +151,35 @@
     @apply bg-gray-100 text-gray-800;
   }
 }
+
+/* Custom scrollbar for SelectWithSearch */
+.custom-scrollbar {
+  scrollbar-width: auto;
+  scrollbar-color: #64748b #f1f5f9;
+  /* Ensure scrollbar is always visible and interactive */
+  overflow-y: scroll !important;
+  scroll-behavior: smooth;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 12px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #64748b;
+  border-radius: 6px;
+  border: 2px solid #f1f5f9;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: #334155;
+}
