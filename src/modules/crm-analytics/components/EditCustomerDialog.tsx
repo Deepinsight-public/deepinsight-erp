@@ -31,8 +31,13 @@ export function EditCustomerDialog({
   customer,
   onCustomerUpdated,
 }: EditCustomerDialogProps) {
-  const { t } = useTranslation();
+  const { t, ready } = useTranslation();
   const [loading, setLoading] = useState(false);
+
+  // Don't render until i18n is ready
+  if (!ready) {
+    return null;
+  }
 
   const formSchema = z.object({
     name: z.string().min(1, t('customers.validation.nameRequired')),

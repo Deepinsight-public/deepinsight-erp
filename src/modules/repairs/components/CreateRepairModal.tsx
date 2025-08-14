@@ -189,7 +189,7 @@ export function CreateRepairModal({ open, onClose, onSuccess }: CreateRepairModa
       case 5:
         return <CompletionGuaranteeStep formData={formData} updateFormData={updateFormData} />;
       case 6:
-        return <ReviewStep formData={formData} />;
+        return <ReviewStep formData={formData} onBack={handlePrevious} onSubmit={handleSubmit} />;
       default:
         return null;
     }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,17 +21,22 @@ interface NewPasswordFormProps {
 }
 
 export function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
-  const { t } = useTranslation();
+  const { t, ready } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const passwordSchema = z.object({
+  // Show loading state while i18n is not ready
+  if (!ready) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  const passwordSchema = useMemo(() => z.object({
     password: z.string().min(6, t('auth.validation.passwordMinLength')),
     confirmPassword: z.string(),
   }).refine((data) => data.password === data.confirmPassword, {
     message: t('auth.validation.passwordsDoNotMatch'),
     path: ['confirmPassword'],
-  });
+  }), [t]);
 
   const form = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
