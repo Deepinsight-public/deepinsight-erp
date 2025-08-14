@@ -83,15 +83,15 @@ export function PurchaseRequestsList() {
   const getStatusLabel = (status: PurchaseRequest['status']) => {
     switch (status) {
       case 'pending':
-        return 'Pending';
+        return t('purchaseRequests.status.pending');
       case 'approved':
-        return 'Approved';
+        return t('purchaseRequests.status.approved');
       case 'rejected':
-        return 'Rejected';
+        return t('purchaseRequests.status.rejected');
       case 'completed':
-        return 'Completed';
+        return t('purchaseRequests.status.completed');
       default:
-        return 'Unknown';
+        return t('purchaseRequests.status.unknown');
     }
   };
 

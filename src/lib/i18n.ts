@@ -456,6 +456,10 @@ const resources = {
       'createReturn.itemReason': 'Item Reason',
       'createReturn.itemReasonPlaceholder': 'Reason for this item',
       'createReturn.remove': 'Remove',
+      'createReturn.dialog.title': 'Create New Return',
+      'createReturn.dialog.description': 'Create a new return request for processing',
+      'createReturn.messages.success': 'Return created successfully',
+      'createReturn.messages.error': 'Failed to create return',
       
       // Sales Orders
       'salesOrders.recent.title': 'Recent Sales Orders',
@@ -586,6 +590,11 @@ const resources = {
       'purchaseRequests.columns.status': 'Status',
       'purchaseRequests.columns.actions': 'Actions',
       'purchaseRequests.actions.view': 'View',
+      'purchaseRequests.status.pending': 'Pending',
+      'purchaseRequests.status.approved': 'Approved',
+      'purchaseRequests.status.rejected': 'Rejected',
+      'purchaseRequests.status.completed': 'Completed',
+      'purchaseRequests.status.unknown': 'Unknown',
       
       // Pages & Navigation
       'pages.history': 'History',
@@ -1065,6 +1074,12 @@ const resources = {
       'returns.form.reason': '退货原因',
       'returns.success': '退货记录已创建',
       
+      // Create Return Dialog
+      'createReturn.dialog.title': '创建新退货',
+      'createReturn.dialog.description': '创建新的退货申请进行处理',
+      'createReturn.messages.success': '退货创建成功',
+      'createReturn.messages.error': '创建退货失败',
+      
       // Common Actions
       'actions.create': '创建',
       'actions.edit': '编辑',
@@ -1409,6 +1424,11 @@ const resources = {
       'purchaseRequests.columns.status': '状态',
       'purchaseRequests.columns.actions': '操作',
       'purchaseRequests.actions.view': '查看',
+      'purchaseRequests.status.pending': '待处理',
+      'purchaseRequests.status.approved': '已批准',
+      'purchaseRequests.status.rejected': '已拒绝',
+      'purchaseRequests.status.completed': '已完成',
+      'purchaseRequests.status.unknown': '未知',
       
       // Pages & Navigation
       'pages.history': '历史',
