@@ -98,7 +98,7 @@ export function SourceAndPartiesStep({ formData, updateFormData }: SourceAndPart
               <select
                 className="w-full p-2 border rounded-md"
                 value={formData.source}
-                onChange={(e) => updateFormData({ source: e.target.value })}
+                onChange={(e) => updateFormData({ source: e.target.value as "" | "warranty" | "external" | "original" })}
               >
                 <option value="">{t('repairs.wizard.sourceParties.sourcePlaceholder')}</option>
                 <option value="warranty">Warranty Transfer</option>

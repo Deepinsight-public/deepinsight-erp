@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import type { Repair } from '../types';
 
 interface RepairsTableProps {
@@ -18,6 +19,7 @@ type SortField = 'date' | 'cost' | 'type';
 type SortDirection = 'asc' | 'desc';
 
 export function RepairsTable({ repairs, loading, onRepairClick }: RepairsTableProps) {
+  const { t } = useTranslation();
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -80,7 +82,7 @@ export function RepairsTable({ repairs, loading, onRepairClick }: RepairsTablePr
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Repairs</CardTitle>
+          <CardTitle>{t('repairs.list.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -100,21 +102,21 @@ export function RepairsTable({ repairs, loading, onRepairClick }: RepairsTablePr
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Repair ID</TableHead>
-              <TableHead>{renderSortableHeader('Date', 'date')}</TableHead>
-              <TableHead>{renderSortableHeader('Type', 'type')}</TableHead>
-              <TableHead>Product</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>{renderSortableHeader('Cost', 'cost')}</TableHead>
+              <TableHead>{t('repairs.list.table.repairId')}</TableHead>
+              <TableHead>{renderSortableHeader(t('repairs.list.table.date'), 'date')}</TableHead>
+              <TableHead>{renderSortableHeader(t('repairs.list.table.type'), 'type')}</TableHead>
+              <TableHead>{t('repairs.list.table.product')}</TableHead>
+              <TableHead>{t('repairs.list.table.status')}</TableHead>
+              <TableHead>{t('repairs.list.table.description')}</TableHead>
+              <TableHead>{renderSortableHeader(t('repairs.list.table.cost'), 'cost')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedRepairs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                  No repairs found
-                </TableCell>
+                              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                {t('repairs.list.table.noRepairs')}
+              </TableCell>
               </TableRow>
             ) : (
               sortedRepairs.map((repair) => (
