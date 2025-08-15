@@ -51,8 +51,8 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
       full_name: profile?.full_name || '',
       email: profile?.email || user?.email || '',
       phone: profile?.phone || '',
-      role: profile?.role || '',
-      store_id: profile?.store_id || '',
+      role: profile?.role ?? undefined,
+      store_id: profile?.store_id || undefined,
     },
   });
 
@@ -62,8 +62,8 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
         full_name: profile.full_name || '',
         email: profile.email || user?.email || '',
         phone: profile.phone || '',
-        role: profile.role || '',
-        store_id: profile.store_id || '',
+        role: profile.role ?? undefined,
+        store_id: profile.store_id || undefined,
       });
     }
   }, [profile, user, open, form]);
