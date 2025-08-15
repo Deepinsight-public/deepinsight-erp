@@ -27,6 +27,7 @@ interface DataTableProps<T> {
   onRowClick?: (record: T) => void;
   pagination?: React.ReactNode;
   minTableWidth?: number; // optional pixel width to force horizontal scroll
+  maxHeight?: string; // optional max height to enable vertical scroll (e.g., "400px", "50vh")
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -37,6 +38,7 @@ export function DataTable<T extends Record<string, any>>({
   onRowClick,
   pagination,
   minTableWidth,
+  maxHeight,
 }: DataTableProps<T>) {
   const { t } = useTranslation();
   if (loading) {
@@ -56,8 +58,11 @@ export function DataTable<T extends Record<string, any>>({
   return (
     <Card>
       <CardContent className="p-0">
-        {/* Wrap table to enable horizontal scrolling while keeping the rest of the layout responsive */}
-        <div className="w-full overflow-x-auto">
+        {/* Wrap table to enable both horizontal and vertical scrolling */}
+        <div 
+          className="w-full overflow-auto"
+          style={maxHeight ? { maxHeight } : undefined}
+        >
           {/* min-w-full ensures the table keeps its natural width so the scrollbar appears only for the table */}
           <Table className="min-w-full" style={minTableWidth ? { minWidth: `${minTableWidth}px` } : undefined}>
             <TableHeader>

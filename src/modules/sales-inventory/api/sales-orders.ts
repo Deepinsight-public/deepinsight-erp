@@ -364,6 +364,7 @@ export const fetchSalesOrders = async (params: ListParams = {}): Promise<SalesOr
       sales_order_items (
         id,
         product_id,
+        item_id,
         quantity,
         unit_price,
         discount_amount,
@@ -424,6 +425,8 @@ export const fetchSalesOrders = async (params: ListParams = {}): Promise<SalesOr
 };
 
 export const fetchSalesOrder = async (id: string): Promise<SalesOrderDTO> => {
+  // Ensure we scope item lookups to the current store
+  const profile = await getUserProfile();
   const { data: order, error } = await supabase
     .from('sales_orders')
     .select(`
@@ -431,13 +434,15 @@ export const fetchSalesOrder = async (id: string): Promise<SalesOrderDTO> => {
       sales_order_items (
         id,
         product_id,
+        item_id,
         quantity,
         unit_price,
         discount_amount,
         total_amount,
         products:product_id (
           sku,
-          product_name
+          product_name,
+          kw_code
         )
       )
     `)
@@ -447,16 +452,93 @@ export const fetchSalesOrder = async (id: string): Promise<SalesOrderDTO> => {
   if (error) throw error;
   if (!order) throw new Error('Sales order not found');
 
-  const lines: SalesOrderLineDTO[] = (order.sales_order_items || []).map((item: any) => ({
-    id: item.id,
-    productId: item.product_id,
-    sku: item.products?.sku || '',
-    productName: item.products?.product_name || '',
-    quantity: item.quantity,
-    unitPrice: item.unit_price,
-    discountPercent: item.discount_amount > 0 ? (item.discount_amount / (item.unit_price * item.quantity)) * 100 : 0,
-    subTotal: item.total_amount
-  }));
+  // Get A4L codes from linked items if item_id exists, otherwise from available items for the products
+  const itemIds = (order.sales_order_items || []).map((item: any) => item.item_id).filter(Boolean);
+  const productIds = (order.sales_order_items || []).map((item: any) => item.product_id).filter(Boolean);
+  
+  let linkedItemsMap: Record<string, { a4lCode: string, kwCode: string }> = {}; // item_id -> codes
+  let availableItemsMap: Record<string, Array<{ a4lCode: string, kwCode: string }>> = {}; // product_id -> available items
+
+  // Get linked items if they exist
+  if (itemIds.length > 0) {
+    const { data: linkedItems, error: linkedError } = await supabase
+      .from('Item')
+      .select('id, a4lCode, kw_code')
+      .in('id', itemIds);
+
+    if (!linkedError && linkedItems) {
+      const typedLinkedItems = (linkedItems as any[]) || [];
+      typedLinkedItems.forEach((item: any) => {
+        linkedItemsMap[item.id] = {
+          a4lCode: item.a4lCode || '',
+          kwCode: item.kw_code || ''
+        };
+      });
+    }
+  }
+
+  // Get available items for products (for cases where no specific item is linked)
+  if (productIds.length > 0) {
+    const { data: availableItems, error: availableError } = await supabase
+      .from('Item')
+      .select('id, a4lCode, kw_code, productId')
+      .in('productId', productIds)
+      .in('status', ['available', 'in_stock'])
+      .eq('currentStoreId', profile.store_id)
+      .order('createdAt', { ascending: true });
+
+    if (!availableError && availableItems) {
+      const typedAvailableItems = (availableItems as any[]) || [];
+      typedAvailableItems.forEach((item: any) => {
+        if (!availableItemsMap[item.productId]) {
+          availableItemsMap[item.productId] = [];
+        }
+        availableItemsMap[item.productId].push({
+          a4lCode: item.a4lCode || '',
+          kwCode: item.kw_code || ''
+        });
+      });
+    }
+  }
+
+  const lines: SalesOrderLineDTO[] = (order.sales_order_items || []).map((item: any) => {
+    let itemA4lCodes: string[] = [];
+    let itemKwCodes: string[] = [];
+    
+    if (item.item_id && linkedItemsMap[item.item_id]) {
+      // Use the specific linked item
+      const linkedItem = linkedItemsMap[item.item_id];
+      if (linkedItem.a4lCode) itemA4lCodes.push(linkedItem.a4lCode);
+      if (linkedItem.kwCode) itemKwCodes.push(linkedItem.kwCode);
+    } else {
+      // Use available items for this product (take quantity number of items)
+      const availableItems = availableItemsMap[item.product_id] || [];
+      const itemsToUse = availableItems.slice(0, item.quantity);
+      
+      itemsToUse.forEach(availableItem => {
+        if (availableItem.a4lCode) itemA4lCodes.push(availableItem.a4lCode);
+        if (availableItem.kwCode) itemKwCodes.push(availableItem.kwCode);
+      });
+    }
+    
+    // Also include product KW code if available
+    if (item.products?.kw_code && !itemKwCodes.includes(item.products.kw_code)) {
+      itemKwCodes.push(item.products.kw_code);
+    }
+    
+    return {
+      id: item.id,
+      productId: item.product_id,
+      sku: item.products?.sku || '',
+      productName: item.products?.product_name || '',
+      quantity: item.quantity,
+      unitPrice: item.unit_price,
+      discountPercent: item.discount_amount > 0 ? (item.discount_amount / (item.unit_price * item.quantity)) * 100 : 0,
+      subTotal: item.total_amount,
+      a4lCodes: itemA4lCodes,
+      kwCodes: itemKwCodes
+    };
+  });
 
   return mapDatabaseToDTO(order, lines);
 };

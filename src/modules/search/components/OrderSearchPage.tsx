@@ -1,15 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/shared/DataTable';
 import { StandardSearchBar } from '@/components/shared/StandardSearchBar';
 import { searchProducts } from '../api/products';
+import { useAuth } from '@/hooks/useAuth';
 import type { ProductSearchItem, ProductSearchFilters } from '../types';
 
 export function OrderSearchPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { profile } = useAuth();
   const [products, setProducts] = useState<ProductSearchItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<ProductSearchFilters>({});
@@ -29,6 +33,7 @@ export function OrderSearchPage() {
         page, 
         limit: 20 
       });
+
       setProducts(result.data);
       setTotal(result.total);
       setCurrentPage(page);
@@ -90,26 +95,68 @@ export function OrderSearchPage() {
     handleSearch(1, { search: undefined, filters: {} });
   };
 
-  // Load initial data
+  // Load initial data immediately
   useEffect(() => {
     handleSearch(1, { search: undefined, filters: {} });
   }, []);
+
+  const handleRowClick = (item: ProductSearchItem) => {
+    navigate(`/store/items/${item.id}`);
+  };
 
   const columns = [
     {
       key: 'a4lCode' as keyof ProductSearchItem,
       title: t('search.columns.a4lCode'),
-      sortable: true
+      sortable: true,
+      render: (value: string) => (
+        <div className="font-mono text-sm font-medium">
+          {value}
+        </div>
+      )
     },
     {
-      key: 'type' as keyof ProductSearchItem,
-      title: t('search.columns.type'),
+      key: 'loadNumber' as keyof ProductSearchItem,
+      title: 'Load Number',
+      sortable: true,
+      render: (value: string) => (
+        <div className="font-mono text-sm">
+          {value || 'N/A'}
+        </div>
+      )
+    },
+    {
+      key: 'loadInDate' as keyof ProductSearchItem,
+      title: 'Load-in Date',
+      sortable: true,
+      render: (value: string) => (
+        <div className="text-sm">
+          {value ? new Date(value).toLocaleDateString() : 'N/A'}
+        </div>
+      )
+    },
+    {
+      key: 'productName' as keyof ProductSearchItem,
+      title: 'Product',
+      render: (value: string, record: ProductSearchItem) => (
+        <div>
+          <div className="font-medium">{value}</div>
+          <div className="text-sm text-muted-foreground">
+            SKU: {record.sku} • {record.type}
+          </div>
+        </div>
+      ),
       sortable: true
     },
     {
       key: 'kwCode' as keyof ProductSearchItem,
       title: t('search.columns.kwCode'),
-      sortable: true
+      sortable: true,
+      render: (value: string) => (
+        <div className="font-mono text-sm">
+          {value}
+        </div>
+      )
     },
     {
       key: 'grade' as keyof ProductSearchItem,
@@ -122,12 +169,40 @@ export function OrderSearchPage() {
       sortable: true
     },
     {
-      key: 'inStock' as keyof ProductSearchItem,
-      title: t('search.columns.inStock'),
-      render: (value: boolean) => (
-        <Badge variant={value ? 'default' : 'destructive'}>
-          {value ? t('search.stockStatus.yes') : t('search.stockStatus.no')}
-        </Badge>
+      key: 'isInStock' as keyof ProductSearchItem,
+      title: 'In Stock',
+      render: (value: boolean, record: ProductSearchItem) => (
+        <div>
+          <Badge variant={value ? 'default' : 'destructive'}>
+            {value ? 'Yes' : 'No'}
+          </Badge>
+          {record.availableStock !== undefined && (
+            <div className="text-xs text-muted-foreground mt-1">
+              Available: {record.availableStock}
+            </div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'currentLocation' as keyof ProductSearchItem,
+      title: 'Location',
+      sortable: true,
+      render: (value: string, record: ProductSearchItem) => (
+        <div>
+          <div className="font-medium">
+            {value === 'In Store' || value === 'Reserved' || value === 'Transfer Pending' 
+              ? `${value} - ${record.storeName || 'Unknown Store'}` 
+              : value || 'Unknown'}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {value === 'Sold' && 'Not available'}
+            {(value === 'In Store' || value === 'Reserved' || value === 'Transfer Pending') && 
+              `${record.storeCode} • ${record.storeRegion}`}
+            {value && !['Sold', 'In Store', 'Reserved', 'Transfer Pending'].includes(value) && 
+              'External location'}
+          </div>
+        </div>
       )
     },
     {
@@ -140,7 +215,12 @@ export function OrderSearchPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{t('search.title')}</h1>
+        <div>
+          <h1 className="text-2xl font-semibold">Product Search</h1>
+          <p className="text-sm text-muted-foreground">
+            Search inventory across all stores • {total} items found
+          </p>
+        </div>
         <Button
           variant="outline"
           size="sm"
@@ -182,14 +262,24 @@ export function OrderSearchPage() {
             value: filters.modelNumber || '',
             onChange: (value) => handleFilterChange('modelNumber', value),
           },
+          {
+            key: 'storeRegion',
+            label: 'Store Region',
+            placeholder: 'Filter by store region...',
+            type: 'input',
+            value: filters.storeRegion || '',
+            onChange: (value) => handleFilterChange('storeRegion', value),
+          },
         ] : []}
       />
 
       <DataTable
         data={products}
         columns={columns}
-        title={t('search.results', { count: total })}
+        title={`Search Results (${total} items)`}
         loading={loading}
+        onRowClick={handleRowClick}
+        maxHeight="60vh"
       />
     </div>
   );

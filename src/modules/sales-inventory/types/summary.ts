@@ -22,7 +22,13 @@ export interface SalesOrderSummary {
     sku: string;
     quantity: number;
     unitPrice: number;
+    a4lCodes?: string[];
+    kwCodes?: string[];
   }>;
+  
+  // Combined codes for display
+  a4lCodes?: string;
+  kwCodes?: string;
   
   // Item counts and totals
   itemsCount: number;

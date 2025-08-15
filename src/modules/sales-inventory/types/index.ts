@@ -58,6 +58,8 @@ export interface SalesOrderLineDTO {
   unitPrice: number;
   discountPercent: number;
   subTotal: number;
+  a4lCodes?: string[];
+  kwCodes?: string[];
 }
 
 export interface ProductLookupItem {

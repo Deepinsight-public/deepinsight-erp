@@ -53,6 +53,7 @@ import {
 import ScrapManagement from './pages/store/Scrap';
 import NewScrap from './pages/store/NewScrap';
 import BarcodesPO2 from './pages/store/BarcodesPO2';
+import ItemDetail from './pages/store/ItemDetail';
 const SalesOrdersPivot = lazy(() => import('./pages/store/SalesOrdersPivot'));
 
 const queryClient = new QueryClient();
@@ -147,6 +148,8 @@ export default function App() {
                   {/* Order Search */}
                   <Route path="orders/search" element={<OrderSearch />} />
                   
+                  {/* Item Detail */}
+                  <Route path="items/:id" element={<ItemDetail />} />
                   
                   {/* Scrap Management */}
                   <Route path="scrap" element={<ScrapManagement />} />

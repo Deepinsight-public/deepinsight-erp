@@ -8,29 +8,69 @@ import type {
 export const inventoryApi = {
   // 库存查询 (Inventory Query)
   async getInventory(storeId: string, filters?: InventorySearchFilters): Promise<InventoryItem[]> {
-    // Simplified query to avoid type issues
-    const { data: inventoryData, error } = await supabase
+    // Build query with filters
+    let query = supabase
       .from('inventory')
       .select('*')
-      .eq('store_id', storeId)
-      .order('updated_at', { ascending: false });
+      .eq('store_id', storeId);
 
-    if (error) throw error;
+    // Apply filters
+    if (filters?.a4lCode) {
+      query = query.ilike('a4l_code', `%${filters.a4lCode}%`);
+    }
+    
+    if (filters?.kwCode) {
+      query = query.ilike('kw_code', `%${filters.kwCode}%`);
+    }
+
+    query = query.order('updated_at', { ascending: false });
+
+    const { data: inventoryData, error } = await query;
+
+    if (error) {
+      console.error('Inventory query error:', error);
+      throw error;
+    }
+
+    console.log('Raw inventory data from DB:', inventoryData?.slice(0, 2));
 
     // Get product details separately to avoid join complexity
     const productIds = inventoryData?.map(item => item.product_id) || [];
-    const { data: productsData } = await supabase
+    let productsQuery = supabase
       .from('products')
       .select('*')
       .in('id', productIds);
 
+    // Apply product-level filters
+    if (filters?.searchTerm) {
+      productsQuery = productsQuery.or(`
+        sku.ilike.%${filters.searchTerm}%,
+        product_name.ilike.%${filters.searchTerm}%,
+        brand.ilike.%${filters.searchTerm}%
+      `);
+    }
+
+    const { data: productsData } = await productsQuery;
     const productsMap = new Map(productsData?.map(p => [p.id, p]) || []);
 
     return inventoryData?.map(item => {
       const product = productsMap.get(item.product_id);
+      
+      // Debug logging to see what we're getting from the database
+      console.log('Inventory item from DB:', {
+        id: item.id,
+        a4l_code: item.a4l_code,
+        kw_code: item.kw_code,
+        product_id: item.product_id,
+        product_sku: product?.sku,
+        product_kw_code: product?.kw_code
+      });
+      
       return {
         id: item.id,
         productId: item.product_id,
+        a4lCode: item.a4l_code || `A4L-${product?.sku || 'UNK'}-001`,
+        kwCode: item.kw_code || product?.kw_code || `KW-${product?.category?.substring(0,3).toUpperCase() || 'GEN'}`,
         sku: product?.sku || '',
         productName: product?.product_name || '',
         brand: product?.brand,
@@ -47,6 +87,12 @@ export const inventoryApi = {
         createdAt: item.created_at,
         updatedAt: item.updated_at,
       };
+    }).filter(item => {
+      // Filter out items if product filters don't match and product is missing
+      if (filters?.searchTerm && !item.productName) {
+        return false;
+      }
+      return true;
     }) || [];
   },
 

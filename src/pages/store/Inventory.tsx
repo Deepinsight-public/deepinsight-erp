@@ -1,61 +1,110 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Package, AlertTriangle, Search, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Breadcrumbs, DataTable, StatusBadge } from '@/components';
+import { Breadcrumbs, DataTable, StatusBadge, LoadingOverlay } from '@/components';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InventorySearch } from '@/modules/inventory/components/InventorySearch';
 import { TransferManagement } from '@/modules/inventory/components/TransferManagement';
 import { InventoryCount } from '@/modules/inventory/components/InventoryCount';
+import { inventoryApi } from '@/modules/inventory/api/inventory';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import type { InventoryItem, InventorySearchFilters } from '@/modules/inventory/types';
 
-const mockInventoryItems = [
-  {
-    id: '1',
-    productName: 'Wireless Bluetooth Headphones',
-    sku: 'WBH-001',
-    currentStock: 45,
-    reservedStock: 5,
-    availableStock: 40,
-    minStockLevel: 10,
-    status: 'active',
-  },
-  {
-    id: '2',
-    productName: 'USB-C Cable',
-    sku: 'USC-002',
-    currentStock: 8,
-    reservedStock: 2,
-    availableStock: 6,
-    minStockLevel: 15,
-    status: 'active',
-  },
-  {
-    id: '3',
-    productName: 'Laptop Stand',
-    sku: 'LPS-003',
-    currentStock: 25,
-    reservedStock: 0,
-    availableStock: 25,
-    minStockLevel: 5,
-    status: 'active',
-  },
-];
+
 
 export default function Inventory() {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const storeId = 'store-1'; // Would get from auth context
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<InventorySearchFilters>({});
+  
+  const storeId = profile?.store_id || 'default-store';
+
+  useEffect(() => {
+    if (profile?.store_id) {
+      loadInventoryData();
+    }
+  }, [profile?.store_id]);
+
+  const loadInventoryData = async () => {
+    setLoading(true);
+    try {
+      console.log('Loading inventory for store:', storeId);
+      const data = await inventoryApi.getInventory(storeId, filters);
+      console.log('Inventory data loaded:', data?.length, 'items');
+      console.log('Sample inventory item:', data?.[0]);
+      setInventoryItems(data);
+    } catch (error) {
+      console.error('Error loading inventory:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load inventory data',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async (searchFilters: InventorySearchFilters) => {
+    setFilters(searchFilters);
+    setLoading(true);
+    try {
+      const data = await inventoryApi.getInventory(storeId, searchFilters);
+      setInventoryItems(data);
+    } catch (error) {
+      console.error('Error searching inventory:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to search inventory',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const columns = [
     {
+      key: 'a4lCode',
+      title: 'A4L Code',
+      render: (value: string, record: InventoryItem) => (
+        <div className="font-mono text-sm font-medium">
+          {value || `A4L-${record.sku}-001`}
+        </div>
+      ),
+      sortable: true,
+    },
+    {
+      key: 'kwCode',
+      title: 'KW Code',
+      render: (value: string, record: InventoryItem) => (
+        <div className="font-mono text-sm">
+          {value || 'KW-GEN'}
+          {!value && (
+            <span className="text-xs text-muted-foreground ml-1">(generated)</span>
+          )}
+        </div>
+      ),
+      sortable: true,
+    },
+    {
       key: 'productName',
       title: t('inventory.columns.product'),
-      render: (value: string, record: any) => (
+      render: (value: string, record: InventoryItem) => (
         <div>
           <div className="font-medium">{value}</div>
           <div className="text-sm text-muted-foreground">SKU: {record.sku}</div>
+          {record.brand && (
+            <div className="text-xs text-muted-foreground">{record.brand} {record.model}</div>
+          )}
         </div>
       ),
     },
@@ -69,7 +118,7 @@ export default function Inventory() {
     {
       key: 'availableStock',
       title: t('inventory.columns.available'),
-      render: (value: number, record: any) => {
+      render: (value: number, record: InventoryItem) => {
         const isLowStock = value <= record.minStockLevel;
         return (
           <div className="flex items-center gap-2">
@@ -100,7 +149,7 @@ export default function Inventory() {
     {
       key: 'status',
       title: t('inventory.columns.status'),
-      render: (value: string, record: any) => {
+      render: (value: string, record: InventoryItem) => {
         const isLowStock = record.availableStock <= record.minStockLevel;
         if (isLowStock) {
           return <Badge variant="destructive" className="text-xs">{t('inventory.status.lowStock')}</Badge>;
@@ -110,11 +159,12 @@ export default function Inventory() {
     },
   ];
 
-  const handleRowClick = (item: any) => {
-    console.log('Navigate to item:', item.id);
+  const handleRowClick = (item: InventoryItem) => {
+    // Navigate to item detail page using the product ID
+    window.location.href = `/store/items/${item.productId}`;
   };
 
-  const lowStockItems = mockInventoryItems.filter(
+  const lowStockItems = inventoryItems.filter(
     item => item.availableStock <= item.minStockLevel
   );
 
@@ -155,15 +205,25 @@ export default function Inventory() {
 
         <TabsContent value="search" className="mt-6 space-y-6">
           <InventorySearch 
-            onSearch={(filters) => console.log('Search filters:', filters)}
+            onSearch={handleSearch}
             onExport={() => console.log('Exporting inventory...')}
           />
-          <DataTable
-            data={mockInventoryItems}
-            columns={columns}
-            onRowClick={handleRowClick}
-            title={t('inventory.list.title')}
-          />
+          {loading ? (
+            <LoadingOverlay />
+          ) : inventoryItems.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No inventory items found for this store</p>
+              <p className="text-sm">Check your store configuration or add products to inventory</p>
+            </div>
+          ) : (
+            <DataTable
+              data={inventoryItems}
+              columns={columns}
+              onRowClick={handleRowClick}
+              title={t('inventory.list.title')}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="transfers" className="mt-6">

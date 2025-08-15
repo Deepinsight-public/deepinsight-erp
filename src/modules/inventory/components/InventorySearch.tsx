@@ -12,13 +12,17 @@ interface InventorySearchProps {
 export function InventorySearch({ onSearch, onExport }: InventorySearchProps) {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
+  const [a4lCode, setA4lCode] = useState('');
+  const [kwCode, setKwCode] = useState('');
   const [searchType, setSearchType] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
 
   const handleSearch = () => {
     onSearch({
-      searchTerm,
+      searchTerm: searchTerm || undefined,
+      a4lCode: a4lCode || undefined,
+      kwCode: kwCode || undefined,
       searchType,
       status: statusFilter === 'all' ? undefined : statusFilter,
       lowStock: stockFilter === 'low' ? true : undefined,
@@ -32,6 +36,8 @@ export function InventorySearch({ onSearch, onExport }: InventorySearchProps) {
 
   const badges: SearchBadge[] = [
     { key: 'all', label: t('inventorySearch.badges.all'), active: searchType === 'all', onClick: () => setSearchType('all') },
+    { key: 'a4l', label: 'A4L Code', active: searchType === 'a4l', onClick: () => setSearchType('a4l') },
+    { key: 'kw', label: 'KW Code', active: searchType === 'kw', onClick: () => setSearchType('kw') },
     { key: 'sku', label: t('inventorySearch.badges.sku'), active: searchType === 'sku', onClick: () => setSearchType('sku') },
     { key: 'upc', label: t('inventorySearch.badges.upc'), active: searchType === 'upc', onClick: () => setSearchType('upc') },
     { key: 'model', label: t('inventorySearch.badges.model'), active: searchType === 'model', onClick: () => setSearchType('model') },
@@ -39,6 +45,22 @@ export function InventorySearch({ onSearch, onExport }: InventorySearchProps) {
   ];
 
   const filters: SearchFilter[] = [
+    {
+      key: 'a4lCode',
+      label: 'A4L Code',
+      placeholder: 'Enter A4L code...',
+      type: 'input',
+      value: a4lCode,
+      onChange: setA4lCode,
+    },
+    {
+      key: 'kwCode',
+      label: 'KW Code',
+      placeholder: 'Enter KW code...',
+      type: 'input',
+      value: kwCode,
+      onChange: setKwCode,
+    },
     {
       key: 'status',
       label: t('inventorySearch.filters.status'),

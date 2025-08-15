@@ -96,6 +96,8 @@ export function SalesOrdersSummary() {
     { key: 'customerName', title: 'Customer', visible: true },
     { key: 'status', title: 'Status', visible: true },
     { key: 'presale', title: 'Presale', visible: true },
+    { key: 'a4lCodes', title: 'A4L Code', visible: true },
+    { key: 'kwCodes', title: 'KW Code', visible: true },
     { key: 'type', title: 'Type', visible: true },
     { key: 'itemsCount', title: 'Items', visible: true },
     { key: 'extendedWarranty', title: 'Extended Warranty', visible: true },
@@ -283,7 +285,11 @@ export function SalesOrdersSummary() {
         'itemsCount','discountAmount','taxTotal','totalAmount','paidTotal','balanceAmount',
         'mapTotal','deliveryFee','accessoryFee','otherFee','cogsTotal','grossProfit','productMapRate'
       ].includes(col.key)
-    ) ? '140px' : undefined,
+    ) ? '140px' : (
+      [
+        'a4lCodes', 'kwCodes'
+      ].includes(col.key)
+    ) ? '180px' : undefined,
     render: col.render || ((value: any, record: any) => {
       switch (col.key) {
         case 'orderDate':
@@ -318,6 +324,22 @@ export function SalesOrdersSummary() {
           return value ? (
             <span className="text-center">✓</span>
           ) : null;
+        case 'a4lCodes':
+          return (
+            <span className="font-mono text-sm" title={value}>
+              {value && value !== 'N/A' ? (
+                value.length > 20 ? `${value.substring(0, 20)}...` : value
+              ) : 'N/A'}
+            </span>
+          );
+        case 'kwCodes':
+          return (
+            <span className="font-mono text-sm" title={value}>
+              {value && value !== 'N/A' ? (
+                value.length > 20 ? `${value.substring(0, 20)}...` : value
+              ) : 'N/A'}
+            </span>
+          );
         case 'itemsCount':
           return <span className="text-right">{value}</span>;
         case 'extendedWarranty':
@@ -581,6 +603,8 @@ export function SalesOrdersSummary() {
               'customerName',       // Customer
               'status',             // Status
               'presale',            // Presale
+              'a4lCodes',           // A4L Code
+              'kwCodes',            // KW Code
               'type',               // Type (Product Names)
               'actualDeliveryDate', // Actual Delivery Date
               'balanceAmount',      // Balance

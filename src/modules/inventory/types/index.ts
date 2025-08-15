@@ -2,6 +2,8 @@
 export interface InventoryItem {
   id: string;
   productId: string;
+  a4lCode: string;
+  kwCode: string;
   sku: string;
   productName: string;
   brand?: string;
@@ -24,6 +26,8 @@ export interface InventoryItem {
 
 export interface InventorySearchFilters {
   searchTerm?: string;
+  a4lCode?: string;
+  kwCode?: string;
   status?: string;
   lowStock?: boolean;
   category?: string;

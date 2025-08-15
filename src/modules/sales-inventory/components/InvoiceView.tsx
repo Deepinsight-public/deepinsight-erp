@@ -18,9 +18,67 @@ interface InvoiceItem {
   warrantyTerm: string;
 }
 
+interface IndividualInvoiceItem {
+  id: string;
+  productName: string;
+  sku: string;
+  a4lCode?: string;
+  kwCode?: string;
+  unitPrice: number;
+  discountPercent: number;
+  itemSubTotal: number;
+}
+
+// Function to expand order lines into individual items based on A4L codes
+function expandOrderLinesToIndividualItems(orderLines: any[]): IndividualInvoiceItem[] {
+  const individualItems: IndividualInvoiceItem[] = [];
+  
+  orderLines.forEach((line, lineIndex) => {
+    const { a4lCodes = [], kwCodes = [], quantity } = line;
+    const unitPrice = line.unitPrice || (line.subTotal / Math.max(quantity, 1));
+    const itemSubTotal = unitPrice * (1 - line.discountPercent / 100);
+    
+    // If we have A4L codes, create one item per A4L code
+    if (a4lCodes.length > 0) {
+      a4lCodes.forEach((a4lCode: string, index: number) => {
+        individualItems.push({
+          id: `${line.id || line.productId}-${index}`,
+          productName: line.productName,
+          sku: line.sku,
+          a4lCode,
+          kwCode: kwCodes[index] || kwCodes[0] || undefined,
+          unitPrice,
+          discountPercent: line.discountPercent,
+          itemSubTotal,
+        });
+      });
+    } else {
+      // If no A4L codes, create individual items equal to quantity
+      for (let i = 0; i < quantity; i++) {
+        individualItems.push({
+          id: `${line.id || line.productId}-${i}`,
+          productName: line.productName,
+          sku: line.sku,
+          a4lCode: undefined,
+          kwCode: kwCodes[i] || kwCodes[0] || undefined,
+          unitPrice,
+          discountPercent: line.discountPercent,
+          itemSubTotal,
+        });
+      }
+    }
+  });
+  
+  return individualItems;
+}
+
 export function InvoiceView({ order }: InvoiceViewProps) {
   const { t } = useTranslation();
-  // Transform order data to invoice format
+  
+  // Expand order lines into individual items with A4L codes
+  const individualItems = expandOrderLinesToIndividualItems(order.lines);
+  
+  // Transform order data to invoice format (keep original for compatibility)
   const invoiceItems: InvoiceItem[] = order.lines.map((line, index) => ({
     idx: index + 1,
     type: t('invoice.itemType.appliance'), // Default to Appliance, could be enhanced based on product category
@@ -284,33 +342,48 @@ export function InvoiceView({ order }: InvoiceViewProps) {
               </tr>
             </thead>
             <tbody>
-              {order.lines.map((line, index) => (
-                <tr key={line.id || index} className="border-t hover:bg-gray-50">
+              {individualItems.map((item, index) => (
+                <tr key={item.id} className="border-t hover:bg-gray-50">
                   <td className="border border-gray-200 p-3 align-top">
                     <span className="font-medium text-blue-600">{index + 1}</span>
                   </td>
                   <td className="border border-gray-200 p-3">
                     <div className="space-y-1">
-                      <div className="font-medium text-foreground">{line.productName}</div>
-                      <div className="text-sm text-muted-foreground">SKU: {line.sku}</div>
+                      <div className="font-medium text-foreground">{item.productName}</div>
+                      <div className="text-sm text-muted-foreground">SKU: {item.sku}</div>
+                      {item.a4lCode && (
+                        <div className="text-sm text-blue-600 font-mono font-semibold">
+                          A4L: {item.a4lCode}
+                        </div>
+                      )}
+                      {item.kwCode && (
+                        <div className="text-sm text-green-600 font-mono">
+                          KW: {item.kwCode}
+                        </div>
+                      )}
+                      {!item.a4lCode && (
+                        <div className="text-sm text-orange-600 italic">
+                          No A4L code assigned
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="border border-gray-200 p-3 text-center">
-                    <div className="font-medium">{line.quantity}</div>
-                    <div className="text-xs text-muted-foreground">units</div>
+                    <div className="font-medium">1</div>
+                    <div className="text-xs text-muted-foreground">unit</div>
                   </td>
                   <td className="border border-gray-200 p-3 text-right">
                     <div className="space-y-1">
                       <div className="text-sm text-muted-foreground">
-                        Unit Price: ${line.unitPrice.toFixed(2)}
+                        Unit Price: ${item.unitPrice.toFixed(2)}
                       </div>
-                      {line.discountPercent > 0 && (
+                      {item.discountPercent > 0 && (
                         <div className="text-sm text-red-600">
-                          Discount: {line.discountPercent}%
+                          Discount: {item.discountPercent}%
                         </div>
                       )}
                       <div className="font-medium text-foreground">
-                        Total: ${line.subTotal.toFixed(2)}
+                        Total: ${item.itemSubTotal.toFixed(2)}
                       </div>
                     </div>
                   </td>
