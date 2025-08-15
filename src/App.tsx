@@ -36,11 +36,12 @@ import SalesOrderSuccess from "./pages/store/SalesOrderSuccess";
 import PurchaseRequests from "./pages/store/PurchaseRequests";
 import NewPurchaseRequest from "./pages/store/NewPurchaseRequest";
 import Inventory from "./pages/store/Inventory";
+import InventoryTransferOut from "./pages/store/InventoryTransferOut";
+import InventoryTransferIn from "./pages/store/InventoryTransferIn";
+import InventoryTransferRecord from "./pages/store/InventoryTransferRecord";
 import Customers from "./pages/store/Customers";
 import {
   PurchaseRequestDetail,
-  InventoryTransferIn,
-  InventoryTransferOut,
   Products,
   ProductDetail,
   ProductLookup,
@@ -119,8 +120,9 @@ export default function App() {
                   
                   {/* Inventory */}
                   <Route path="inventory" element={<Inventory />} />
-                  <Route path="inventory/transfer-in" element={<InventoryTransferIn />} />
                   <Route path="inventory/transfer-out" element={<InventoryTransferOut />} />
+                  <Route path="inventory/transfer-in" element={<InventoryTransferIn />} />
+                  <Route path="inventory/transfer-record" element={<InventoryTransferRecord />} />
                   
                   {/* Products */}
                   <Route path="products" element={<Products />} />
