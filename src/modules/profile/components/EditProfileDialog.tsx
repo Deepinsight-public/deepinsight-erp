@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,15 +21,10 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
-import { updateProfile } from '../api/profile';
-import { ProfileFormData } from '../types';
-
-const formSchema = z.object({
-  full_name: z.string().min(1, 'profile.edit.nameRequired'),
-  email: z.string().email('profile.edit.emailInvalid'),
-  phone: z.string().optional(),
-});
+import { updateProfile, searchStores } from '../api/profile';
+import { ProfileFormData, Store, USER_ROLES } from '../types';
 
 interface EditProfileDialogProps {
   open: boolean;
@@ -38,7 +33,17 @@ interface EditProfileDialogProps {
 
 export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps) {
   const { t } = useTranslation();
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, hasPermission } = useAuth();
+  const [stores, setStores] = useState<Store[]>([]);
+  const [loadingStores, setLoadingStores] = useState(false);
+  
+  const formSchema = z.object({
+    full_name: z.string().min(1, t('profile.edit.validation.firstNameRequired')).max(30, t('profile.edit.validation.firstNameLength')),
+    email: z.string().email(t('profile.edit.emailInvalid')),
+    phone: z.string().optional(),
+    role: z.string().optional(),
+    store_id: z.string().optional(),
+  });
   
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(formSchema),
@@ -46,6 +51,8 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
       full_name: profile?.full_name || '',
       email: profile?.email || user?.email || '',
       phone: profile?.phone || '',
+      role: profile?.role || '',
+      store_id: profile?.store_id || '',
     },
   });
 
@@ -55,9 +62,29 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
         full_name: profile.full_name || '',
         email: profile.email || user?.email || '',
         phone: profile.phone || '',
+        role: profile.role || '',
+        store_id: profile.store_id || '',
       });
     }
   }, [profile, user, open, form]);
+
+  // Load stores when dialog opens
+  useEffect(() => {
+    if (open) {
+      const loadStores = async () => {
+        try {
+          setLoadingStores(true);
+          const storesData = await searchStores();
+          setStores(storesData);
+        } catch (error) {
+          console.error('Failed to load stores:', error);
+        } finally {
+          setLoadingStores(false);
+        }
+      };
+      loadStores();
+    }
+  }, [open]);
 
   const onSubmit = async (data: ProfileFormData) => {
     if (!user?.id) return;
@@ -67,6 +94,8 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
         full_name: data.full_name,
         email: data.email,
         phone: data.phone || undefined,
+        role: data.role || undefined,
+        store_id: data.store_id || undefined,
       });
 
       toast({
@@ -88,13 +117,14 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{t('profile.edit.title')}</DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="full_name"
@@ -136,6 +166,78 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
                 </FormItem>
               )}
             />
+            
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('profile.edit.role')}</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange} disabled={!hasPermission('manage_users')}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('profile.edit.rolePlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {USER_ROLES.map((role) => (
+                          <SelectItem key={role} value={role}>
+                            {role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  {!hasPermission('manage_users') && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t('profile.edit.roleReadOnly')}
+                    </p>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="store_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('profile.edit.store')}</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange} disabled={!hasPermission('manage_users')}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('profile.edit.storePlaceholder')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {loadingStores ? (
+                          <SelectItem value="" disabled>
+                            {t('common.loading')}
+                          </SelectItem>
+                        ) : stores.length === 0 ? (
+                          <SelectItem value="" disabled>
+                            {t('profile.edit.noStoresFound')}
+                          </SelectItem>
+                        ) : (
+                          stores.map((store) => (
+                            <SelectItem key={store.id} value={store.id}>
+                              {store.store_name} ({store.store_code})
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  {!hasPermission('manage_users') && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t('profile.edit.storeReadOnly')}
+                    </p>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            </div>
             
             <DialogFooter>
               <Button
