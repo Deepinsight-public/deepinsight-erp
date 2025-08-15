@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Check, ChevronsUpDown, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import {
 interface Option {
   value: string;
   label: string;
+  disabled?: boolean;
 }
 
 interface SelectWithSearchProps {
@@ -49,8 +50,50 @@ export function SelectWithSearch({
   renderOption,
 }: SelectWithSearchProps) {
   const [open, setOpen] = useState(false);
+  const commandListRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find((option) => option.value === value);
+
+  useEffect(() => {
+    if (open && commandListRef.current) {
+      const listEl = commandListRef.current;
+      // Debug info for development
+      console.log('📐 CommandList initialized:', {
+        items: options.length,
+        scrollHeight: listEl.scrollHeight,
+        clientHeight: listEl.clientHeight
+      });
+      
+      // Keep current scroll position when dropdown reopens
+
+      // Add manual scroll event handling
+      const handleWheel = (e: WheelEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        listEl.scrollTop += e.deltaY;
+        // Smooth manual wheel scrolling enabled
+      };
+
+      const handleMouseDown = (e: MouseEvent) => {
+        // Only handle scrollbar area clicks
+        const rect = listEl.getBoundingClientRect();
+        const scrollbarWidth = listEl.offsetWidth - listEl.clientWidth;
+        if (e.clientX > rect.right - scrollbarWidth - 5) {
+          // Native scrollbar interaction
+          // Let native scrollbar handle this
+          return;
+        }
+      };
+
+      listEl.addEventListener('wheel', handleWheel, { passive: false });
+      listEl.addEventListener('mousedown', handleMouseDown);
+
+      return () => {
+        listEl.removeEventListener('wheel', handleWheel);
+        listEl.removeEventListener('mousedown', handleMouseDown);
+      };
+    }
+  }, [open, options]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -68,9 +111,9 @@ export function SelectWithSearch({
       </PopoverTrigger>
       <PopoverContent 
         className={cn('p-0 bg-background border shadow-md z-50', popoverClassName)} 
-        style={{ width: 'var(--radix-popover-trigger-width)' }}
+        style={{ width: 'var(--radix-popover-trigger-width)', maxHeight: '450px' }}
       >
-        <Command className="bg-background">
+        <Command className="bg-background" shouldFilter={false} loop>
           <CommandInput 
             placeholder={searchPlaceholder}
             onValueChange={(value) => {
@@ -81,10 +124,20 @@ export function SelectWithSearch({
             }}
             className="bg-background"
           />
-          <CommandList className="bg-background">
+          <CommandList 
+            ref={commandListRef}
+            className="max-h-[300px] overflow-y-scroll overflow-x-hidden bg-background custom-scrollbar"
+            style={{
+              scrollBehavior: 'smooth',
+              touchAction: 'pan-y',
+              overscrollBehavior: 'contain'
+            }}
+          >
             <CommandEmpty className="bg-background">{emptyText}</CommandEmpty>
             <CommandGroup className="bg-background">
-              {options.map((option) => (
+              {(() => {
+                // Rendering all available options with scrolling enabled
+                return options.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.value}
@@ -92,7 +145,8 @@ export function SelectWithSearch({
                     onValueChange(currentValue === value ? '' : currentValue);
                     setOpen(false);
                   }}
-                  className="px-3 py-2 hover:bg-accent hover:text-accent-foreground cursor-pointer bg-background"
+                  className="px-3 py-3 min-h-[48px] hover:bg-accent hover:text-accent-foreground cursor-pointer bg-background flex items-center"
+                  disabled={option.disabled}
                 >
                   <Check
                     className={cn(
@@ -102,7 +156,8 @@ export function SelectWithSearch({
                   />
                   {renderOption ? renderOption(option) : option.label}
                 </CommandItem>
-              ))}
+                ));
+              })()}
             </CommandGroup>
           </CommandList>
         </Command>

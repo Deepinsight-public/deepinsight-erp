@@ -46,6 +46,10 @@ export async function fetchSalesOrdersSummary(
         warranty_years,
         status,
         walk_in_delivery,
+        delivery_date,
+        actual_delivery_date,
+        store_invoice_number,
+        presale,
         total_amount,
         discount_amount,
         tax_amount,
@@ -63,7 +67,9 @@ export async function fetchSalesOrdersSummary(
         sales_order_items(
           quantity,
           unit_price,
-          total_amount
+          total_amount,
+          product_id,
+          products(product_name)
         )
       `)
       .eq('store_id', storeId || profile.store_id)
@@ -108,6 +114,10 @@ export async function fetchSalesOrdersSummary(
     const { data, error } = await query.range(from, to);
 
     if (error) throw error;
+    
+    console.log('🔍 API Debug - Raw data from database:', data?.[0]);
+    console.log('🔍 API Debug - First order store_invoice_number:', data?.[0]?.store_invoice_number);
+    console.log('🔍 API Debug - First order sales_order_items:', data?.[0]?.sales_order_items);
 
 
 
@@ -175,18 +185,19 @@ export async function fetchSalesOrdersSummary(
         }
       }
 
-      // For now, assume fully paid (in real implementation, query payments table)
-      const paidTotal = order.total_amount;
-      const balanceAmount = 0;
+      // Calculate actual paid total from payment methods
+      const paidTotal = paymentMethods.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+      const balanceAmount = Math.max(0, order.total_amount - paidTotal);
 
       // Get cashier name from the lookup map
       const cashierName = order.cashier_id ? cashierMap[order.cashier_id] || 'Unknown Cashier' : null;
 
-      return {
+      const transformedOrder = {
         orderId: order.id,
         orderNumber: order.order_number,
         orderDate: order.order_date,
         storeId: order.store_id,
+        storeInvoiceNumber: order.store_invoice_number,
         customerName: order.customer_name,
         customerSource: order.customer_source,
         cashierId: order.cashier_id,
@@ -195,6 +206,10 @@ export async function fetchSalesOrdersSummary(
         orderType: 'retail' as const, // Default since order_type doesn't exist in schema
         status: order.status as SalesOrderSummary['status'],
         walkInDelivery: order.walk_in_delivery,
+        deliveryDate: order.delivery_date,
+        actualDeliveryDate: order.actual_delivery_date,
+        presale: order.presale || false,
+        sales_order_items: order.sales_order_items, // Add this for the type column
         itemsCount,
         subTotal,
         discountAmount: order.discount_amount || 0,
@@ -216,6 +231,12 @@ export async function fetchSalesOrdersSummary(
         paymentMethod3: paymentMethods[2]?.method || null,
         paymentAmount3: paymentMethods[2]?.amount || null,
       };
+      
+      console.log('🔍 API Debug - Transformed order:', transformedOrder);
+      console.log('🔍 API Debug - storeInvoiceNumber in transformed:', transformedOrder.storeInvoiceNumber);
+      console.log('🔍 API Debug - sales_order_items in transformed:', transformedOrder.sales_order_items);
+      
+      return transformedOrder;
     });
 
     // Apply payment status filter if specified
@@ -254,6 +275,9 @@ export async function fetchSalesOrderSummary(orderId: string): Promise<SalesOrde
         cashier_id,
         status,
         walk_in_delivery,
+        delivery_date,
+        actual_delivery_date,
+        presale,
         total_amount,
         discount_amount,
         tax_amount,
@@ -261,6 +285,12 @@ export async function fetchSalesOrderSummary(orderId: string): Promise<SalesOrde
         accessory,
         other_services,
         other_fee,
+        payment_method1,
+        payment_amount1,
+        payment_method2,
+        payment_amount2,
+        payment_method3,
+        payment_amount3,
         sales_order_items(
           quantity,
           unit_price,
@@ -280,8 +310,23 @@ export async function fetchSalesOrderSummary(orderId: string): Promise<SalesOrde
     const deliveryFee = data.walk_in_delivery === 'delivery' ? 50 : 0;
     const otherFee = data.other_fee || 0;
     
-    const paidTotal = data.total_amount;
-    const balanceAmount = 0;
+    // Parse payment methods for this single order
+    let paymentMethods: Array<{method: string, amount: number, note?: string}> = [];
+    
+    // Add payment methods if they exist
+    if (data.payment_method1 && data.payment_amount1) {
+      paymentMethods.push({ method: data.payment_method1, amount: data.payment_amount1 });
+    }
+    if (data.payment_method2 && data.payment_amount2) {
+      paymentMethods.push({ method: data.payment_method2, amount: data.payment_amount2 });
+    }
+    if (data.payment_method3 && data.payment_amount3) {
+      paymentMethods.push({ method: data.payment_method3, amount: data.payment_amount3 });
+    }
+    
+    // Calculate actual paid total from payment methods
+    const paidTotal = paymentMethods.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+    const balanceAmount = Math.max(0, data.total_amount - paidTotal);
 
     return {
       orderId: data.id,
@@ -293,6 +338,9 @@ export async function fetchSalesOrderSummary(orderId: string): Promise<SalesOrde
       orderType: 'retail' as const, // Default since order_type doesn't exist in schema
       status: data.status as SalesOrderSummary['status'],
       walkInDelivery: data.walk_in_delivery,
+      deliveryDate: data.delivery_date,
+      actualDeliveryDate: data.actual_delivery_date,
+      presale: data.presale || false,
       itemsCount,
       subTotal,
       discountAmount: data.discount_amount || 0,

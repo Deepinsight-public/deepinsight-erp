@@ -144,18 +144,34 @@ export function NewReturnForm() {
     try {
       const purchaseHistory = await getCustomerPurchaseHistory(customer.email);
       if (purchaseHistory.length > 0) {
-        const historyOptions = purchaseHistory.map(product => ({
-          value: `${product.id}_${product.orderId}`, // Use composite key to distinguish same product from different orders
-          label: `${product.sku} - ${product.productName} (Order: ${product.orderNumber || 'N/A'}, ${
-            product.lastPurchaseDate ? format(new Date(product.lastPurchaseDate), 'MMM dd, yyyy') : 'Unknown'
-          }, Total: $${(product.orderGrandTotal || 0).toFixed(2)})`,
-          orderGrandTotal: product.orderGrandTotal,
-          orderNumber: product.orderNumber,
-          purchaseDate: product.lastPurchaseDate,
-          itemsInOrder: product.orderItemsCount,
-          itemPrice: product.unitPrice,
-          actualProductId: product.id, // Store the actual product ID for form submission
-        }));
+        const historyOptions = purchaseHistory.map(order => {
+          const invoiceNumber = order.storeInvoiceNumber || order.orderNumber || 'No Invoice';
+          const orderDate = order.lastPurchaseDate ? format(new Date(order.lastPurchaseDate), 'MMM dd, yyyy') : 'Unknown';
+          const itemsInfo = order.orderItems?.map(item => 
+            `${item.sku} - ${item.productName} (Qty: ${item.quantity}, $${item.unitPrice.toFixed(2)})`
+          ).join('; ') || 'No items';
+          
+          const paymentInfo = order.paymentMethods && order.paymentMethods.length > 0 
+            ? order.paymentMethods.map(p => `${p.method}: $${p.amount.toFixed(2)}`).join(', ')
+            : 'No payment info';
+          
+          return {
+            value: order.id, // Use order ID as value
+            label: `Invoice: ${invoiceNumber}`,
+            secondaryLabel: `${orderDate} | Total: $${(order.orderGrandTotal || 0).toFixed(2)} | Paid: $${(order.totalPaid || 0).toFixed(2)}`,
+            itemsLabel: `Items: ${itemsInfo}`,
+            paymentLabel: `Payments: ${paymentInfo}`,
+            orderGrandTotal: order.orderGrandTotal,
+            orderNumber: order.orderNumber,
+            storeInvoiceNumber: order.storeInvoiceNumber,
+            purchaseDate: order.lastPurchaseDate,
+            itemsInOrder: order.orderItemsCount,
+            totalPaid: order.totalPaid,
+            balance: order.balance,
+            orderItems: order.orderItems,
+            actualProductId: order.id, // Store the order ID for form submission
+          };
+        });
         setPurchaseHistoryProducts(historyOptions);
         setShowPurchaseHistoryOnly(true);
       } else {
@@ -482,6 +498,19 @@ export function NewReturnForm() {
                       emptyText={showPurchaseHistoryOnly ? "No purchase history found." : "No products found."}
                       disabled={loadingPurchaseHistory}
                       className="w-full min-w-[400px]"
+                      renderOption={showPurchaseHistoryOnly ? (option: any) => (
+                        <div className="w-full space-y-2 py-1">
+                          <div className="font-medium text-sm text-blue-700">{option.label}</div>
+                          <div className="text-xs text-muted-foreground">{option.secondaryLabel}</div>
+                          <div className="text-xs text-blue-600 leading-relaxed" style={{ whiteSpace: 'pre-wrap' }}>
+                            {option.itemsLabel?.length > 120 ? `${option.itemsLabel.substring(0, 120)}...` : option.itemsLabel}
+                          </div>
+                          <div className="text-xs text-green-600">{option.paymentLabel}</div>
+                          {option.balance && option.balance > 0 && (
+                            <div className="text-xs text-red-600 font-medium">Outstanding Balance: ${option.balance.toFixed(2)}</div>
+                          )}
+                        </div>
+                      ) : undefined}
                     />
                   </FormControl>
                   {showPurchaseHistoryOnly && (

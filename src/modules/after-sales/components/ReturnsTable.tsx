@@ -117,8 +117,11 @@ export function ReturnsTable({ returns, loading, onReturnClick, onInvoiceClick }
   return (
     <Card>
       <CardContent className="p-0">
-        <Table>
-          <TableHeader>
+        {/* Wrap table to enable horizontal scrolling while keeping the rest of the layout responsive */}
+        <div className="w-full overflow-x-auto">
+          {/* min-w-full ensures the table keeps its natural width so the scrollbar appears only for the table */}
+          <Table className="min-w-full">
+            <TableHeader>
             <TableRow>
               <TableHead>{t('returns.table.returnId')}</TableHead>
               <TableHead>{renderSortableHeader(t('returns.table.returnDate'), 'returnDate')}</TableHead>
@@ -127,12 +130,12 @@ export function ReturnsTable({ returns, loading, onReturnClick, onInvoiceClick }
               <TableHead>{t('returns.table.product')}</TableHead>
               <TableHead>{renderSortableHeader(t('returns.table.refundAmount'), 'refundAmount')}</TableHead>
               <TableHead>{renderSortableHeader(t('returns.table.reason'), 'reason')}</TableHead>
-              <TableHead>{renderSortableHeader('Approval Month', 'approvalMonth')}</TableHead>
-              <TableHead>{renderSortableHeader('Status', 'status')}</TableHead>
-              <TableHead>Self Scraped</TableHead>
-              <TableHead>{renderSortableHeader('MAP', 'mapPrice')}</TableHead>
-              <TableHead>{renderSortableHeader('Total Paid', 'totalAmountPaid')}</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>{renderSortableHeader(t('returns.table.approvalMonth'), 'approvalMonth')}</TableHead>
+              <TableHead>{renderSortableHeader(t('returns.table.status'), 'status')}</TableHead>
+              <TableHead>{t('returns.table.selfScraped')}</TableHead>
+              <TableHead>{renderSortableHeader(t('returns.table.map'), 'mapPrice')}</TableHead>
+              <TableHead>{renderSortableHeader(t('returns.table.totalPaid'), 'totalAmountPaid')}</TableHead>
+              <TableHead>{t('returns.table.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -251,7 +254,8 @@ export function ReturnsTable({ returns, loading, onReturnClick, onInvoiceClick }
               ))
             )}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );

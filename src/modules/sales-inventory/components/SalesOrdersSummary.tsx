@@ -92,15 +92,20 @@ export function SalesOrdersSummary() {
   const [columns, setColumns] = useState<Column[]>([
     { key: 'orderDate', title: 'Date', visible: true },
     { key: 'orderNumber', title: 'Order NO.', visible: true },
+    { key: 'storeInvoiceNumber', title: 'Invoice Number', visible: true },
     { key: 'customerName', title: 'Customer', visible: true },
     { key: 'status', title: 'Status', visible: true },
+    { key: 'presale', title: 'Presale', visible: true },
+    { key: 'type', title: 'Type', visible: true },
     { key: 'itemsCount', title: 'Items', visible: true },
     { key: 'extendedWarranty', title: 'Extended Warranty', visible: true },
     { key: 'warrantyAmount', title: 'Warranty Amount', visible: true },
     { key: 'mapTotal', title: 'MAP', visible: true },
     { key: 'productMapRate', title: 'Product/MAP Rate', visible: true },
     { key: 'walkInDelivery', title: 'Delivery/Pickup', visible: true },
-    { key: 'deliveryDate', title: 'Delivery Date', visible: true },
+    { key: 'deliveryDate', title: 'Estimated Delivery Date', visible: true },
+    { key: 'actualDeliveryDate', title: 'Actual Delivery Date', visible: true },
+    { key: 'balanceAmount', title: 'Balance', visible: true },
     { key: 'deliveryFee', title: 'Delivery Fee', visible: true },
     { key: 'accessoryFee', title: 'Accessory Fee', visible: true },
     { key: 'otherFee', title: 'Other Fee', visible: true },
@@ -121,7 +126,6 @@ export function SalesOrdersSummary() {
     
     // Advanced columns - hidden for now
     { key: 'paidTotal', title: 'Paid Total', visible: false, advanced: true },
-    { key: 'balanceAmount', title: 'Balance Amount', visible: false, advanced: true },
     { key: 'paymentStatus', title: 'Payment Status', visible: false, advanced: true },
     { key: 'avgItemPrice', title: 'Avg Item Price', visible: false, advanced: true },
     { key: 'effectiveTaxRate', title: 'Effective Tax Rate', visible: false, advanced: true },
@@ -160,7 +164,7 @@ export function SalesOrdersSummary() {
       { value: 'walk-in', label: 'Pickup' },
       { value: 'delivery', label: 'Delivery' }
     ]},
-    { key: 'deliveryDate', label: 'Delivery Date', dataType: 'date' },
+    { key: 'deliveryDate', label: 'Estimated Delivery Date', dataType: 'date' },
     { key: 'deliveryFee', label: 'Delivery Fee', dataType: 'number' },
     { key: 'accessoryFee', label: 'Accessory Fee', dataType: 'number' },
     { key: 'otherFee', label: 'Other Fee', dataType: 'number' },
@@ -271,7 +275,7 @@ export function SalesOrdersSummary() {
     title: col.title,
     width: (
       [
-        'orderDate','orderNumber','customerName','status','cashierName','customerSource',
+        'orderDate','orderNumber','customerName','status','presale','cashierName','customerSource',
         'walkInDelivery','deliveryDate','paymentMethod1','paymentMethod2','paymentMethod3'
       ].includes(col.key)
     ) ? '160px' : (
@@ -286,10 +290,34 @@ export function SalesOrdersSummary() {
           return format(new Date(value), 'MMM dd, yyyy');
         case 'orderNumber':
           return <span className="font-medium text-primary">{value}</span>;
+        case 'storeInvoiceNumber':
+          console.log('🔍 Invoice Debug - value:', value, 'record.storeInvoiceNumber:', record.storeInvoiceNumber, 'record.orderNumber:', record.orderNumber);
+          return <span className="font-medium">{value || `INV-${record.orderNumber}`}</span>;
         case 'customerName':
           return value || 'Walk-in Customer';
+        case 'type':
+          // Handle both formats: summary API (sales_order_items) and detailed API (lines)
+          const items = record.sales_order_items || record.lines || [];
+          console.log('🔍 Type Debug - record:', record);
+          console.log('🔍 Type Debug - items:', items);
+          console.log('🔍 Type Debug - record.sales_order_items:', record.sales_order_items);
+          console.log('🔍 Type Debug - record.lines:', record.lines);
+          
+          const productNames = items.map((item: any) => 
+            item.products?.product_name || item.productName || 'Unknown Product'
+          ).join(', ') || '';
+          console.log('🔍 Type Debug - productNames:', productNames);
+          return (
+            <span className="text-sm" title={productNames}>
+              {productNames.length > 30 ? `${productNames.substring(0, 30)}...` : productNames}
+            </span>
+          );
         case 'status':
           return <StatusBadge status={value} />;
+        case 'presale':
+          return value ? (
+            <span className="text-center">✓</span>
+          ) : null;
         case 'itemsCount':
           return <span className="text-right">{value}</span>;
         case 'extendedWarranty':
@@ -317,6 +345,8 @@ export function SalesOrdersSummary() {
             <span className="text-right">{formatPercent(value)}</span>
           ) : null;
         case 'deliveryDate':
+          return value ? format(new Date(value), 'MMM dd, yyyy') : null;
+        case 'actualDeliveryDate':
           return value ? format(new Date(value), 'MMM dd, yyyy') : null;
         case 'paymentMethod1':
         case 'paymentMethod2':
@@ -547,8 +577,13 @@ export function SalesOrdersSummary() {
             columns={tableColumns.filter(col => [
               'orderDate',          // Date
               'orderNumber',        // Order NO.
+              'storeInvoiceNumber', // Invoice Number
               'customerName',       // Customer
               'status',             // Status
+              'presale',            // Presale
+              'type',               // Type (Product Names)
+              'actualDeliveryDate', // Actual Delivery Date
+              'balanceAmount',      // Balance
               'itemsCount',         // Items
               'extendedWarranty',   // Extended Warranty
               'warrantyAmount',     // Warranty Amount

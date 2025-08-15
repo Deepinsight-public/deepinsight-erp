@@ -12,9 +12,9 @@ import {
   ArrowUp,
   Shield,
   Trash2,
-  Settings,
   Home,
   ClipboardList,
+  QrCode,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -75,9 +75,9 @@ const menuItems = [
     icon: Trash2,
   },
   {
-    title: 'settings',
-    url: '/store/settings',
-    icon: Settings,
+    title: 'barcodesPO2',
+    url: '/store/barcodes_po2',
+    icon: QrCode,
   },
 ];
 

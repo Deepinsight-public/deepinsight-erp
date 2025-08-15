@@ -49,11 +49,11 @@ import {
   CustomerInteractions,
   AfterSalesScrap,
   OrderSearch,
-  Settings,
 } from "./pages/store/OtherStorePages";
 
 import ScrapManagement from './pages/store/Scrap';
 import NewScrap from './pages/store/NewScrap';
+import BarcodesPO2 from './pages/store/BarcodesPO2';
 const SalesOrdersPivot = lazy(() => import('./pages/store/SalesOrdersPivot'));
 
 const queryClient = new QueryClient();
@@ -154,8 +154,8 @@ export default function App() {
                   <Route path="scrap" element={<ScrapManagement />} />
                   <Route path="scrap/new" element={<NewScrap />} />
                   
-                  {/* Settings */}
-                  <Route path="settings" element={<Settings />} />
+                  {/* Barcodes PO2 */}
+                  <Route path="barcodes_po2" element={<BarcodesPO2 />} />
                 </Route>
 
                 {/* Catch-all route */}

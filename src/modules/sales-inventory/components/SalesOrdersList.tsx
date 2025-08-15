@@ -66,6 +66,15 @@ export function SalesOrdersList() {
       ),
     },
     {
+      key: 'storeInvoiceNumber',
+      title: 'Invoice Number',
+      render: (value: string, record: SalesOrderDTO) => (
+        <span className="font-medium">
+          {value || `INV-${record.orderNumber}`}
+        </span>
+      ),
+    },
+    {
       key: 'customerName',
       title: t('salesOrders.columns.customer'),
       render: (value: string) => value || t('salesOrders.walkInCustomer')
@@ -74,6 +83,23 @@ export function SalesOrdersList() {
       key: 'orderDate',
       title: t('salesOrders.columns.date'),
       render: (value: string) => new Date(value).toLocaleDateString()
+    },
+    {
+      key: 'actualDeliveryDate',
+      title: 'Actual Delivery Date',
+      render: (value: string) => value ? new Date(value).toLocaleDateString() : 'Pending'
+    },
+    {
+      key: 'type',
+      title: 'Type',
+      render: (_: any, record: SalesOrderDTO) => {
+        const productNames = record.lines?.map(line => line.productName).join(', ') || '';
+        return (
+          <span className="text-sm" title={productNames}>
+            {productNames.length > 30 ? `${productNames.substring(0, 30)}...` : productNames}
+          </span>
+        );
+      },
     },
     {
       key: 'status',
@@ -88,6 +114,20 @@ export function SalesOrdersList() {
       render: (value: number) => (
         <span className="font-medium">${value.toFixed(2)}</span>
       ),
+    },
+    {
+      key: 'balance',
+      title: 'Balance',
+      render: (_: any, record: SalesOrderDTO) => {
+        // Calculate paid amount from payment methods
+        const paidAmount = record.paymentMethods?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
+        const balance = record.totalAmount - paidAmount;
+        return (
+          <span className={`font-medium ${balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
+            ${balance.toFixed(2)}
+          </span>
+        );
+      },
     },
     {
       key: 'actions',

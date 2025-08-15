@@ -35,7 +35,7 @@ export function RepairsList() {
       setRepairs(data);
     } catch (error) {
       console.error('Error loading repairs:', error);
-      showError('Failed to load repairs. Please try again.');
+      showError(t('repairs.list.loadError'));
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,7 @@ export function RepairsList() {
   };
 
   const breadcrumbs = [
-    { title: 'Repairs' }
+    { title: t('repairs.list.title') }
   ];
 
   return (
@@ -81,21 +81,21 @@ export function RepairsList() {
       
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Repairs Management</h1>
+          <h1 className="text-3xl font-bold">{t('repairs.list.management')}</h1>
           <p className="text-muted-foreground">
-            Manage product repairs and service orders
+            {t('repairs.list.description')}
           </p>
         </div>
         <Button onClick={() => setCreateModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Create Repair
+          {t('repairs.list.createButton')}
         </Button>
       </div>
 
       <StandardSearchBar
-        title="Search Repairs"
+        title={t('repairs.list.search.title')}
         searchValue={searchQuery}
-        searchPlaceholder="Search by Repair ID, Issue, or Status..."
+        searchPlaceholder={t('repairs.list.search.placeholder')}
         onSearchChange={setSearchQuery}
         onSearch={handleSearch}
       />
@@ -103,8 +103,8 @@ export function RepairsList() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
-          <TabsTrigger value="processing">Repair Processing</TabsTrigger>
-          <TabsTrigger value="warranty">Warranty Transfers</TabsTrigger>
+          <TabsTrigger value="processing">{t('repairs.list.tabs.processing')}</TabsTrigger>
+          <TabsTrigger value="warranty">{t('repairs.list.tabs.warranty')}</TabsTrigger>
         </TabsList>
         
         <TabsContent value={activeTab} className="space-y-4">

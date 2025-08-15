@@ -26,6 +26,8 @@ export interface SalesOrderDTO {
   warrantyYears?: number;
   warrantyAmount?: number;
   walkInDelivery?: string;
+  deliveryDate?: string;
+  actualDeliveryDate?: string;
   accessory?: string;
   otherServices?: string;
   otherFee?: number;
@@ -39,6 +41,7 @@ export interface SalesOrderDTO {
   customerSource?: string;
   cashierId?: string;
   storeInvoiceNumber?: string;
+  presale?: boolean;
   // Meta
   createdAt?: string;
   updatedAt?: string;
@@ -64,6 +67,8 @@ export interface ProductLookupItem {
   price: number;
   cost?: number;
   availableStock: number;
+  mapPrice?: number;
+  isNew?: boolean;
   // Purchase history fields (optional, used in returns)
   lastPurchaseDate?: string;
   orderNumber?: string;
@@ -74,6 +79,27 @@ export interface ProductLookupItem {
   orderGrandTotal?: number;
   orderItemsCount?: number;
   itemTotalAmount?: number;
+  // Extended order information for enhanced returns display
+  storeInvoiceNumber?: string;
+  orderStatus?: string;
+  discountAmount?: number;
+  taxAmount?: number;
+  warrantyAmount?: number;
+  otherFee?: number;
+  totalPaid?: number;
+  balance?: number;
+  paymentMethods?: Array<{method: string, amount: number}>;
+  // All items in this order for detailed display
+  orderItems?: Array<{
+    productId: string;
+    sku: string;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    totalAmount: number;
+    discountAmount: number;
+    cost: number;
+  }>;
 }
 
 export interface StockLevel {

@@ -71,7 +71,7 @@ export function ScrapPage() {
   const columns = [
     {
       key: 'scrapNo',
-      title: t('Scrap No.'),
+      title: t('scrap.page.columns.scrapNo'),
       render: (value: any, record: ScrapHeader) => {
         console.log('Rendering scrap number:', record.scrapNo, record);
         return <span className="font-medium font-mono">{record.scrapNo || 'N/A'}</span>;
@@ -79,7 +79,7 @@ export function ScrapPage() {
     },
     {
       key: 'createdAt',
-      title: t('Date'),
+      title: t('scrap.page.columns.date'),
       render: (value: any, record: ScrapHeader) => {
         console.log('Rendering date:', record.createdAt, record);
         if (!record.createdAt) return '-';
@@ -95,7 +95,7 @@ export function ScrapPage() {
     },
     {
       key: 'status',
-      title: t('Status'),
+      title: t('scrap.page.columns.status'),
       render: (value: any, record: ScrapHeader) => (
         <Badge 
           variant="secondary"
@@ -107,14 +107,14 @@ export function ScrapPage() {
     },
     {
       key: 'reason',
-      title: t('Reason'),
+      title: t('scrap.page.columns.reason'),
       render: (value: any, record: ScrapHeader) => (
         <span className="capitalize">Coming soon</span>
       )
     },
     {
       key: 'totalQty',
-      title: t('Total Quantity'),
+      title: t('scrap.page.columns.totalQuantity'),
       render: (value: any, record: ScrapHeader) => (
         <span className="font-medium">{record.totalQty || 0}</span>
       )
@@ -128,12 +128,12 @@ export function ScrapPage() {
         <div>
           <h1 className="text-3xl font-bold">{t('scrapManagement.title')}</h1>
           <p className="text-muted-foreground">
-            {t('Description')}
+            {t('scrap.page.description')}
           </p>
         </div>
         <Button onClick={() => navigate('/store/scrap/new')}>
           <Plus className="h-4 w-4 mr-2" />
-          {t('New Scrap Request')}
+          {t('scrap.page.newRequest')}
         </Button>
       </div>
 

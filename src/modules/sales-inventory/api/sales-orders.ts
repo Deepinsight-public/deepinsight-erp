@@ -49,6 +49,9 @@ export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDT
         warranty_years: dto.warrantyYears,
         warranty_amount: dto.warrantyAmount,
         walk_in_delivery: dto.walkInDelivery,
+        delivery_date: dto.deliveryDate,
+        actual_delivery_date: dto.actualDeliveryDate,
+        presale: dto.presale || false,
         accessory: dto.accessory,
         other_services: dto.otherServices,
         other_fee: dto.otherFee,
@@ -94,6 +97,8 @@ export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDT
 
       // Deduct stock for each line item
       for (const line of dto.lines) {
+        console.log('🔥 Deducting stock for product:', line.productId, 'quantity:', line.quantity);
+        
         // First get current inventory
         const { data: currentInventory } = await supabase
           .from('inventory')
@@ -102,18 +107,31 @@ export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDT
           .eq('store_id', profile.store_id)
           .single();
         
-        if (!currentInventory) continue;
+        console.log('📊 Current inventory before deduction:', currentInventory);
+        
+        if (!currentInventory) {
+          console.log('❌ No inventory found for product:', line.productId);
+          continue;
+        }
+        
+        const newQuantity = currentInventory.quantity - line.quantity;
+        console.log('📉 Updating stock from', currentInventory.quantity, 'to', newQuantity);
         
         const { error: stockError } = await supabase
           .from('inventory')
           .update({ 
-            quantity: currentInventory.quantity - line.quantity,
+            quantity: newQuantity,
             updated_at: new Date().toISOString()
           })
           .eq('product_id', line.productId)
           .eq('store_id', profile.store_id);
         
-        if (stockError) throw stockError;
+        if (stockError) {
+          console.error('❌ Stock deduction error:', stockError);
+          throw stockError;
+        } else {
+          console.log('✅ Stock deduction successful for product:', line.productId);
+        }
       }
 
       return mapDatabaseToDTO(order, dto.lines || []);
@@ -160,7 +178,7 @@ export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDT
     payment_amount3: paymentMethods[2]?.amount || null,
     payment_note: dto.paymentNote,
     customer_source: dto.customerSource,
-    store_invoice_number: dto.storeInvoiceNumber,
+    store_invoice_number: dto.storeInvoiceNumber || null,
     cashier_id: dto.cashierId,
     store_id: profile.store_id,
     created_by: profile.user_id
@@ -269,6 +287,9 @@ export const updateSalesOrder = async (id: string, dto: SalesOrderDTO): Promise<
     warranty_years: dto.warrantyYears,
     warranty_amount: dto.warrantyAmount,
     walk_in_delivery: dto.walkInDelivery,
+    delivery_date: dto.deliveryDate,
+    actual_delivery_date: dto.actualDeliveryDate,
+    presale: dto.presale || false,
     accessory: dto.accessory,
     other_services: dto.otherServices,
     other_fee: dto.otherFee,
@@ -283,7 +304,7 @@ export const updateSalesOrder = async (id: string, dto: SalesOrderDTO): Promise<
     payment_amount3: paymentMethods[2]?.amount || null,
     payment_note: dto.paymentNote,
     customer_source: dto.customerSource,
-    store_invoice_number: dto.storeInvoiceNumber,
+    store_invoice_number: dto.storeInvoiceNumber || null,
     cashier_id: dto.cashierId,
     updated_at: new Date().toISOString()
   };
@@ -295,7 +316,10 @@ export const updateSalesOrder = async (id: string, dto: SalesOrderDTO): Promise<
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Supabase error updating sales order:', error);
+    throw new Error(`Failed to update order: ${error.message || error.details || 'Database error'}`);
+  }
 
   // Delete existing line items
   const { error: deleteError } = await supabase
@@ -303,7 +327,10 @@ export const updateSalesOrder = async (id: string, dto: SalesOrderDTO): Promise<
     .delete()
     .eq('sales_order_id', id);
 
-  if (deleteError) throw deleteError;
+  if (deleteError) {
+    console.error('Supabase error deleting order items:', deleteError);
+    throw new Error(`Failed to delete existing order items: ${deleteError.message || deleteError.details || 'Database error'}`);
+  }
 
   // Insert updated line items
   if (dto.lines && dto.lines.length > 0) {
@@ -320,7 +347,10 @@ export const updateSalesOrder = async (id: string, dto: SalesOrderDTO): Promise<
       .from('sales_order_items')
       .insert(lineItems);
 
-    if (lineItemsError) throw lineItemsError;
+    if (lineItemsError) {
+      console.error('Supabase error inserting order items in updateSalesOrder:', lineItemsError);
+      throw new Error(`Failed to insert order items: ${lineItemsError.message || lineItemsError.details || 'Database error'}`);
+    }
   }
 
   return mapDatabaseToDTO(order, dto.lines || []);
@@ -441,6 +471,9 @@ export const fetchProductLookup = async (search: string): Promise<ProductLookupI
       sku,
       product_name,
       price,
+      cost,
+      map_price,
+      is_new,
       inventory (
         quantity,
         reserved_quantity,
@@ -460,6 +493,9 @@ export const fetchProductLookup = async (search: string): Promise<ProductLookupI
     sku: product.sku,
     productName: product.product_name,
     price: product.price || 0,
+    cost: product.cost || 0,
+    mapPrice: product.map_price || 0,
+    isNew: product.is_new || false,
     availableStock: (product.inventory?.[0]?.quantity || 0) - (product.inventory?.[0]?.reserved_quantity || 0)
   }));
 
@@ -471,6 +507,9 @@ export const fetchProductLookup = async (search: string): Promise<ProductLookupI
         sku: 'REF001',
         productName: '双门冰箱 (Double Door Refrigerator)',
         price: 899.99,
+        cost: 699.99,
+        mapPrice: 849.99,
+        isNew: true,
         availableStock: 5
       },
       {
@@ -478,6 +517,9 @@ export const fetchProductLookup = async (search: string): Promise<ProductLookupI
         sku: 'WM001',
         productName: '洗衣机 (Washing Machine)',
         price: 599.99,
+        cost: 449.99,
+        mapPrice: 549.99,
+        isNew: false,
         availableStock: 3
       },
       {
@@ -485,6 +527,9 @@ export const fetchProductLookup = async (search: string): Promise<ProductLookupI
         sku: 'TV001',
         productName: '智能电视 (Smart TV)',
         price: 799.99,
+        cost: 599.99,
+        mapPrice: 749.99,
+        isNew: true,
         availableStock: 8
       }
     ].filter(p => 
@@ -652,6 +697,9 @@ const mapDatabaseToDTO = (dbOrder: any, lines: SalesOrderLineDTO[]): SalesOrderD
     warrantyYears: dbOrder.warranty_years,
     warrantyAmount: dbOrder.warranty_amount,
     walkInDelivery: dbOrder.walk_in_delivery,
+    deliveryDate: dbOrder.delivery_date,
+    actualDeliveryDate: dbOrder.actual_delivery_date,
+    presale: dbOrder.presale || false,
     accessory: dbOrder.accessory,
     otherServices: dbOrder.other_services,
     otherFee: dbOrder.other_fee,
