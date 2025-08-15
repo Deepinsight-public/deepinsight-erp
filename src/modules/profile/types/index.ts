@@ -10,7 +10,7 @@ export interface ProfileFormData {
   full_name: string;
   email: string;
   phone: string;
-  role?: string;
+  role?: UserRole;
   store_id?: string;
 }
 

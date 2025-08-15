@@ -41,7 +41,7 @@ export function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps
     full_name: z.string().min(1, t('profile.edit.validation.firstNameRequired')).max(30, t('profile.edit.validation.firstNameLength')),
     email: z.string().email(t('profile.edit.emailInvalid')),
     phone: z.string().optional(),
-    role: z.string().optional(),
+    role: z.enum(USER_ROLES).optional(),
     store_id: z.string().optional(),
   });
   
