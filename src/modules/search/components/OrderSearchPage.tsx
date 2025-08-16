@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Filter } from 'lucide-react';
+import { Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/shared/DataTable';
@@ -21,7 +21,10 @@ export function OrderSearchPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [originalProducts, setOriginalProducts] = useState<ProductSearchItem[]>([]);
+  
+  const itemsPerPage = 20;
 
   const handleSearch = async (page = 1, searchParams?: { search?: string; filters?: ProductSearchFilters }) => {
     setLoading(true);
@@ -31,11 +34,12 @@ export function OrderSearchPage() {
         ...params.filters, 
         search: params.search, 
         page, 
-        limit: 20 
+        limit: itemsPerPage 
       });
 
       setProducts(result.data);
       setTotal(result.total);
+      setTotalPages(result.totalPages || Math.ceil(result.total / itemsPerPage));
       setCurrentPage(page);
       
       // Store original data when no search or filters are applied
@@ -94,6 +98,104 @@ export function OrderSearchPage() {
     // Reload original data when clearing
     handleSearch(1, { search: undefined, filters: {} });
   };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      handleSearch(newPage, { search: searchQuery || undefined, filters });
+    }
+  };
+
+  const goToFirstPage = () => handlePageChange(1);
+  const goToPreviousPage = () => handlePageChange(currentPage - 1);
+  const goToNextPage = () => handlePageChange(currentPage + 1);
+  const goToLastPage = () => handlePageChange(totalPages);
+
+  // Generate page numbers for pagination
+  const generatePageNumbers = () => {
+    const maxVisiblePages = 5;
+    const pages: number[] = [];
+    
+    if (totalPages <= maxVisiblePages) {
+      // Show all pages if total is small
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Show pages around current page
+      let startPage = Math.max(1, currentPage - 2);
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+      
+      // Adjust start if we're near the end
+      if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  };
+
+  // Create pagination component
+  const paginationComponent = totalPages > 1 ? (
+    <div className="flex items-center justify-between">
+      <div className="text-sm text-muted-foreground">
+        Showing {Math.min((currentPage - 1) * itemsPerPage + 1, total)} to{' '}
+        {Math.min(currentPage * itemsPerPage, total)} of {total} results
+      </div>
+      <div className="flex items-center space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={goToFirstPage}
+          disabled={currentPage === 1}
+        >
+          First
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={goToPreviousPage}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Previous
+        </Button>
+        <div className="flex items-center space-x-1">
+          {generatePageNumbers().map((pageNumber) => (
+            <Button
+              key={`page-${pageNumber}`}
+              variant={pageNumber === currentPage ? "default" : "outline"}
+              size="sm"
+              onClick={() => handlePageChange(pageNumber)}
+              className="w-10"
+            >
+              {pageNumber}
+            </Button>
+          ))}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={goToNextPage}
+          disabled={currentPage === totalPages}
+        >
+          Next
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={goToLastPage}
+          disabled={currentPage === totalPages}
+        >
+          Last
+        </Button>
+      </div>
+    </div>
+  ) : null;
 
   // Load initial data immediately
   useEffect(() => {
@@ -280,6 +382,7 @@ export function OrderSearchPage() {
         loading={loading}
         onRowClick={handleRowClick}
         maxHeight="60vh"
+        pagination={paginationComponent}
       />
     </div>
   );
