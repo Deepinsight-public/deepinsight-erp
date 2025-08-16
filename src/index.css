@@ -2,35 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ERP Store Design System - Professional & Clean */
+/* Wheelzie-Style Dashboard Design System */
 
 @layer base {
   :root {
-    /* ERP Brand Colors */
-    --background: 0 0% 100%;
-    --foreground: 216 24% 12%;
+    /* Wheelzie Brand Colors */
+    --background: 0 0% 99%;
+    --foreground: 0 0% 9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 216 24% 12%;
+    --card-foreground: 0 0% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 216 24% 12%;
+    --popover-foreground: 0 0% 9%;
 
-    /* Professional Blue Theme */
-    --primary: 214 84% 56%;
+    /* Modern Red/Orange Theme */
+    --primary: 2 91% 58%;
     --primary-foreground: 0 0% 98%;
-    --primary-hover: 214 84% 48%;
+    --primary-hover: 2 91% 50%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 216 24% 12%;
+    --secondary: 210 14% 97%;
+    --secondary-foreground: 0 0% 9%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 210 14% 97%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 216 24% 12%;
+    --accent: 210 14% 97%;
+    --accent-foreground: 0 0% 9%;
 
-    /* Status Colors */
+    /* Status Colors - Wheelzie Style */
     --success: 142 76% 36%;
     --success-foreground: 0 0% 98%;
     --warning: 38 92% 50%;
@@ -38,32 +38,34 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 214 84% 56%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 2 91% 58%;
 
     --radius: 0.375rem;
 
-    /* Sidebar Design */
-    --sidebar-background: 216 34% 97%;
-    --sidebar-foreground: 216 24% 12%;
-    --sidebar-primary: 214 84% 56%;
+    /* Sidebar Design - Wheelzie Style */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 45%;
+    --sidebar-primary: 2 91% 58%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 216 24% 12%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 214 84% 56%;
+    --sidebar-accent: 210 14% 97%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 2 91% 58%;
 
-    /* ERP Specific Variables */
+    /* Wheelzie Specific Variables */
     --kpi-positive: 142 76% 36%;
     --kpi-negative: 0 84% 60%;
     --status-active: 142 76% 36%;
     --status-pending: 38 92% 50%;
-    --status-inactive: 215 16% 47%;
+    --status-inactive: 0 0% 45%;
     
-    /* Animations & Transitions */
+    /* Modern Design Tokens */
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --shadow-elegant: 0 4px 6px -1px hsl(214 32% 91% / 0.1), 0 2px 4px -1px hsl(214 32% 91% / 0.06);
+    --shadow-elegant: 0 4px 6px -1px hsl(220 13% 91% / 0.1), 0 2px 4px -1px hsl(220 13% 91% / 0.06);
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(2 91% 65%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 14% 99%));
   }
 
   .dark {
