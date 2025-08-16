@@ -16,7 +16,7 @@ export const productsApi = {
     let query = supabase
       .from('products')
       .select('*', { count: 'exact' })
-      .eq('delete', false) // Only active products
+      .eq('is_active', true) // Only active products
       .order('updated_at', { ascending: false });
 
     // Apply search filter
@@ -24,9 +24,9 @@ export const productsApi = {
       query = query.or(`model.ilike.%${searchTerm}%,brand.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,kw_code.ilike.%${searchTerm}%`);
     }
 
-    // Apply product type filter
+    // Apply category filter (using category instead of product_type)
     if (productType && productType !== 'all') {
-      query = query.eq('product_type', productType);
+      query = query.eq('category', productType);
     }
 
     // Apply brand filter
@@ -61,14 +61,14 @@ export const productsApi = {
       kwCode: product.kw_code,
       description: product.description,
       mapPrice: Number(product.map_price) || 0,
-      productType: product.product_type || 'OTHER',
-      dimensions: product.dimensions,
-      features: product.features,
+      productType: 'OTHER' as ProductType,
+      dimensions: product.description || '',
+      features: product.description || '',
       createdAt: product.created_at,
       updatedAt: product.updated_at,
-      delete: product.delete,
-      delete_by: product.delete_by,
-      delete_on: product.delete_on,
+      delete: false,
+      delete_by: null,
+      delete_on: null,
     }));
 
     const totalPages = Math.ceil((count || 0) / limit);
@@ -86,7 +86,7 @@ export const productsApi = {
       .from('products')
       .select('*')
       .eq('id', id)
-      .eq('delete', false)
+      .eq('is_active', true)
       .single();
 
     if (error) {
@@ -103,14 +103,14 @@ export const productsApi = {
       kwCode: data.kw_code,
       description: data.description,
       mapPrice: Number(data.map_price) || 0,
-      productType: data.product_type || 'OTHER',
-      dimensions: data.dimensions,
-      features: data.features,
+      productType: 'OTHER' as ProductType,
+      dimensions: data.description || '',
+      features: data.description || '',
       createdAt: data.created_at,
       updatedAt: data.updated_at,
-      delete: data.delete,
-      delete_by: data.delete_by,
-      delete_on: data.delete_on,
+      delete: false,
+      delete_by: null,
+      delete_on: null,
     };
   },
 
@@ -118,7 +118,7 @@ export const productsApi = {
     const { data, error } = await supabase
       .from('products')
       .select('brand')
-      .eq('delete', false)
+      .eq('is_active', true)
       .not('brand', 'is', null);
 
     if (error) {

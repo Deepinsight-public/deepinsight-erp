@@ -14,14 +14,7 @@ export const inventoryApi = {
       .select('*')
       .eq('store_id', storeId);
 
-    // Apply filters
-    if (filters?.a4lCode) {
-      query = query.ilike('a4l_code', `%${filters.a4lCode}%`);
-    }
-    
-    if (filters?.kwCode) {
-      query = query.ilike('kw_code', `%${filters.kwCode}%`);
-    }
+    // Apply filters - removed since these fields don't exist on inventory table
 
     query = query.order('updated_at', { ascending: false });
 
@@ -56,21 +49,11 @@ export const inventoryApi = {
     return inventoryData?.map(item => {
       const product = productsMap.get(item.product_id);
       
-      // Debug logging to see what we're getting from the database
-      console.log('Inventory item from DB:', {
-        id: item.id,
-        a4l_code: item.a4l_code,
-        kw_code: item.kw_code,
-        product_id: item.product_id,
-        product_sku: product?.sku,
-        product_kw_code: product?.kw_code
-      });
-      
       return {
         id: item.id,
         productId: item.product_id,
-        a4lCode: item.a4l_code || `A4L-${product?.sku || 'UNK'}-001`,
-        kwCode: item.kw_code || product?.kw_code || `KW-${product?.category?.substring(0,3).toUpperCase() || 'GEN'}`,
+        a4lCode: `A4L-${product?.sku || 'UNK'}-001`,
+        kwCode: product?.kw_code || `KW-${product?.category?.substring(0,3).toUpperCase() || 'GEN'}`,
         sku: product?.sku || '',
         productName: product?.product_name || '',
         brand: product?.brand,
@@ -150,6 +133,8 @@ export const inventoryApi = {
     return data?.map(item => ({
       id: item.id,
       productId: item.product_id,
+      a4lCode: `A4L-${item.products?.sku || 'UNK'}-001`,
+      kwCode: `KW-GEN`,
       sku: item.products?.sku || '',
       productName: item.products?.product_name || '',
       brand: item.products?.brand,
@@ -162,7 +147,7 @@ export const inventoryApi = {
       maxStockLevel: item.max_stock,
       reorderPoint: item.reorder_point,
       lastCountedAt: item.last_counted_at,
-      status: 'active',
+      status: 'active' as const,
       createdAt: item.created_at,
       updatedAt: item.updated_at,
     })) || [];

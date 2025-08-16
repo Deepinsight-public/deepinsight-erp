@@ -17,6 +17,16 @@ import ResetSuccessPage from "@/modules/auth/pages/ResetSuccessPage";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
+// Warehouse Layout and Pages
+import { WarehouseLayout } from "@/components/warehouse/WarehouseLayout";
+import WarehouseDashboard from "./pages/warehouse/Dashboard";
+import SalesSummary from "./pages/warehouse/SalesSummary";
+import StoreManagement from "./pages/warehouse/StoreManagement";
+import StorePO from "./pages/warehouse/StorePO";
+import NewStorePO from "./pages/warehouse/NewStorePO";
+import Wholesale from "./pages/warehouse/Wholesale";
+import NewWholesale from "./pages/warehouse/NewWholesale";
+
 // Store Layout and Pages
 import { AfterSalesReturns } from "@/modules/after-sales/components/AfterSalesReturns";
 import NewAfterSalesReturn from "./pages/store/NewAfterSalesReturn";
@@ -93,6 +103,21 @@ export default function App() {
                 <Route path="/auth/sent" element={<ResetSentPage />} />
                 <Route path="/auth/reset" element={<NewPasswordPage />} />
                 <Route path="/auth/success" element={<ResetSuccessPage />} />
+
+                {/* Protected Warehouse Routes */}
+                <Route path="/warehouse" element={
+                  <ProtectedRoute>
+                    <WarehouseLayout />
+                  </ProtectedRoute>
+                }>
+                  <Route path="dashboard" element={<WarehouseDashboard />} />
+                  <Route path="sales-summary" element={<SalesSummary />} />
+                  <Route path="store-management" element={<StoreManagement />} />
+                  <Route path="store-po" element={<StorePO />} />
+                  <Route path="store-po/new" element={<NewStorePO />} />
+                  <Route path="wholesale" element={<Wholesale />} />
+                  <Route path="wholesale/new" element={<NewWholesale />} />
+                </Route>
 
                 {/* Protected Store Routes */}
                 <Route path="/store" element={

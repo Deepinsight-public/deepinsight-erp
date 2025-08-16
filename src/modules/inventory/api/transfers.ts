@@ -9,10 +9,11 @@ export const transfersApi = {
       {
         id: '1',
         transferNumber: 'TRF-OUT-001',
-        type: 'transfer_out',
         fromStoreId: storeId,
+        fromStoreName: 'Store A',
         toStoreId: 'other-store-id',
-        status: 'submitted',
+        toStoreName: 'Store B',
+        status: 'shipped',
         items: [
           {
             id: '1',
@@ -22,10 +23,11 @@ export const transfersApi = {
             quantityRequested: 10,
             quantityShipped: 0,
             quantityReceived: 0,
+            status: 'in_stock',
           }
         ],
         reason: 'Stock rebalancing',
-        requestedBy: 'user1',
+        createdBy: 'user1',
         createdAt: '2025-01-01T00:00:00Z',
         updatedAt: '2025-01-01T00:00:00Z',
       }
@@ -39,14 +41,15 @@ export const transfersApi = {
     return {
       id: `transfer-${Date.now()}`,
       transferNumber,
-      type: 'transfer_out',
       fromStoreId: transfer.fromStoreId,
+      fromStoreName: transfer.fromStoreName,
       toStoreId: transfer.toStoreId,
+      toStoreName: transfer.toStoreName,
       status: transfer.status,
       items: transfer.items,
       reason: transfer.reason,
       notes: transfer.notes,
-      requestedBy: transfer.requestedBy,
+      createdBy: transfer.createdBy,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
