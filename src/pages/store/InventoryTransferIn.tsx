@@ -11,7 +11,7 @@ export default function InventoryTransferIn() {
       <div>
         <Breadcrumbs 
           items={[
-            { title: t('inventory'), url: '/store/inventory' },
+            { title: t('inventory'), href: '/store/inventory' },
             { title: t('inventory.transfers.transferIn.title') }
           ]} 
         />

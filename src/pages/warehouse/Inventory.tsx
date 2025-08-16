@@ -12,22 +12,19 @@ export default function Inventory() {
     {
       title: t('warehouse.inventory.totalItems', 'Total Items'),
       value: '45,672',
-      change: '+2.3%',
-      trend: 'up' as const,
+      change: { value: 2.3, label: '%' },
       icon: Package,
     },
     {
       title: t('warehouse.inventory.transfersIn', 'Transfers In'),
       value: '234',
-      change: '+12%',
-      trend: 'up' as const,
+      change: { value: 12, label: '%' },
       icon: ArrowDown,
     },
     {
       title: t('warehouse.inventory.transfersOut', 'Transfers Out'),
       value: '187',
-      change: '+8%',
-      trend: 'up' as const,
+      change: { value: 8, label: '%' },
       icon: ArrowUp,
     },
   ];
@@ -54,7 +51,6 @@ export default function Inventory() {
             title={kpi.title}
             value={kpi.value}
             change={kpi.change}
-            trend={kpi.trend}
             icon={kpi.icon}
           />
         ))}

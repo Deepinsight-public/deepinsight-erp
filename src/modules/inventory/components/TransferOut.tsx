@@ -338,7 +338,6 @@ export function TransferOut({ storeId }: TransferOutProps) {
               columns={draftOrderColumns}
               onRowClick={setSelectedOrder}
               title={t('inventory.transfers.transferOut.draftsList')}
-              description={t('inventory.transfers.transferOut.draftsDescription')}
             />
           </CardContent>
         </Card>
@@ -441,7 +440,6 @@ export function TransferOut({ storeId }: TransferOutProps) {
                     data={selectedOrder.items}
                     columns={orderItemColumns}
                     title={t('inventory.transfers.transferOut.itemsList')}
-                    description={t('inventory.transfers.transferOut.itemsListDescription')}
                   />
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">

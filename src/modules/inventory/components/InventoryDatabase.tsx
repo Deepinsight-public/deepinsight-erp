@@ -450,9 +450,8 @@ export function InventoryDatabase({ storeId }: InventoryDatabaseProps) {
             data={inventory}
             columns={columns}
             loading={loading}
-            onRowClick={(item) => console.log('View inventory item details:', item)}
             title={t('inventory.database.results', { count: inventory.length })}
-            description={t('inventory.database.resultsDescription')}
+            onRowClick={(item) => console.log('View item details:', item)}
           />
         </CardContent>
       </Card>

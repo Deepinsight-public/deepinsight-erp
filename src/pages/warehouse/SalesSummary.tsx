@@ -18,29 +18,25 @@ export default function SalesSummary() {
     {
       title: t('warehouse.sales.totalRevenue', 'Total Revenue'),
       value: '$1,284,592',
-      change: '+12.5%',
-      trend: 'up' as const,
+      change: { value: 12.5, label: '%' },
       icon: DollarSign,
     },
     {
       title: t('warehouse.sales.unitsSold', 'Units Sold'),
       value: '8,247',
-      change: '+8.2%',
-      trend: 'up' as const,
+      change: { value: 8.2, label: '%' },
       icon: Package,
     },
     {
       title: t('warehouse.sales.avgOrderValue', 'Avg Order Value'),
       value: '$156',
-      change: '+3.1%',
-      trend: 'up' as const,
+      change: { value: 3.1, label: '%' },
       icon: TrendingUp,
     },
     {
       title: t('warehouse.sales.activeStores', 'Active Stores'),
       value: '24',
-      change: '+2',
-      trend: 'up' as const,
+      change: { value: 2, label: '' },
       icon: Store,
     },
   ];
@@ -163,7 +159,6 @@ export default function SalesSummary() {
             title={kpi.title}
             value={kpi.value}
             change={kpi.change}
-            trend={kpi.trend}
             icon={kpi.icon}
           />
         ))}

@@ -433,9 +433,8 @@ export function TransferRecord({ storeId }: TransferRecordProps) {
           <DataTable
             data={filteredRecords}
             columns={columns}
-            onRowClick={(record) => console.log('View transfer details:', record)}
             title={t('inventory.transfers.transferRecord.results', { count: filteredRecords.length })}
-            description={t('inventory.transfers.transferRecord.resultsDescription')}
+            onRowClick={(record) => console.log('View transfer details:', record)}
           />
         </CardContent>
       </Card>

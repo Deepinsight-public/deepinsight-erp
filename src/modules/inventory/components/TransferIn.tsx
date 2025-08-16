@@ -375,7 +375,6 @@ export function TransferIn({ storeId }: TransferInProps) {
               columns={transferColumns}
               onRowClick={setSelectedTransfer}
               title={t('inventory.transfers.transferIn.list')}
-              description={t('inventory.transfers.transferIn.listDescription')}
             />
           </CardContent>
         </Card>
@@ -500,7 +499,6 @@ export function TransferIn({ storeId }: TransferInProps) {
                   data={selectedTransfer.items}
                   columns={itemColumns}
                   title={t('inventory.transfers.transferIn.itemsToReceive')}
-                  description={t('inventory.transfers.transferIn.itemsDescription')}
                 />
               </CardContent>
             </Card>

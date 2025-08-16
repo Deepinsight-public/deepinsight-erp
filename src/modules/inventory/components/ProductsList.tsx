@@ -362,7 +362,6 @@ export function ProductsList({ storeId }: ProductsListProps) {
             loading={loading}
             onRowClick={(product) => console.log('View product details:', product)}
             title={t('inventory.products.results', { count: products.length })}
-            description={t('inventory.products.resultsDescription')}
           />
         </CardContent>
       </Card>

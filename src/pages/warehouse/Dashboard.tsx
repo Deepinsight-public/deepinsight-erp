@@ -20,7 +20,7 @@ export default function WarehouseDashboard() {
     {
       title: t('warehouse.dashboard.totalInventory', 'Total Inventory'),
       value: '125,847',
-      change: '+5.2%',
+      change: { value: 5.2, label: '%' },
       trend: 'up' as const,
       icon: Package,
       color: 'text-blue-600',
@@ -28,7 +28,7 @@ export default function WarehouseDashboard() {
     {
       title: t('warehouse.dashboard.activeStores', 'Active Stores'),
       value: '24',
-      change: '+2 new',
+      change: { value: 2, label: 'new' },
       trend: 'up' as const,
       icon: Store,
       color: 'text-green-600',
@@ -36,7 +36,7 @@ export default function WarehouseDashboard() {
     {
       title: t('warehouse.dashboard.shipments', 'Shipments Today'),
       value: '156',
-      change: '+12.3%',
+      change: { value: 12.3, label: '%' },
       trend: 'up' as const,
       icon: Truck,
       color: 'text-purple-600',
@@ -44,7 +44,7 @@ export default function WarehouseDashboard() {
     {
       title: t('warehouse.dashboard.revenue', 'Monthly Revenue'),
       value: '$284,592',
-      change: '+8.1%',
+      change: { value: 8.1, label: '%' },
       trend: 'up' as const,
       icon: TrendingUp,
       color: 'text-orange-600',
@@ -73,7 +73,6 @@ export default function WarehouseDashboard() {
             title={kpi.title}
             value={kpi.value}
             change={kpi.change}
-            trend={kpi.trend}
             icon={kpi.icon}
           />
         ))}

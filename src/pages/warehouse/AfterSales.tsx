@@ -12,22 +12,19 @@ export default function AfterSales() {
     {
       title: t('warehouse.afterSales.totalReturns', 'Total Returns'),
       value: '234',
-      change: '+5.2%',
-      trend: 'up' as const,
+      change: { value: 5.2, label: '%' },
       icon: RefreshCw,
     },
     {
       title: t('warehouse.afterSales.scrapItems', 'Scrap Items'),
       value: '45',
-      change: '-2.1%',
-      trend: 'down' as const,
+      change: { value: -2.1, label: '%' },
       icon: Trash2,
     },
     {
       title: t('warehouse.afterSales.processing', 'Processing'),
       value: '89',
-      change: '+8.3%',
-      trend: 'up' as const,
+      change: { value: 8.3, label: '%' },
       icon: ArrowLeft,
     },
   ];
@@ -54,7 +51,6 @@ export default function AfterSales() {
             title={kpi.title}
             value={kpi.value}
             change={kpi.change}
-            trend={kpi.trend}
             icon={kpi.icon}
           />
         ))}
