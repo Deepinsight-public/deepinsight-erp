@@ -91,6 +91,29 @@ export function WarehouseSidebar() {
     return currentPath.startsWith(url);
   };
 
+  // Helper function to get menu titles with fallbacks
+  const getMenuTitle = (key: string) => {
+    const titles: Record<string, string> = {
+      dashboard: 'Dashboard',
+      salesSummary: 'Sales Summary',
+      storeManagement: 'Store Management',
+      storePO: 'Store PO',
+      wholesale: 'Wholesale',
+      loadList: 'Load List',
+      search: 'Search',
+      inventory: 'Inventory',
+      barcodes: 'Barcodes',
+      afterSales: 'After Sales',
+    };
+    
+    // Try to get translation, fallback to English title
+    const translationKey = `warehouse.${key}`;
+    const translation = t(translationKey);
+    
+    // If translation key is returned (not found), use the fallback title
+    return translation === translationKey ? titles[key] || key : translation;
+  };
+
   return (
     <Sidebar className={open ? 'w-64' : 'w-16'}>
       <SidebarContent>
@@ -133,7 +156,7 @@ export function WarehouseSidebar() {
                         <item.icon className="h-5 w-5 flex-shrink-0" />
                         {open && (
                           <span className="font-medium">
-                            {t(`warehouse.nav.${item.title}`)}
+                            {getMenuTitle(item.title)}
                           </span>
                         )}
                       </NavLink>
