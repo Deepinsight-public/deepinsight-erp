@@ -1116,6 +1116,13 @@ export type Database = {
           walk_in_delivery: string | null
           warranty_amount: number | null
           warranty_years: number | null
+          separate_tax_rates: boolean | null
+          uniform_tax_rate: number | null
+          services_tax_rate: number | null
+          warranty_tax_rate: number | null
+          accessory_tax_rate: number | null
+          delivery_tax_rate: number | null
+          other_fee_tax_rate: number | null
         }
         Insert: {
           accessory?: string | null
@@ -1157,6 +1164,13 @@ export type Database = {
           walk_in_delivery?: string | null
           warranty_amount?: number | null
           warranty_years?: number | null
+          separate_tax_rates?: boolean | null
+          uniform_tax_rate?: number | null
+          services_tax_rate?: number | null
+          warranty_tax_rate?: number | null
+          accessory_tax_rate?: number | null
+          delivery_tax_rate?: number | null
+          other_fee_tax_rate?: number | null
         }
         Update: {
           accessory?: string | null
@@ -1198,6 +1212,13 @@ export type Database = {
           walk_in_delivery?: string | null
           warranty_amount?: number | null
           warranty_years?: number | null
+          separate_tax_rates?: boolean | null
+          uniform_tax_rate?: number | null
+          services_tax_rate?: number | null
+          warranty_tax_rate?: number | null
+          accessory_tax_rate?: number | null
+          delivery_tax_rate?: number | null
+          other_fee_tax_rate?: number | null
         }
         Relationships: [
           {

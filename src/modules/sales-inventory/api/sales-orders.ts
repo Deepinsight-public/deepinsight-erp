@@ -67,6 +67,14 @@ export const createSalesOrder = async (dto: SalesOrderDTO): Promise<SalesOrderDT
         payment_note: dto.paymentNote,
         customer_source: dto.customerSource,
         cashier_id: dto.cashierId,
+        // Tax Settings
+        separate_tax_rates: dto.separateTaxRates || false,
+        uniform_tax_rate: dto.uniformTaxRate || 10.00,
+        services_tax_rate: dto.servicesTaxRate || 10.00,
+        warranty_tax_rate: dto.warrantyTaxRate || 10.00,
+        accessory_tax_rate: dto.accessoryTaxRate || 10.00,
+        delivery_tax_rate: dto.deliveryTaxRate || 10.00,
+        other_fee_tax_rate: dto.otherFeeTaxRate || 10.00,
         store_id: profile.store_id,
         created_by: profile.user_id
       };
@@ -306,6 +314,14 @@ export const updateSalesOrder = async (id: string, dto: SalesOrderDTO): Promise<
     customer_source: dto.customerSource,
     store_invoice_number: dto.storeInvoiceNumber || null,
     cashier_id: dto.cashierId,
+    // Tax Settings
+    separate_tax_rates: dto.separateTaxRates || false,
+    uniform_tax_rate: dto.uniformTaxRate || 10.00,
+    services_tax_rate: dto.servicesTaxRate || 10.00,
+    warranty_tax_rate: dto.warrantyTaxRate || 10.00,
+    accessory_tax_rate: dto.accessoryTaxRate || 10.00,
+    delivery_tax_rate: dto.deliveryTaxRate || 10.00,
+    other_fee_tax_rate: dto.otherFeeTaxRate || 10.00,
     updated_at: new Date().toISOString()
   };
 
@@ -791,6 +807,14 @@ const mapDatabaseToDTO = (dbOrder: any, lines: SalesOrderLineDTO[]): SalesOrderD
     customerSource: dbOrder.customer_source,
     storeInvoiceNumber: dbOrder.store_invoice_number,
     cashierId: dbOrder.cashier_id,
+    // Tax Settings
+    separateTaxRates: dbOrder.separate_tax_rates || false,
+    uniformTaxRate: dbOrder.uniform_tax_rate || 10.00,
+    servicesTaxRate: dbOrder.services_tax_rate || 10.00,
+    warrantyTaxRate: dbOrder.warranty_tax_rate || 10.00,
+    accessoryTaxRate: dbOrder.accessory_tax_rate || 10.00,
+    deliveryTaxRate: dbOrder.delivery_tax_rate || 10.00,
+    otherFeeTaxRate: dbOrder.other_fee_tax_rate || 10.00,
     createdAt: dbOrder.created_at,
     updatedAt: dbOrder.updated_at,
     createdBy: dbOrder.created_by,

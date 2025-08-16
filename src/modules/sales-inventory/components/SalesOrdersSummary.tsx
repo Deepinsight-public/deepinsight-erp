@@ -11,7 +11,8 @@ import {
   Eye,
   FileText,
   RotateCcw,
-  AlertCircle
+  AlertCircle,
+  Truck
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
@@ -465,6 +466,14 @@ export function SalesOrdersSummary() {
             <Button data-testid="btn-new-primary" onClick={() => navigate('/store/sales-orders/new')}>
               <Plus className="h-4 w-4 mr-2" />
               {t('sales.summary.newOrder')}
+            </Button>
+            <Button 
+              variant="outline" 
+              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+              onClick={() => navigate('/store/sales-orders/delivery')}
+            >
+              <Truck className="h-4 w-4 mr-2" />
+              Delivery
             </Button>
           </div>
           {/* Desktop actions */}

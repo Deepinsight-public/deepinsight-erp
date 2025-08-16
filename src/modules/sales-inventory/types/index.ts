@@ -31,6 +31,7 @@ export interface SalesOrderDTO {
   accessory?: string;
   otherServices?: string;
   otherFee?: number;
+  deliveryFee?: number;
   paymentMethod?: string;
   paymentMethods?: Array<{
     method: string;
@@ -42,6 +43,14 @@ export interface SalesOrderDTO {
   cashierId?: string;
   storeInvoiceNumber?: string;
   presale?: boolean;
+  // Tax Settings
+  separateTaxRates?: boolean;
+  uniformTaxRate?: number;
+  servicesTaxRate?: number;
+  warrantyTaxRate?: number;
+  accessoryTaxRate?: number;
+  deliveryTaxRate?: number;
+  otherFeeTaxRate?: number;
   // Meta
   createdAt?: string;
   updatedAt?: string;

@@ -30,6 +30,7 @@ import { StoreLayout } from "@/components/store/StoreLayout";
 import Dashboard from "./pages/store/Dashboard";
 import SalesOrders from "./pages/store/SalesOrders";
 import SalesOrdersHistory from "./pages/store/SalesOrdersHistory";
+import SalesOrdersDelivery from "./pages/store/SalesOrdersDelivery";
 import SalesOrderDetail from "./pages/store/SalesOrderDetail";
 import NewSalesOrder from "./pages/store/NewSalesOrder";
 import SalesOrderSuccess from "./pages/store/SalesOrderSuccess";
@@ -104,6 +105,7 @@ export default function App() {
                   {/* Sales Orders */}
                   <Route path="sales-orders" element={<SalesOrders />} />
                   <Route path="sales-orders/history" element={<SalesOrdersHistory />} />
+                  <Route path="sales-orders/delivery" element={<SalesOrdersDelivery />} />
                   <Route path="sales-orders/pivot" element={
                     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
                       <SalesOrdersPivot />

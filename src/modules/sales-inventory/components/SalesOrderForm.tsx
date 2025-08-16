@@ -166,6 +166,7 @@ const SalesOrderFormSchema = z.object({
   accessory: z.string().optional(),
   otherFee: z.number().min(0).optional(),
   otherServices: z.string().optional(),
+  deliveryFee: z.number().min(0).optional(),
       paymentMethods: z.array(z.object({
       method: z.string(),
       amount: z.number().min(0),
@@ -176,7 +177,15 @@ const SalesOrderFormSchema = z.object({
   cashierId: z.string().optional(),
   orderDate: z.string().optional(),
   storeInvoiceNumber: z.string().optional(),
-  presale: z.boolean().optional()
+  presale: z.boolean().optional(),
+  // Tax Settings
+  separateTaxRates: z.boolean().optional(),
+  uniformTaxRate: z.number().min(0).max(100).optional(),
+  servicesTaxRate: z.number().min(0).max(100).optional(),
+  warrantyTaxRate: z.number().min(0).max(100).optional(),
+  accessoryTaxRate: z.number().min(0).max(100).optional(),
+  deliveryTaxRate: z.number().min(0).max(100).optional(),
+  otherFeeTaxRate: z.number().min(0).max(100).optional()
 }).refine((data) => {
   // If delivery is selected, address fields and delivery date are required
   if (data.fulfillmentType === 'delivery') {
@@ -253,7 +262,16 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
       warrantyAmount: initialData?.warrantyAmount || 0,
       accessory: initialData?.accessory || '',
       otherServices: initialData?.otherServices || '',
-      otherFee: initialData?.otherFee || 0
+      otherFee: initialData?.otherFee || 0,
+      deliveryFee: (initialData as any)?.deliveryFee || 0,
+      // Tax Settings
+      separateTaxRates: (initialData as any)?.separateTaxRates || false,
+      uniformTaxRate: (initialData as any)?.uniformTaxRate || 10,
+      servicesTaxRate: (initialData as any)?.servicesTaxRate || 10,
+      warrantyTaxRate: (initialData as any)?.warrantyTaxRate || 10,
+      accessoryTaxRate: (initialData as any)?.accessoryTaxRate || 10,
+      deliveryTaxRate: (initialData as any)?.deliveryTaxRate || 10,
+      otherFeeTaxRate: (initialData as any)?.otherFeeTaxRate || 10
     }
   });
 
@@ -284,7 +302,16 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
         warrantyAmount: initialData.warrantyAmount || 0,
         accessory: initialData.accessory || '',
         otherServices: initialData.otherServices || '',
-        otherFee: initialData.otherFee || 0
+        otherFee: initialData.otherFee || 0,
+        deliveryFee: (initialData as any)?.deliveryFee || 0,
+        // Tax Settings
+        separateTaxRates: (initialData as any)?.separateTaxRates || false,
+        uniformTaxRate: (initialData as any)?.uniformTaxRate || 10,
+        servicesTaxRate: (initialData as any)?.servicesTaxRate || 10,
+        warrantyTaxRate: (initialData as any)?.warrantyTaxRate || 10,
+        accessoryTaxRate: (initialData as any)?.accessoryTaxRate || 10,
+        deliveryTaxRate: (initialData as any)?.deliveryTaxRate || 10,
+        otherFeeTaxRate: (initialData as any)?.otherFeeTaxRate || 10
       };
       
       reset(resetValues);
@@ -292,34 +319,89 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
     }
   }, [initialData, reset]);
 
-  // Calculate totals including fees
-  const calculateTotals = (orderLines: SalesOrderLineDTO[], warrantyAmount?: number, accessoryFee?: number, otherFee?: number, taxPct = 10) => {
+  // Calculate totals including fees with dynamic tax rates
+  const calculateTotals = (
+    orderLines: SalesOrderLineDTO[], 
+    warrantyAmount?: number, 
+    accessoryFee?: number, 
+    deliveryFee?: number,
+    otherFee?: number, 
+    separateTaxRates = false,
+    uniformTaxRate = 10,
+    servicesTaxRate = 10,
+    warrantyTaxRate = 10,
+    accessoryTaxRate = 10,
+    deliveryTaxRate = 10,
+    otherFeeTaxRate = 10
+  ) => {
     const linesSum = orderLines.reduce((sum, line) => sum + line.subTotal, 0);
     const linesDiscount = orderLines.reduce((sum, line) => 
       sum + (line.unitPrice * line.quantity * line.discountPercent / 100), 0
     );
     const linesSubTotal = linesSum - linesDiscount;
     
-    const extras = (warrantyAmount ?? 0) + (accessoryFee ?? 0) + (otherFee ?? 0);
-    const subTotal = linesSubTotal + extras;
-    const taxAmount = subTotal * (taxPct / 100);
-    const grandTotal = subTotal + taxAmount;
+    const warranty = warrantyAmount ?? 0;
+    const accessory = accessoryFee ?? 0;
+    const delivery = deliveryFee ?? 0;
+    const other = otherFee ?? 0;
+    
+    let taxAmount = 0;
+    let servicesTax = 0;
+    let productWarrantyTax = 0;
+    let accessoryTax = 0;
+    let deliveryTax = 0;
+    let otherTax = 0;
+    
+
+    
+    if (separateTaxRates) {
+      // Calculate tax separately for each component
+      // Services Tax is separate from Product & Warranty Tax
+      servicesTax = 0; // Set to 0 to avoid double taxation - products are included in productWarrantyTax
+      productWarrantyTax = (linesSubTotal + warranty) * (warrantyTaxRate / 100); // Combined Product & Warranty Tax as requested
+      accessoryTax = accessory * (accessoryTaxRate / 100);
+      deliveryTax = delivery * (deliveryTaxRate / 100);
+      otherTax = other * (otherFeeTaxRate / 100);
+      taxAmount = servicesTax + productWarrantyTax + accessoryTax + deliveryTax + otherTax;
+    } else {
+      // Use uniform tax rate for all components
+      const subTotal = linesSubTotal + warranty + accessory + delivery + other;
+      taxAmount = subTotal * (uniformTaxRate / 100);
+    }
+    
+    const grandTotal = linesSubTotal + warranty + accessory + delivery + other + taxAmount;
     
     return { 
       subTotal: linesSubTotal, 
       discountAmount: linesDiscount, 
       taxAmount, 
       totalAmount: grandTotal,
-      extrasTotal: extras
+      extrasTotal: warranty + accessory + delivery + other,
+      // Additional breakdown for separate tax rates
+      servicesTax: servicesTax,
+      productWarrantyTax: productWarrantyTax,
+      warrantyTax: 0, // Deprecated - now part of productWarrantyTax
+      accessoryTax: accessoryTax,
+      deliveryTax: deliveryTax,
+      otherTax: otherTax
     };
   };
 
   const totals = calculateTotals(
     lines, 
-    watch('warrantyAmount'), 
+    Number(watch('warrantyAmount')) || 0, 
     parseFloat(watch('accessory') || '0'), 
-    watch('otherFee')
+    Number(watch('deliveryFee')) || 0,
+    Number(watch('otherFee')) || 0,
+    watch('separateTaxRates'),
+    Number(watch('uniformTaxRate')) || 10,
+    Number(watch('servicesTaxRate')) || 10,
+    Number(watch('warrantyTaxRate')) || 10,
+    Number(watch('accessoryTaxRate')) || 10,
+    Number(watch('deliveryTaxRate')) || 10,
+    Number(watch('otherFeeTaxRate')) || 10
   );
+
 
   // Add new line item
   const handleAddItem = async (productId: string, quantity: number) => {
@@ -444,12 +526,21 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
         accessory: formData.accessory || '',
         otherServices: formData.otherServices,
         otherFee: formData.otherFee || 0,
+        deliveryFee: formData.deliveryFee || 0,
         paymentMethod: formData.paymentMethods?.[0]?.method || null,
         paymentMethods: formData.paymentMethods || [],
         paymentNote: formData.paymentNote,
         customerSource: formData.customerSource,
         storeInvoiceNumber: formData.storeInvoiceNumber || `INV-${Date.now()}`,
         presale: formData.presale || false,
+        // Tax Settings
+        separateTaxRates: formData.separateTaxRates || false,
+        uniformTaxRate: formData.uniformTaxRate || 10,
+        servicesTaxRate: formData.servicesTaxRate || 10,
+        warrantyTaxRate: formData.warrantyTaxRate || 10,
+        accessoryTaxRate: formData.accessoryTaxRate || 10,
+        deliveryTaxRate: formData.deliveryTaxRate || 10,
+        otherFeeTaxRate: formData.otherFeeTaxRate || 10,
         totalAmount: totals.totalAmount,
         discountAmount: totals.discountAmount,
         taxAmount: totals.taxAmount,
@@ -463,10 +554,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
         lines
       };
 
-      // Debug logging for save operations (can be commented out)
-      // console.log('=== ORDER SAVE DEBUG ===');
-      // console.log('Is update operation:', !!initialData?.id);
-      // console.log('Order ID:', initialData?.id);
+
       
       let savedOrder;
       if (initialData?.id) {
@@ -475,17 +563,11 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
         savedOrder = await createSalesOrder(orderDTO);
       }
 
-      console.log('=== CUSTOMER SAVE DEBUG START ===');
-      console.log('Form data received:', formData);
-      console.log('Customer email:', formData.customerEmail);
-      console.log('Customer first name:', formData.firstName);
-      console.log('Customer last name:', formData.lastName);
-      console.log('Profile store_id:', profile.store_id);
-      console.log('User ID:', user.id);
+
 
       // Save/update customer information in customers table
       if (formData.customerEmail && formData.firstName && formData.lastName) {
-        console.log('Attempting to save customer data...');
+
         try {
           // First check if customer exists with both email and store_id
           const { data: existingCustomer, error: searchError } = await supabase
@@ -516,12 +598,11 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
         ].filter(Boolean).join(', ') || null
       };
 
-          console.log('Customer data to save:', customerData);
-          console.log('Existing customer found:', existingCustomer);
+
 
           if (existingCustomer) {
             // Update existing customer
-            console.log('Updating existing customer with ID:', existingCustomer.id);
+
             const { data: updatedCustomer, error: updateError } = await supabase
               .from('customers')
               .update({
@@ -539,7 +620,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
               throw updateError;
             }
             
-            console.log('Customer updated successfully:', updatedCustomer);
+
             toast({
               title: 'Customer Updated',
               description: `Updated details for ${customerData.first_name} ${customerData.last_name}`,
@@ -547,7 +628,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
             });
           } else {
             // Create new customer - try using CRM module approach
-            console.log('Creating new customer via CRM pattern...');
+
             try {
               // Import and use the CRM addCustomer function
               const { addCustomer } = await import('@/modules/crm-analytics/api/customers');
@@ -568,7 +649,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
                 address: customerAddress
               });
               
-              console.log('Customer created successfully via CRM:', newCustomer);
+
               toast({
                 title: 'Customer Created',
                 description: `Created new customer: ${fullName}`,
@@ -589,7 +670,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
                 throw insertError;
               }
               
-              console.log('Customer created successfully (direct):', newCustomer);
+
               toast({
                 title: 'Customer Created',
                 description: `Created new customer: ${customerData.first_name} ${customerData.last_name}`,
@@ -606,13 +687,10 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
           });
         }
       } else {
-        console.log('Skipping customer save - missing required customer information');
-        console.log('Email provided:', !!formData.customerEmail);
-        console.log('First name provided:', !!formData.firstName);
-        console.log('Last name provided:', !!formData.lastName);
+
       }
       
-      console.log('=== CUSTOMER SAVE DEBUG END ===');
+
 
       toast({
         title: 'Success',
@@ -621,7 +699,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
       
       // Refresh product list to update stock levels after order submission
       if (status === 'submitted') {
-        console.log('🔄 Refreshing product list after order submission');
+
         handleProductSearch('');
       }
       
@@ -681,10 +759,10 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
 
   // Customer lookup by email
   const searchCustomerByEmail = useCallback(async (email: string) => {
-    console.log('searchCustomerByEmail called with:', email);
+
     
     if (!email || email.length < 3) {
-      console.log('Email too short, skipping search');
+
       setCustomerFound(false);
       return;
     }
@@ -692,19 +770,19 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      console.log('Invalid email format, skipping search');
+
       setCustomerFound(false);
       return;
     }
 
-    console.log('Starting customer search for:', email);
+
     setIsSearchingCustomer(true);
     
     try {
       // Get current user's store_id for filtering
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.log('No authenticated user found');
+
         setCustomerFound(false);
         return;
       }
@@ -716,7 +794,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
         .single();
 
       if (!profile?.store_id) {
-        console.log('No store_id found for user');
+
         setCustomerFound(false);
         return;
       }
@@ -729,7 +807,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
         .eq('store_id', profile.store_id)
         .limit(1);
 
-      console.log('Customer search result:', { customers, error });
+
 
       if (error) {
         throw error;
@@ -743,7 +821,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
         const firstName = customer.first_name || '';
         const lastName = customer.last_name || '';
 
-        console.log("Found customer:", customer);
+
         
         // Auto-fill form fields with customer data
         setValue('firstName', firstName);
@@ -752,7 +830,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
         
         // Auto-fill address if available - improved parsing
         if (customer.address) {
-          console.log('Parsing address:', customer.address);
+
           const addressParts = customer.address.split(', ').filter(part => part.trim());
           
           // More flexible address parsing
@@ -780,7 +858,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
           variant: 'default'
         });
       } else {
-        console.log('No customer found with email:', email);
+
         setCustomerFound(false);
       }
     } catch (error) {
@@ -800,12 +878,12 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
   useEffect(() => {
     // Don't search if we have initial data (viewing existing order)
     if (initialData?.id) {
-      console.log('Skipping customer search - editing existing order');
+
       return;
     }
     
     const email = watch('customerEmail');
-    console.log('Email changed to:', email, 'customerFound:', customerFound);
+
     
     if (!email) {
       setCustomerFound(false);
@@ -813,7 +891,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
     }
     
     const timeoutId = setTimeout(() => {
-      console.log('Debounced search triggered for:', email);
+
       // Always search when email changes, don't skip if customer was found before
       if (email && email.includes('@')) {
         searchCustomerByEmail(email);
@@ -821,7 +899,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
     }, 800); // Increased delay to 800ms for better UX
 
     return () => {
-      console.log('Clearing timeout for email search');
+
       clearTimeout(timeoutId);
     };
   }, [watch('customerEmail'), searchCustomerByEmail, initialData?.id]);
@@ -854,6 +932,15 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
         currentFormData.accessory !== (initialData.accessory || '') ||
         currentFormData.otherServices !== (initialData.otherServices || '') ||
         currentFormData.otherFee !== (initialData.otherFee || 0) ||
+        currentFormData.deliveryFee !== ((initialData as any)?.deliveryFee || 0) ||
+        // Tax settings
+        currentFormData.separateTaxRates !== ((initialData as any)?.separateTaxRates || false) ||
+        currentFormData.uniformTaxRate !== ((initialData as any)?.uniformTaxRate || 10) ||
+        currentFormData.servicesTaxRate !== ((initialData as any)?.servicesTaxRate || 10) ||
+        currentFormData.warrantyTaxRate !== ((initialData as any)?.warrantyTaxRate || 10) ||
+        currentFormData.accessoryTaxRate !== ((initialData as any)?.accessoryTaxRate || 10) ||
+        currentFormData.deliveryTaxRate !== ((initialData as any)?.deliveryTaxRate || 10) ||
+        currentFormData.otherFeeTaxRate !== ((initialData as any)?.otherFeeTaxRate || 10) ||
         // Payment and other details
         currentFormData.paymentNote !== (initialData.paymentNote || '') ||
         currentFormData.customerSource !== (initialData.customerSource || '') ||
@@ -923,14 +1010,14 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
 
   // Product search
   const handleProductSearch = async (search: string) => {
-    console.log('🔍 handleProductSearch called with:', search, 'length:', search.length);
+
     
     try {
       const { searchAvailableProducts } = await import('../api/products');
       const products = await searchAvailableProducts(search);
-      console.log('📋 Setting product options:', products.length, 'products:', products);
+
       setProductOptions(products);
-      console.log('📋 Product options state after setting:', products.length, 'items');
+
     } catch (error) {
       console.error('Failed to search products:', error);
       toast({
@@ -1063,7 +1150,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
 
   const handleOrderSubmit = handleSubmit(
     (data) => {
-      console.log('Form validation passed, data:', data);
+
       if (lines.length === 0) {
         toast({
           title: 'Validation Error',
@@ -1089,7 +1176,7 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
       handleSave(data, 'submitted');
     },
     (errors) => {
-      console.log('Form validation failed, errors:', errors);
+
       let message = 'Please fill in all required fields.';
       if (errors.customerEmail || errors.firstName || errors.lastName || errors.customerPhone) {
         message = 'Please fill in all required customer information (Email, First Name, Last Name, Phone)';
@@ -1108,9 +1195,9 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
 
   // Alternative manual validation function as backup
   const handleOrderSubmitManual = () => {
-    console.log('Manual submit clicked');
+
     const currentValues = getValues();
-    console.log('Current form values:', currentValues);
+
     
     // Manual validation check
     if (!currentValues.customerEmail || !currentValues.firstName || !currentValues.lastName || !currentValues.customerPhone) {
@@ -1482,6 +1569,25 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
               </div>
             )}
             
+            {/* Order Items moved here */}
+            <div className="col-span-full">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Order Items</h3>
+                {!readOnly && (
+                  <Button onClick={() => setShowAddItemDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Item
+                  </Button>
+                )}
+              </div>
+              <div className="border rounded-lg">
+                <DataTable
+                  data={lines}
+                  columns={lineColumns}
+                />
+              </div>
+            </div>
+
             <div>
               <Label>Payment Methods (Max 3)</Label>
               <PaymentMethodsSection 
@@ -1657,6 +1763,28 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
             </div>
             
             <div>
+              <Label htmlFor="deliveryFee">Delivery Fee ($)</Label>
+              <Input
+                id="deliveryFee"
+                type="text"
+                value={watch('deliveryFee') || ''}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  // Allow numbers, decimal point, and empty string
+                  if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+                    const amount = parseFloat(newValue) || 0;
+                    if (amount >= 0 || newValue === '') {
+                      setValue('deliveryFee', amount);
+                    }
+                  }
+                }}
+                disabled={readOnly}
+                className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div>
               <Label htmlFor="otherFee">Other Fee ($)</Label>
               <Input
                 id="otherFee"
@@ -1679,28 +1807,178 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
             </div>
           </div>
         </div>
-      </Card>
 
-      {/* Line Items */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Order Items</CardTitle>
-            {!readOnly && (
-              <Button onClick={() => setShowAddItemDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Item
-              </Button>
+        {/* Tax Settings */}
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Tax Settings</h2>
+          
+          {/* Tax Mode Toggle */}
+          <div className="mb-4">
+            <div className="flex items-center space-x-3 p-3 border-2 border-dashed border-orange-300 rounded-lg bg-orange-50">
+              <Checkbox
+                id="separateTaxRates"
+                checked={watch('separateTaxRates') || false}
+                onCheckedChange={(checked) => setValue('separateTaxRates', checked as boolean)}
+                disabled={readOnly}
+                className="data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
+              />
+              <div>
+                <Label htmlFor="separateTaxRates" className="text-base font-medium cursor-pointer">
+                  Use Separate Tax Rates for Each Fee
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  When enabled, you can set different tax rates for items, warranty, accessory, and other fees
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tax Rate Inputs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {!watch('separateTaxRates') ? (
+              // Uniform Tax Rate
+              <div className="md:col-span-2">
+                <Label htmlFor="uniformTaxRate">Uniform Tax Rate (%)</Label>
+                <Input
+                  id="uniformTaxRate"
+                  type="text"
+                  value={watch('uniformTaxRate') || ''}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+                      const rate = parseFloat(newValue) || 0;
+                      if (rate >= 0 && rate <= 100 || newValue === '') {
+                        setValue('uniformTaxRate', rate);
+                      }
+                    }
+                  }}
+                  disabled={readOnly}
+                  className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none max-w-xs"
+                  placeholder="10.0"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  This tax rate will be applied to all items and fees
+                </p>
+              </div>
+            ) : (
+              // Separate Tax Rates
+              <>
+                <div>
+                  <Label htmlFor="servicesTaxRate">Services Tax Rate (%)</Label>
+                  <Input
+                    id="servicesTaxRate"
+                    type="text"
+                    value={watch('servicesTaxRate') || ''}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+                        const rate = parseFloat(newValue) || 0;
+                        if (rate >= 0 && rate <= 100 || newValue === '') {
+                          setValue('servicesTaxRate', rate);
+                        }
+                      }
+                    }}
+                    disabled={readOnly}
+                    className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    placeholder="10.0"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Tax rate for services</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="warrantyTaxRate">Product & Warranty Tax Rate (%)</Label>
+                  <Input
+                    id="warrantyTaxRate"
+                    type="text"
+                    value={watch('warrantyTaxRate') || ''}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+                        const rate = parseFloat(newValue) || 0;
+                        if (rate >= 0 && rate <= 100 || newValue === '') {
+                          setValue('warrantyTaxRate', rate);
+                        }
+                      }
+                    }}
+                    disabled={readOnly}
+                    className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    placeholder="10.0"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Tax rate for products and warranty (combined)</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="accessoryTaxRate">Accessory Tax Rate (%)</Label>
+                  <Input
+                    id="accessoryTaxRate"
+                    type="text"
+                    value={watch('accessoryTaxRate') || ''}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+                        const rate = parseFloat(newValue) || 0;
+                        if (rate >= 0 && rate <= 100 || newValue === '') {
+                          setValue('accessoryTaxRate', rate);
+                        }
+                      }
+                    }}
+                    disabled={readOnly}
+                    className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    placeholder="10.0"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Tax rate for accessory fees</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="deliveryTaxRate">Delivery Tax Rate (%)</Label>
+                  <Input
+                    id="deliveryTaxRate"
+                    type="text"
+                    value={watch('deliveryTaxRate') || ''}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+                        const rate = parseFloat(newValue) || 0;
+                        if (rate >= 0 && rate <= 100 || newValue === '') {
+                          setValue('deliveryTaxRate', rate);
+                        }
+                      }
+                    }}
+                    disabled={readOnly}
+                    className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    placeholder="10.0"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Tax rate for delivery fees</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="otherFeeTaxRate">Other Fee Tax Rate (%)</Label>
+                  <Input
+                    id="otherFeeTaxRate"
+                    type="text"
+                    value={watch('otherFeeTaxRate') || ''}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+                        const rate = parseFloat(newValue) || 0;
+                        if (rate >= 0 && rate <= 100 || newValue === '') {
+                          setValue('otherFeeTaxRate', rate);
+                        }
+                      }
+                    }}
+                    disabled={readOnly}
+                    className="[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    placeholder="10.0"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Tax rate for other fees</p>
+                </div>
+              </>
             )}
           </div>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            data={lines}
-            columns={lineColumns}
-          />
-        </CardContent>
+        </div>
       </Card>
+
+
 
       {/* Totals */}
       <Card>
@@ -1722,14 +2000,62 @@ export function SalesOrderForm({ initialData, onSave, onCancel, onFormChange, re
           </div>
           {totals.extrasTotal > 0 && (
             <div className="flex justify-between">
-              <span>Extras (Warranty + Accessory + Other):</span>
+              <span>Extras (Warranty + Accessory + Delivery + Other):</span>
               <span>${totals.extrasTotal.toFixed(2)}</span>
             </div>
           )}
-          <div className="flex justify-between">
-            <span>Tax (10%):</span>
-            <span>${totals.taxAmount.toFixed(2)}</span>
-          </div>
+          
+          {/* Tax Breakdown */}
+          {watch('separateTaxRates') ? (
+            // Show separate tax breakdown when enabled
+            <div className="space-y-2 bg-gray-50 p-3 rounded-lg">
+              <div className="text-sm font-medium text-gray-700 mb-2">Tax Breakdown:</div>
+              
+
+              
+              {totals.servicesTax > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Services Tax ({watch('servicesTaxRate') || 0}%):</span>
+                  <span>${totals.servicesTax.toFixed(2)}</span>
+                </div>
+              )}
+              {totals.productWarrantyTax > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Product & Warranty Tax ({watch('warrantyTaxRate') || 0}%):</span>
+                  <span>${totals.productWarrantyTax.toFixed(2)}</span>
+                </div>
+              )}
+              {totals.accessoryTax > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Accessory Tax ({watch('accessoryTaxRate') || 0}%):</span>
+                  <span>${totals.accessoryTax.toFixed(2)}</span>
+                </div>
+              )}
+              {totals.deliveryTax > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Delivery Tax ({watch('deliveryTaxRate') || 0}%):</span>
+                  <span>${totals.deliveryTax.toFixed(2)}</span>
+                </div>
+              )}
+              {totals.otherTax > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>Other Fee Tax ({watch('otherFeeTaxRate') || 0}%):</span>
+                  <span>${totals.otherTax.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-medium border-t pt-2">
+                <span>Total Tax:</span>
+                <span>${totals.taxAmount.toFixed(2)}</span>
+              </div>
+            </div>
+          ) : (
+            // Show uniform tax when separate rates are disabled
+            <div className="flex justify-between">
+              <span>Tax ({watch('uniformTaxRate') || 0}%):</span>
+              <span>${totals.taxAmount.toFixed(2)}</span>
+            </div>
+          )}
+          
           <div className="border-t pt-3">
             <div className="flex justify-between font-bold text-lg">
               <span>Grand Total:</span>
@@ -1813,7 +2139,7 @@ function AddItemDialog({ open, onClose, onAdd, onProductSearch, productOptions }
   // Load initial products when dialog opens
   useEffect(() => {
     if (open) {
-      console.log('Dialog opened, loading initial products');
+
       // Load all available products initially
       onProductSearch('');
     } else {
@@ -1845,13 +2171,13 @@ function AddItemDialog({ open, onClose, onAdd, onProductSearch, productOptions }
           <SelectWithSearch
             key={open ? 'dialog-open' : 'dialog-closed'}
             options={(() => {
-              console.log('🔍 productOptions state in render:', productOptions.length, 'items:', productOptions);
+
               const mappedOptions = productOptions.map(p => ({
                 value: p.id,
                 label: `${p.sku} - ${p.productName} ($${p.price.toFixed(2)}) - Stock: ${p.availableStock}`,
                 disabled: p.availableStock === 0
               }));
-              console.log('🎯 SelectWithSearch options being passed:', mappedOptions.length, 'options:', mappedOptions.map(o => ({ value: o.value, label: o.label, disabled: o.disabled })));
+
               return mappedOptions;
             })()}
             value={selectedProduct}
