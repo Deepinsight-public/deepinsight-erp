@@ -25,7 +25,7 @@ export function WarehouseHeader() {
         </NotificationDropdown>
         <Avatar className="h-8 w-8">
           <AvatarFallback>
-            {profile?.first_name?.[0] || 'W'}{profile?.last_name?.[0] || 'H'}
+            WH
           </AvatarFallback>
         </Avatar>
       </div>

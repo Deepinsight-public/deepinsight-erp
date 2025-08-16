@@ -26,6 +26,11 @@ import StorePO from "./pages/warehouse/StorePO";
 import NewStorePO from "./pages/warehouse/NewStorePO";
 import Wholesale from "./pages/warehouse/Wholesale";
 import NewWholesale from "./pages/warehouse/NewWholesale";
+import LoadList from "./pages/warehouse/LoadList";
+import Search from "./pages/warehouse/Search";
+import WarehouseInventory from "./pages/warehouse/Inventory";
+import Barcodes from "./pages/warehouse/Barcodes";
+import AfterSales from "./pages/warehouse/AfterSales";
 
 // Store Layout and Pages
 import { AfterSalesReturns } from "@/modules/after-sales/components/AfterSalesReturns";
@@ -117,6 +122,11 @@ export default function App() {
                   <Route path="store-po/new" element={<NewStorePO />} />
                   <Route path="wholesale" element={<Wholesale />} />
                   <Route path="wholesale/new" element={<NewWholesale />} />
+                  <Route path="load-list" element={<LoadList />} />
+                  <Route path="search" element={<Search />} />
+                  <Route path="inventory" element={<WarehouseInventory />} />
+                  <Route path="barcodes" element={<Barcodes />} />
+                  <Route path="after-sales" element={<AfterSales />} />
                 </Route>
 
                 {/* Protected Store Routes */}
